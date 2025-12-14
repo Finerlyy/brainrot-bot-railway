@@ -4,137 +4,124 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from database import admin_add_new_item, get_all_cases # Импортируем новую функцию
+from database import admin_add_new_item, get_all_cases 
 
-# --- ТВОИ ДАННЫЕ ---
-ADMIN_TOKEN = "8547237995:AAHmdSNHOz9eLu3gfj7OjPky-hW9txmUobA" # ПРОВЕРЕН И В КАВЫЧКАХ
-MY_ID = 5208528884 # ТВОЙ АЙДИ
+# --- ВАШИ ДАННЫЕ ---
+ADMIN_TOKEN = "8547237995:AAHmdSNHOz9eLu3gfj7OjPky-hN9txmUobA" 
+# 👇 СЮДА МЫ ВСТАВИМ ID, КОТОРЫЙ БОТ ПРИШЛЕТ В ЧАТЕ
+MY_ID = 5208528884 
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=ADMIN_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Машина состояний для диалога добавления предмета
+# Машина состояний
 class AddItem(StatesGroup):
-    waiting_for_case = State() # <--- НОВЫЙ ШАГ: Выбор кейса
+    waiting_for_case = State() 
     waiting_for_name = State()
     waiting_for_rarity = State()
     waiting_for_price = State()
     waiting_for_image = State()
-    waiting_for_sound = State() # <--- НОВЫЙ ШАГ: URL звука
+    waiting_for_sound = State() 
 
+# Проверка на админа
 def is_admin(message: types.Message):
     return message.from_user.id == MY_ID
+
+# --- КОМАНДЫ ---
+
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    if message.from_user.id == MY_ID:
+        await message.answer("👋 Привет, Админ! Жми /add чтобы добавить предмет.")
+    else:
+        await message.answer(f"⛔ Вы не админ.\nВаш ID: `{message.from_user.id}`\nСкопируйте этот ID и вставьте в admin_bot.py в переменную MY_ID.")
+
+@dp.message(Command("cancel"), StateFilter(AddItem))
+async def cmd_cancel(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Отменено.")
 
 @dp.message(Command("add"), is_admin)
 async def cmd_add_start(message: types.Message, state: FSMContext):
     cases = await get_all_cases()
     if not cases:
-        await message.answer("Сначала создайте кейсы в базе данных.")
+        await message.answer("⚠️ Сначала запустите основного бота, чтобы он создал базу данных и кейсы.")
         return
 
-    # Создание кнопок для выбора кейса
     keyboard = types.ReplyKeyboardMarkup(
         keyboard=[[types.KeyboardButton(text=c['name'])] for c in cases],
-        resize_keyboard=True,
-        one_time_keyboard=True
+        resize_keyboard=True, one_time_keyboard=True
     )
     
-    await message.answer("Выберите кейс, в который вы хотите добавить предмет:", reply_markup=keyboard)
+    await message.answer("Выберите кейс:", reply_markup=keyboard)
     await state.set_state(AddItem.waiting_for_case)
     await state.update_data(cases_data={c['name']: c['id'] for c in cases})
+
+# --- ЛОГИКА ДОБАВЛЕНИЯ (Пропускаю детали для краткости, они работают) ---
 
 @dp.message(AddItem.waiting_for_case)
 async def process_case_choice(message: types.Message, state: FSMContext):
     data = await state.get_data()
     cases_map = data.get('cases_data', {})
-    case_name = message.text
-    
-    if case_name not in cases_map:
-        await message.answer("Неверный кейс. Попробуйте снова.")
+    if message.text not in cases_map:
+        await message.answer("Неверный кейс.")
         return
-        
-    case_id = cases_map[case_name]
-    await state.update_data(case_id=case_id)
-    
-    await message.answer(f"Выбран кейс: {case_name}. \nВведите название предмета (например, 'Тралалеро Тралала'):", 
-                         reply_markup=types.ReplyKeyboardRemove())
+    await state.update_data(case_id=cases_map[message.text])
+    await message.answer("Название предмета?", reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(AddItem.waiting_for_name)
 
 @dp.message(AddItem.waiting_for_name)
 async def process_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
-    keyboard = types.ReplyKeyboardMarkup(
-        keyboard=[
-            [types.KeyboardButton(text="Common"), types.KeyboardButton(text="Uncommon")],
-            [types.KeyboardButton(text="Rare"), types.KeyboardButton(text="Mythical")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    await message.answer("Введите редкость:", reply_markup=keyboard)
+    kb = types.ReplyKeyboardMarkup(keyboard=[[types.KeyboardButton(text="Common"), types.KeyboardButton(text="Uncommon")], [types.KeyboardButton(text="Rare"), types.KeyboardButton(text="Mythical")]], resize_keyboard=True)
+    await message.answer("Редкость?", reply_markup=kb)
     await state.set_state(AddItem.waiting_for_rarity)
 
 @dp.message(AddItem.waiting_for_rarity)
 async def process_rarity(message: types.Message, state: FSMContext):
-    rarity = message.text
-    if rarity not in ["Common", "Uncommon", "Rare", "Mythical"]:
-        await message.answer("Неверная редкость. Используйте кнопки.")
+    if message.text not in ["Common", "Uncommon", "Rare", "Mythical"]:
+        await message.answer("Используйте кнопки.")
         return
-    await state.update_data(rarity=rarity)
-    await message.answer("Введите цену предмета (например, 150):", reply_markup=types.ReplyKeyboardRemove())
+    await state.update_data(rarity=message.text)
+    await message.answer("Цена (число)?", reply_markup=types.ReplyKeyboardRemove())
     await state.set_state(AddItem.waiting_for_price)
 
 @dp.message(AddItem.waiting_for_price)
 async def process_price(message: types.Message, state: FSMContext):
-    try:
-        price = int(message.text)
-        await state.update_data(price=price)
-        await message.answer("Введите URL картинки предмета (прямая ссылка, https://...):")
-        await state.set_state(AddItem.waiting_for_image)
-    except ValueError:
-        await message.answer("Цена должна быть числом.")
+    if not message.text.isdigit():
+        await message.answer("Нужно число.")
+        return
+    await state.update_data(price=int(message.text))
+    await message.answer("Ссылка на картинку?")
+    await state.set_state(AddItem.waiting_for_image)
 
 @dp.message(AddItem.waiting_for_image)
 async def process_image(message: types.Message, state: FSMContext):
     await state.update_data(image_url=message.text)
-    await message.answer("Введите URL ЗВУКА предмета (прямая ссылка на .mp3 или .wav):")
-    await state.set_state(AddItem.waiting_for_sound) # <--- НОВЫЙ ШАГ
+    await message.answer("Ссылка на звук (.mp3)?")
+    await state.set_state(AddItem.waiting_for_sound)
 
 @dp.message(AddItem.waiting_for_sound)
 async def process_sound(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    
-    # Полный набор данных
     new_item = {
-        'case_id': data['case_id'],
-        'name': data['name'],
-        'rarity': data['rarity'],
-        'price': data['price'],
-        'image_url': data['image_url'],
-        'sound_url': message.text # <--- СОХРАНЕНИЕ URL ЗВУКА
+        'case_id': data['case_id'], 'name': data['name'], 'rarity': data['rarity'],
+        'price': data['price'], 'image_url': data['image_url'], 'sound_url': message.text 
     }
-    
     try:
         await admin_add_new_item(new_item)
-        await message.answer(f"✅ Предмет '{new_item['name']}' успешно добавлен в кейс ID {new_item['case_id']}!")
+        await message.answer(f"✅ Добавлено: {new_item['name']}")
     except Exception as e:
-        await message.answer(f"❌ Произошла ошибка при добавлении в БД: {e}")
-        
+        await message.answer(f"Ошибка: {e}")
     await state.clear()
 
-# Вспомогательная функция для БД, которую нужно добавить в database.py
-async def admin_add_new_item(item):
-    """Добавляет новый предмет в базу данных."""
-    import aiosqlite
-    import sqlite3
-    DB_NAME = "brainrot.db"
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("""
-            INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (item['name'], item['rarity'], item['price'], item['image_url'], item['sound_url'], item['case_id']))
-        await db.commit()
-
-# [Остальной код admin_bot.py]
-# ...
+# --- ЛОВУШКА ДЛЯ ОТЛАДКИ ---
+# Если ни один фильтр не сработал (например, вы не админ), сработает это:
+@dp.message()
+async def debug_catch_all(message: types.Message):
+    await message.answer(
+        f"🤖 Бот работает, но команда не распознана или у вас нет прав.\n"
+        f"Ваш ID: `{message.from_user.id}`\n"
+        f"В коде прописан ID: `{MY_ID}`"
+    )
