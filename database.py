@@ -70,23 +70,25 @@ async def init_db():
         await db.commit()
         
         # Получаем ID кейсов
-        base_case_id = (await db.execute_fetchone("SELECT id FROM cases WHERE name = '🗿 Brainrot Base Case'"))[0]
-        explorer_case_id = (await db.execute_fetchone("SELECT id FROM cases WHERE name = '🌌 Meme Explorer Case'"))[0]
+        base_case_id_row = await db.execute_fetchone("SELECT id FROM cases WHERE name = '🗿 Brainrot Base Case'")
+        explorer_case_id_row = await db.execute_fetchone("SELECT id FROM cases WHERE name = '🌌 Meme Explorer Case'")
         
-        # 3. Вставляем примеры предметов
+        base_case_id = base_case_id_row[0] if base_case_id_row else None
+        explorer_case_id = explorer_case_id_row[0] if explorer_case_id_row else None
         
-        # Кейс 1: Base Brainrot Case
-        await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
-                         ('Тралалеро Тралала', 'Common', 50, 'https://i.imgur.com/tralalero_img.png', 'https://i.imgur.com/tralalero_sound.mp3', base_case_id))
-        await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
-                         ('Тунг Тунг Тунг Сахуром', 'Uncommon', 150, 'https://i.imgur.com/sahroom_img.png', 'https://i.imgur.com/sahroom_sound.mp3', base_case_id))
+        # 3. Вставляем примеры предметов (только если кейсы найдены)
+        if base_case_id:
+            await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
+                             ('Тралалеро Тралала', 'Common', 50, 'https://i.imgur.com/tralalero_img.png', 'https://i.imgur.com/tralalero_sound.mp3', base_case_id))
+            await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
+                             ('Тунг Тунг Тунг Сахуром', 'Uncommon', 150, 'https://i.imgur.com/sahroom_img.png', 'https://i.imgur.com/sahroom_sound.mp3', base_case_id))
         
-        # Кейс 2: Meme Explorer Case
-        await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
-                         ('Bazinga!', 'Rare', 800, 'https://i.imgur.com/bazinga_img.png', 'https://i.imgur.com/bazinga_sound.mp3', explorer_case_id))
-        await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
-                         ('Skitibi Dop', 'Mythical', 5000, 'https://i.imgur.com/skitibi_img.png', 'https://i.imgur.com/skitibi_sound.mp3', explorer_case_id))
-                         
+        if explorer_case_id:
+            await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
+                             ('Bazinga!', 'Rare', 800, 'https://i.imgur.com/bazinga_img.png', 'https://i.imgur.com/bazinga_sound.mp3', explorer_case_id))
+            await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
+                             ('Skitibi Dop', 'Mythical', 5000, 'https://i.imgur.com/skitibi_img.png', 'https://i.imgur.com/skitibi_sound.mp3', explorer_case_id))
+                             
         await db.commit()
 
 
@@ -156,3 +158,13 @@ async def get_leaderboard():
         sql = "SELECT username, balance FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10"
         async with db.execute(sql) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
+
+# --- Функции для Админ-бота ---
+async def admin_add_new_item(item):
+    """Добавляет новый предмет в базу данных."""
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("""
+            INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (item['name'], item['rarity'], item['price'], item['image_url'], item['sound_url'], item['case_id']))
+        await db.commit()
