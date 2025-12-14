@@ -4,58 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brainrot Case Opener</title>
-    <link rel="icon" type="image/png" href="https://i.imgur.com/app_icon.png"> 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/static/styles.css"> 
 </head>
 <body>
+    <div class="app-container">
+        <header>
+            <h1>🍕 Brainrot Case Opener</h1>
+        </header>
 
-    <header>
-        <h1>🍕 Brainrot Case Opener 🗿</h1>
-        <div id="user-info">
-            Привет, <span id="username">...</span>! | Баланс: <span id="balance">0</span> 💰
-        </div>
-    </header>
+        <section id="user-info">
+            <p>Привет, <span id="user-name">...!</span> | Баланс: <span id="user-balance">0</span> 💰</p>
+        </section>
 
-    <main>
-        
         <section id="case-selection">
             <h2>Выберите Кейс</h2>
-            <div id="cases-container">
-                <p id="loading-message">Загрузка данных...</p>
-            </div>
-        </section>
-
-        <section id="case-opener" class="hidden">
-            <h2>Открытие Кейса</h2>
-            <div class="roller-container">
-                <div class="roller-window">
-                    <div id="roller">
-                        </div>
+            <div id="case-list">
+                <p>Загрузка данных...</p>
                 </div>
-                <div class="roller-indicator"></div>
-            </div>
-            <button id="close-roller">Закрыть</button>
         </section>
 
-        <section id="result-display" class="hidden">
-            <h2>🎁 Выпавший предмет!</h2>
-            <div id="dropped-item">
-                <img id="dropped-img" src="" alt="Dropped Item">
-                <h3 id="dropped-name"></h3>
-                <p id="dropped-rarity"></p>
-                <p>Предмет добавлен в ваш инвентарь!</p>
+        <section id="case-opening" style="display:none;">
+            <h2>Открытие Кейса</h2>
+            <button id="close-opening">Закрыть</button>
+            <div id="roulette-container">
+                </div>
+            
+            <div id="drop-result" style="display:none;">
+                <h2>🎁 Выпавший предмет!</h2>
+                <h3 id="dropped-item-name">Dropped Item</h3>
+                <img id="dropped-item-image" src="" alt="Dropped Item" style="max-width: 100px;">
+                <p id="drop-status">Предмет добавлен в ваш инвентарь!</p>
+                <button id="open-again">Открыть еще</button>
             </div>
-            <button id="open-another">Открыть ещё</button>
         </section>
 
         <section id="inventory">
             <h2>Ваш Инвентарь</h2>
             <div id="inventory-list">
-                </div>
+                <p>Инвентарь пуст.</p>
+            </div>
         </section>
 
-    </main>
+        <section id="leaderboard">
+            <h2>🏆 Топ по Балансу</h2>
+            <ol id="leaderboard-list">
+                <p>Загрузка данных...</p>
+            </ol>
+        </section>
+
+        <footer>
+            <p>@CaseUngaBungaBot</p>
+        </footer>
+    </div>
     
-    <script src="script.js"></script>
+    <script src="/static/script.js"></script>
 </body>
 </html>
