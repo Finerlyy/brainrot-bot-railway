@@ -6,16 +6,15 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from database import admin_add_new_item, get_all_cases 
 
-# --- ВАШИ ДАННЫЕ ---
-ADMIN_TOKEN = "8547237995:AAHmdSNHOz9eLu3gfj7OjPky-hN9txmUobA" 
-# 👇 СЮДА МЫ ВСТАВИМ ID, КОТОРЫЙ БОТ ПРИШЛЕТ В ЧАТЕ
+# НОВЫЙ ТОКЕН АДМИНА
+ADMIN_TOKEN = "8547237995:AAHy3-r86_noknx1qk0nC8ZmZpERaguURQg" 
+# ВАШ ID (ОСТАВЛЯЕМ КАК ЕСТЬ ИЛИ ИЗМЕНЯЕМ ЕСЛИ БОТ ПРИШЛЕТ ДРУГОЙ)
 MY_ID = 5208528884 
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=ADMIN_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Машина состояний
 class AddItem(StatesGroup):
     waiting_for_case = State() 
     waiting_for_name = State()
@@ -24,7 +23,6 @@ class AddItem(StatesGroup):
     waiting_for_image = State()
     waiting_for_sound = State() 
 
-# Проверка на админа
 def is_admin(message: types.Message):
     return message.from_user.id == MY_ID
 
@@ -57,8 +55,6 @@ async def cmd_add_start(message: types.Message, state: FSMContext):
     await message.answer("Выберите кейс:", reply_markup=keyboard)
     await state.set_state(AddItem.waiting_for_case)
     await state.update_data(cases_data={c['name']: c['id'] for c in cases})
-
-# --- ЛОГИКА ДОБАВЛЕНИЯ (Пропускаю детали для краткости, они работают) ---
 
 @dp.message(AddItem.waiting_for_case)
 async def process_case_choice(message: types.Message, state: FSMContext):
@@ -116,8 +112,6 @@ async def process_sound(message: types.Message, state: FSMContext):
         await message.answer(f"Ошибка: {e}")
     await state.clear()
 
-# --- ЛОВУШКА ДЛЯ ОТЛАДКИ ---
-# Если ни один фильтр не сработал (например, вы не админ), сработает это:
 @dp.message()
 async def debug_catch_all(message: types.Message):
     await message.answer(
