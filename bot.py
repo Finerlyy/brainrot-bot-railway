@@ -9,7 +9,8 @@ import jinja2
 from database import get_user, get_all_items, add_item_to_inventory, get_inventory, get_leaderboard
 
 # --- ТВОИ ДАННЫЕ И КОНФИГУРАЦИЯ ---
-TOKEN = "8400521006:AAH4Ixvq-Bb8KQDpcEUO08rWhMxzvrO7Xe8"
+# ЗАМЕНЕННЫЙ ТОКЕН: 8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU
+TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU" 
 WEB_APP_URL = "https://your-railway-domain.up.railway.app" # <--- ССЫЛКА БУДЕТ ЗДЕСЬ
 
 logging.basicConfig(level=logging.INFO)
