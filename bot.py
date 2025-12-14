@@ -14,7 +14,7 @@ TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU"
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app/" # <--- ССЫЛКА БУДЕТ ЗДЕСЬ
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=TOKEN)
+bot = Bot(token=8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU)
 dp = Dispatcher()
 app = web.Application()
 
