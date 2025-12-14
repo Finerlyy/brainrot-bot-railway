@@ -6,7 +6,6 @@ DB_NAME = "brainrot.db"
 # Асинхронная функция для инициализации БД
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
-        # Устанавливаем row_factory для удобства работы с результатами
         db.row_factory = sqlite3.Row 
         
         # Таблица пользователей (users)
@@ -29,7 +28,7 @@ async def init_db():
             )
         """)
         
-        # Таблица предметов (items) - СВЯЗАННА С case_id и sound_url
+        # Таблица предметов (items)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY,
@@ -59,17 +58,17 @@ async def init_db():
         # Заполнение начальными данными
         await db.execute("INSERT OR IGNORE INTO users (tg_id, username, balance) VALUES (?, ?, ?)", (0, 'system_user', 0))
         
-        # 1. Добавляем начальный кейс (Цена 100)
+        # 1. Добавляем начальный кейс
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", 
                          ('🗿 Brainrot Base Case', 100, 'https://i.imgur.com/base_icon.png'))
         
-        # 2. Добавляем второй кейс (Цена 500)
+        # 2. Добавляем второй кейс
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", 
                          ('🌌 Meme Explorer Case', 500, 'https://i.imgur.com/explorer_icon.png'))
                          
         await db.commit()
         
-        # Получаем ID кейсов - ИСПРАВЛЕНО: используем курсор
+        # Получаем ID кейсов (исправлено)
         async with db.execute("SELECT id FROM cases WHERE name = '🗿 Brainrot Base Case'") as cursor:
             base_case_id_row = await cursor.fetchone()
         
@@ -79,7 +78,7 @@ async def init_db():
         base_case_id = base_case_id_row[0] if base_case_id_row else None
         explorer_case_id = explorer_case_id_row[0] if explorer_case_id_row else None
         
-        # 3. Вставляем примеры предметов (только если кейсы найдены)
+        # 3. Вставляем примеры предметов
         if base_case_id:
             await db.execute("INSERT OR IGNORE INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", 
                              ('Тралалеро Тралала', 'Common', 50, 'https://i.imgur.com/tralalero_img.png', 'https://i.imgur.com/tralalero_sound.mp3', base_case_id))
@@ -97,19 +96,23 @@ async def init_db():
 
 # --- Вспомогательные функции ---
 
-# Важно: get_user возвращает кортеж (tuple) для обратной совместимости с bot.py
+# ИСПРАВЛЕНО: Логика для избежания IntegrityError
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
-        # ИСПРАВЛЕНО: используем курсор для получения одного результата
+        # 1. Попытка найти пользователя
         async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
             user = await cursor.fetchone()
             
         if user is None:
+            # 2. Если не найден, вставляем и сразу получаем его ID/данные
             await db.execute("INSERT INTO users (tg_id, username) VALUES (?, ?)", (tg_id, username))
             await db.commit()
+            
             # Повторный запрос после создания
             async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
                 user = await cursor.fetchone()
+                
+        # 3. Возвращаем найденного или только что созданного пользователя
         return user
 
 async def update_user_balance(tg_id, amount):

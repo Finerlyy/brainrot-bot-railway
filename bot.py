@@ -8,11 +8,13 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 # Импортируем НОВЫЕ функции БД
-from database import get_user, get_inventory, get_leaderboard, get_all_cases, get_case_items, add_item_to_inventory, update_user_balance
+from database import get_user, get_inventory, get_leaderboard, get_all_cases, get_case_items, add_item_to_inventory, update_user_balance, get_case_data
 
 # --- ТВОИ ДАННЫЕ И КОНФИГУРАЦИЯ ---
+# ИСПРАВЛЕНИЕ: Токен взят в кавычки!
 TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU" 
-WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app" # <--- ТВОЯ РЕАЛЬНАЯ ССЫЛКА
+WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app" 
+STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static') # <--- ПУТЬ К ПАПКЕ STATIC
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
@@ -24,6 +26,7 @@ aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.di
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    # При первом запуске создаст пользователя или получит существующего
     await get_user(message.from_user.id, message.from_user.username or "MemeLover")
     
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
@@ -49,7 +52,7 @@ async def api_get_data(request):
     
     user_data = await get_user(user_id, username)
     
-    # ИСПРАВЛЕНИЕ TypeError: Явное преобразование кортежа (tuple) в словарь (dict)
+    # Явное преобразование кортежа (tuple) в словарь (dict)
     user_dict = None
     if user_data:
         # Предполагаем порядок столбцов: id, tg_id, username, balance
@@ -59,17 +62,16 @@ async def api_get_data(request):
     return web.json_response({
         "user": user_dict, 
         "inventory": await get_inventory(user_id),
-        "cases": await get_all_cases(), # <--- НОВЫЙ: Список всех кейсов
-        "case_items": await get_case_items(case_id=None), # <--- НОВЫЙ: Все предметы для рулетки
+        "cases": await get_all_cases(),
+        "case_items": await get_case_items(case_id=None),
         "leaderboard": await get_leaderboard()
     })
 
 async def api_open_case(request):
     data = await request.json()
     user_id = int(data.get('user_id'))
-    case_id = int(data.get('case_id')) # <--- НОВЫЙ: ID ВЫБРАННОГО КЕЙСА
+    case_id = int(data.get('case_id')) 
     
-    # Получаем цену кейса и баланс пользователя
     case_data = await get_case_data(case_id)
     if not case_data:
         return web.json_response({"error": "Case not found"}, status=404)
@@ -81,7 +83,7 @@ async def api_open_case(request):
     if user_balance < case_price:
          return web.json_response({"error": "Insufficient balance"}, status=400)
 
-    items = await get_case_items(case_id) # Получаем предметы только для этого кейса
+    items = await get_case_items(case_id) 
     
     if not items: return web.json_response({"error": "No items in this case"}, status=400)
 
@@ -100,4 +102,5 @@ app.add_routes([
     web.get('/', web_index),
     web.post('/api/data', api_get_data),
     web.post('/api/open', api_open_case),
+    web.static('/static', STATIC_DIR) # <--- ДОБАВЛЕН МАРШРУТ ДЛЯ СТАТИКИ
 ])
