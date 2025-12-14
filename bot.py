@@ -11,7 +11,7 @@ from database import get_user, get_all_items, add_item_to_inventory, get_invento
 # --- ТВОИ ДАННЫЕ И КОНФИГУРАЦИЯ ---
 # ЗАМЕНЕННЫЙ ТОКЕН: 8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU
 TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU" 
-WEB_APP_URL = "https://your-railway-domain.up.railway.app" # <--- ССЫЛКА БУДЕТ ЗДЕСЬ
+WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app/" # <--- ССЫЛКА БУДЕТ ЗДЕСЬ
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
