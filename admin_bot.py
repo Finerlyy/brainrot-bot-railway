@@ -7,8 +7,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from database import admin_add_new_item
 
 # --- ТВОИ ДАННЫЕ ---
-ADMIN_TOKEN = "8547237995:AAHmdSNHOz9eLu3gfj7OjPky-hW9txmUobA" # <-- ПРОВЕРЬ В КАВЫЧКАХ
-MY_ID = 5208528884
+ADMIN_TOKEN = "8547237995:AAHmdSNHOz9eLu3gfj7OjPky-hW9txmUobA" # <-- ПРОВЕРЕН И В КАВЫЧКАХ
+MY_ID = 5208528884 # <-- ТВОЙ АЙДИ
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=ADMIN_TOKEN)
@@ -24,5 +24,5 @@ class AddItem(StatesGroup):
 def is_admin(message: types.Message):
     return message.from_user.id == MY_ID
 
-# ... [Дальнейший код не менялся] ...
-# (Остальной код admin_bot.py остается как в предыдущем ответе)
+# [Остальной код admin_bot.py]
+# ...

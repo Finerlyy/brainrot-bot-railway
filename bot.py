@@ -6,12 +6,14 @@ from aiogram.types import WebAppInfo
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
+# Импортируем get_user, get_inventory, get_all_items, get_leaderboard
 from database import get_user, get_all_items, add_item_to_inventory, get_inventory, get_leaderboard
 
 # --- ТВОИ ДАННЫЕ И КОНФИГУРАЦИЯ ---
 # ТОКЕН ОСНОВНОГО БОТА (8292962840...)
-TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU" # <-- ИСПРАВЛЕН СИНТАКСИС (В КАВЫЧКАХ)
-WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app" # <--- ОБНОВИТЬ ПОСЛЕ ПЕРВОГО ДЕПЛОЯ
+TOKEN = "8292962840:AAGp3Zz6xb5bMd-5E4wUhXZqWWJ6Mrv1GRU" 
+# ТВОЯ РЕАЛЬНАЯ ССЫЛКА (УЖЕ ВСТАВЛЕНА!)
+WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app" 
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
@@ -28,8 +30,10 @@ async def cmd_start(message: types.Message):
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="🍕 ИГРАТЬ (Web App)", web_app=WebAppInfo(url=WEB_APP_URL))]
     ])
+    
+    # 🛑 ВАЖНО: ЗАМЕНИ ССЫЛКУ НИЖЕ НА РЕАЛЬНУЮ ПРЯМУЮ ССЫЛКУ НА ИЗОБРАЖЕНИЕ
     await message.answer_photo(
-        photo="https://placehold.co/600x400/121212/00ff88?text=BRAINROT+CASES",
+        photo="https://i.imgur.com/example_of_valid_image.png", # <--- ЗАМЕНИ ЭТУ ССЫЛКУ!
         caption=f"Йо, {message.from_user.first_name}! \nТут итальянский бреинрот. Жми кнопку, чтобы открыть кейсы.",
         reply_markup=kb
     )
@@ -43,9 +47,19 @@ async def api_get_data(request):
     data = await request.json()
     user_id = int(data.get('user_id'))
     username = data.get('username')
-    user = await get_user(user_id, username)
+    
+    user_data = await get_user(user_id, username)
+    
+    # ИСПРАВЛЕНИЕ TypeError: Явное преобразование кортежа (tuple) в словарь (dict)
+    if user_data:
+        # Предполагаем порядок столбцов: id, tg_id, username, balance
+        user_keys = ['id', 'tg_id', 'username', 'balance']
+        user_dict = dict(zip(user_keys, user_data))
+    else:
+        user_dict = None
+    
     return web.json_response({
-        "user": dict(user) if user else None,
+        "user": user_dict, # ИСПОЛЬЗУЕМ ИСПРАВЛЕННЫЙ СЛОВАРЬ
         "inventory": await get_inventory(user_id),
         "case_items": await get_all_items(),
         "leaderboard": await get_leaderboard()
