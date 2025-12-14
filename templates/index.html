@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Brainrot Case</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #121212;
+            --card: #1e1e1e;
+            --accent: #00ff88; /* Italy Green neon */
+            --accent-red: #ff0055; /* Italy Red neon */
+            --text: #ffffff;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+        /* --- TABS --- */
+        .tabs {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            background: var(--card);
+            padding: 10px 0;
+            justify-content: space-around;
+            border-top: 1px solid #333;
+            z-index: 100;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #777;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .tab-btn.active { color: var(--accent); }
+        .screen { display: none; padding: 20px; }
+        .screen.active { display: block; }
+
+        /* --- CASE OPENING --- */
+        .case-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .roulette-wrapper {
+            width: 100%;
+            height: 120px;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .roulette-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--accent-red);
+            z-index: 10;
+            transform: translateX(-50%);
+        }
+        .roulette-strip {
+            display: flex;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: transform 5s cubic-bezier(0.1, 1, 0.1, 1); /* Эффект замедления */
+        }
+        .item-card {
+            width: 100px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #333;
+            background: #222;
+            flex-shrink: 0;
+        }
+        .item-card img { width: 60px; height: 60px; border-radius: 5px; }
+        .item-card span { font-size: 10px; margin-top: 5px; color: #aaa; text-align: center;}
+        
+        .btn-main {
+            background: linear-gradient(45deg, var(--accent), var(--accent-red));
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-weight: bold;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            transition: transform 0.1s;
+        }
+        .btn-main:active { transform: scale(0.95); }
+
+        /* --- INVENTORY GRID --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .inv-item {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+        }
+        .rarity-Common { border-bottom: 2px solid gray; }
+        .rarity-Legendary { border-bottom: 2px solid gold; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+        .stars-badge { font-size: 10px; color: gold; }
+
+        /* --- LEADERBOARD --- */
+        .leader-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: var(--card);
+            margin-bottom: 5px;
+            border-radius: 8px;
+        }
+        
+        /* --- ANIMATIONS --- */
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .win-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .win-item { animation: popIn 0.5s ease forwards; text-align: center; }
+        .win-item img { width: 150px; border: 3px solid gold; border-radius: 10px; box-shadow: 0 0 30px var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="screen-case" class="screen active">
+        <h2 style="text-align: center;">🇮🇹 Italian Brainrot Case</h2>
+        <div class="case-container">
+            <div class="roulette-wrapper">
+                <div class="roulette-line"></div>
+                <div class="roulette-strip" id="rouletteStrip">
+                    </div>
+            </div>
+            <button class="btn-main" onclick="spinCase()">ОТКРЫТЬ ЗА 100 ⭐️</button>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">Weekly Case: Доступен</p>
+        </div>
+    </div>
+
+    <div id="screen-inv" class="screen">
+        <h2>Мой Инвентарь</h2>
+        <div class="grid" id="inventoryGrid"></div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <h2>Upgrade (50%)</h2>
+        <div style="text-align: center; padding: 50px; background: var(--card); border-radius: 10px;">
+            <p>Выбери предмет из инвентаря...</p>
+            <button class="btn-main" style="background: #333;">В разработке</button>
+        </div>
+    </div>
+
+    <div id="screen-top" class="screen">
+        <h2>Топ Мафиози</h2>
+        <div id="leaderboardList"></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('case', this)">🎁 Case</button>
+        <button class="tab-btn" onclick="switchTab('inv', this)">🎒 Items</button>
+        <button class="tab-btn" onclick="switchTab('game', this)">🕹️ Upgrade</button>
+        <button class="tab-btn" onclick="switchTab('top', this)">🏆 Top</button>
+    </div>
+
+    <div class="win-modal" id="winModal" onclick="this.style.display='none'">
+        <div class="win-item">
+            <h1 style="color: gold">LEGENDARY!</h1>
+            <img id="winImage" src="" alt="">
+            <h3 id="winName">Name</h3>
+            <p>Нажми чтобы забрать</p>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const user = tg.initDataUnsafe.user;
+        let allItems = []; // Данные предметов для рулетки
+
+        // --- CORE LOGIC ---
+        async function loadData() {
+            // Если открыто не в тг, используем фейк ID
+            const payload = {
+                user_id: user ? user.id : 123456, 
+                username: user ? user.username : "BrowserUser"
+            };
+
+            const res = await fetch('/api/data', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            allItems = data.case_items;
+            renderInventory(data.inventory);
+            renderLeaderboard(data.leaderboard);
+            initRoulette();
+        }
+
+        function renderInventory(items) {
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = items.map(item => `
+                <div class="inv-item rarity-${item.rarity}">
+                    <img src="${item.image_url}" width="50" style="border-radius:4px;">
+                    <div style="font-size:11px; margin-top:5px;">${item.item_name}</div>
+                    <div class="stars-badge">⭐️ ${item.price}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderLeaderboard(users) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = users.map((u, i) => `
+                <div class="leader-row">
+                    <span>#${i+1} ${u.username}</span>
+                    <span style="color:gold">⭐️ ${u.stars}</span>
+                </div>
+            `).join('');
+        }
+
+        // --- ROULETTE LOGIC ---
+        function initRoulette() {
+            const strip = document.getElementById('rouletteStrip');
+            // Генерируем "визуальную" ленту (повторяем предметы много раз)
+            let html = '';
+            for(let i=0; i<50; i++) {
+                const item = allItems[Math.floor(Math.random() * allItems.length)];
+                html += `
+                    <div class="item-card">
+                        <img src="${item.image_url}">
+                        <span>${item.name}</span>
+                    </div>
+                `;
+            }
+            strip.innerHTML = html;
+        }
+
+        async function spinCase() {
+            const strip = document.getElementById('rouletteStrip');
+            const CARD_WIDTH = 100; // Ширина 1 карточки + бордеры
+            
+            // 1. Сброс позиции
+            strip.style.transition = 'none';
+            strip.style.transform = 'translateX(0px)';
+            
+            // 2. Запрос к бэкенду - что выпало?
+            const res = await fetch('/api/open', {
+                method: 'POST',
+                body: JSON.stringify({ user_id: user ? user.id : 123456 })
+            });
+            const data = await res.json();
+            const winItem = data.dropped;
+
+            // 3. Подмена (хак): Находим позицию ~40-й карточки и меняем её на выигранную
+            // (в реальном проекте лента генерируется динамически на основе результата)
+            const winIndex = 35 + Math.floor(Math.random() * 5); 
+            const cards = strip.children;
+            const targetCard = cards[winIndex];
+            targetCard.querySelector('img').src = winItem.image_url;
+            targetCard.querySelector('span').innerText = winItem.name;
+
+            // 4. Вычисляем смещение, чтобы эта карта встала по центру
+            // Центр экрана (ширина контейнера / 2) - (Позиция карты + половина ширины карты)
+            const wrapperWidth = document.querySelector('.roulette-wrapper').offsetWidth;
+            const offset = -((winIndex * 101) - (wrapperWidth / 2) + 50);
+
+            // 5. Запуск анимации
+            setTimeout(() => {
+                strip.style.transition = 'transform 5s cubic-bezier(0.1, 1, 0.1, 1)';
+                strip.style.transform = `translateX(${offset}px)`;
+            }, 50);
+
+            // 6. Показ выигрыша
+            setTimeout(() => {
+                document.getElementById('winImage').src = winItem.image_url;
+                document.getElementById('winName').innerText = winItem.name;
+                document.getElementById('winModal').style.display = 'flex';
+                // Перезагрузка данных после закрытия
+                loadData(); 
+            }, 5500);
+        }
+
+        // --- UI UTILS ---
+        function switchTab(screenName, btn) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById('screen-'+screenName).classList.add('active');
+            
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Init
+        loadData();
+    </script>
+</body>
+</html>
