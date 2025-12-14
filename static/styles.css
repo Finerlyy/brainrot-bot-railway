@@ -1,0 +1,199 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1a1a2e;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #2e4482;
+}
+
+#user-info {
+    font-size: 1.1em;
+    color: #8be9fd;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background: #16213e;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Стили для выбора кейсов --- */
+#cases-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.case-button {
+    background: #34568b;
+    color: white;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    text-align: center;
+    width: 180px;
+}
+
+.case-button:hover:not(:disabled) {
+    background: #4a77b7;
+    transform: translateY(-2px);
+}
+
+.case-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.case-button img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 5px;
+}
+
+/* --- Стили для рулетки (Roller) --- */
+
+#case-opener {
+    position: relative;
+    overflow: hidden;
+}
+
+.roller-container {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    background: #0d1321;
+    border: 3px solid #ff5555;
+    margin: 20px 0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.roller-window {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#roller {
+    display: flex;
+    position: relative;
+    left: 0;
+    height: 100%;
+    transition: transform 6s cubic-bezier(0.05, 0.65, 0.1, 1.0); /* Эффект замедления */
+}
+
+.roller-item {
+    min-width: 100px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    margin-right: 2px; /* Небольшой зазор между предметами */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+    font-size: 0.8em;
+    text-align: center;
+    user-select: none;
+}
+
+.roller-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+/* Индикатор выигрыша (красная линия посередине) */
+.roller-indicator {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: red;
+    box-shadow: 0 0 10px red;
+    z-index: 10;
+    transform: translateX(-50%);
+}
+
+/* Цвета редкости */
+.rarity-Common { background: #3c3c3c; border-bottom: 4px solid #888888; }
+.rarity-Uncommon { background: #1a3c1a; border-bottom: 4px solid #00ff00; }
+.rarity-Rare { background: #1a1a3c; border-bottom: 4px solid #0000ff; }
+.rarity-Mythical { background: #3c1a3c; border-bottom: 4px solid #ff00ff; }
+
+/* --- Секция результата --- */
+#result-display {
+    text-align: center;
+}
+
+#dropped-item img {
+    width: 200px;
+    height: 200px;
+    border: 5px solid #ffdb58;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+/* Общие стили для кнопок */
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #ff5555;
+    color: white;
+    font-size: 1em;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #ff7777;
+}
+
+/* --- Утилита --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- Инвентарь --- */
+#inventory-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-top: 15px;
+}
+
+.inventory-item {
+    background: #2e4482;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    width: 100px;
+    font-size: 0.8em;
+}
+
+.inventory-item img {
+    width: 50px;
+    height: 50px;
+    display: block;
+    margin: 0 auto 5px;
+}
