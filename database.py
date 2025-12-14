@@ -69,9 +69,9 @@ async def init_db():
                          
         await db.commit()
         
-        # Получаем ID кейсов
-        base_case_id_row = await db.execute_fetchone("SELECT id FROM cases WHERE name = '🗿 Brainrot Base Case'")
-        explorer_case_id_row = await db.execute_fetchone("SELECT id FROM cases WHERE name = '🌌 Meme Explorer Case'")
+        # Получаем ID кейсов - ИСПРАВЛЕНО
+        base_case_id_row = await db.execute_one("SELECT id FROM cases WHERE name = '🗿 Brainrot Base Case'")
+        explorer_case_id_row = await db.execute_one("SELECT id FROM cases WHERE name = '🌌 Meme Explorer Case'")
         
         base_case_id = base_case_id_row[0] if base_case_id_row else None
         explorer_case_id = explorer_case_id_row[0] if explorer_case_id_row else None
@@ -97,11 +97,13 @@ async def init_db():
 # Важно: get_user возвращает кортеж (tuple) для обратной совместимости с bot.py
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
-        user = await db.execute_fetchone("SELECT * FROM users WHERE tg_id = ?", (tg_id,))
+        # ИСПРАВЛЕНО: используем execute_one вместо execute_fetchone (для aiosqlite)
+        user = await db.execute_one("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) 
         if user is None:
             await db.execute("INSERT INTO users (tg_id, username) VALUES (?, ?)", (tg_id, username))
             await db.commit()
-            user = await db.execute_fetchone("SELECT * FROM users WHERE tg_id = ?", (tg_id,))
+            # ИСПРАВЛЕНО: используем execute_one
+            user = await db.execute_one("SELECT * FROM users WHERE tg_id = ?", (tg_id,))
         return user
 
 async def update_user_balance(tg_id, amount):
@@ -118,7 +120,9 @@ async def get_all_cases():
 async def get_case_data(case_id):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        return await db.execute_fetchone("SELECT * FROM cases WHERE id = ?", (case_id,))
+        # ИСПРАВЛЕНО: используем execute_one
+        result = await db.execute_one("SELECT * FROM cases WHERE id = ?", (case_id,))
+        return dict(result) if result else None
 
 # Если case_id = None, возвращаем ВСЕ предметы (для генерации рулетки)
 async def get_case_items(case_id=None):
