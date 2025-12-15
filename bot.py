@@ -54,7 +54,11 @@ async def api_get_data(request):
         user_id = int(data.get('user_id'))
         
         user_data = await get_user(user_id, data.get('username'))
-        user_dict = dict(zip(['id', 'tg_id', 'username', 'balance'], user_data)) if user_data else None
+        
+        # --- ИСПРАВЛЕНИЕ ТУТ ---
+        # Теперь мы просто берем user_data, так как database.py уже возвращает правильный словарь!
+        # Раньше тут был zip(...), который ломал данные.
+        user_dict = user_data if user_data else None
         
         raw_inv = await get_inventory(user_id)
         inventory = []
@@ -74,6 +78,7 @@ async def api_get_data(request):
             "case_items": await get_case_items(None)
         })
     except Exception as e: 
+        logging.error(f"API Data Error: {e}")
         return web.json_response({"error": str(e)}, status=500)
 
 async def api_open_case(request):
@@ -92,6 +97,7 @@ async def api_open_case(request):
         total_price = case_data['price'] * count
         user = await get_user(user_id, 'temp')
         
+        # Обращаемся к балансу как к ключу словаря
         if user['balance'] < total_price: 
             return web.json_response({"error": f"Не хватает денег! Нужно {total_price} 💰"}, status=400)
 
@@ -136,4 +142,4 @@ app.add_routes([
     web.post('/api/open', api_open_case),
     web.post('/api/sell', api_sell_item),
     web.static('/static', STATIC_DIR)
-])
+])ы
