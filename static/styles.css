@@ -1,4 +1,3 @@
-/* ... ВСЕ СТАРЫЕ СТИЛИ ОСТАЮТСЯ, ДОБАВЛЯЕМ НОВЫЕ ... */
 :root { --bg: #18181b; --card: #27272a; --accent: #FFD700; --star-gradient: linear-gradient(45deg, #FFD700, #FFA500); --nav-bg: #202023; }
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; }
