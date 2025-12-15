@@ -1,39 +1,46 @@
-:root { --bg: #0f0f13; --card: #1a1a24; --accent: #ff0055; --gold: #ffd700; }
+:root { --bg: #0f0f13; --card: #1a1a24; --accent: #ff0055; --gold: #ffd700; --nav-bg: #14141a; }
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 50px; }
-header { display: flex; justify-content: space-between; padding: 15px; background: rgba(26,26,36,0.9); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-.logo { font-weight: 900; background: linear-gradient(45deg, #ff0055, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.balance-badge { color: var(--gold); font-weight: bold; border: 1px solid var(--gold); padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
-.section-title { margin: 20px 0 10px; padding-left: 10px; border-left: 4px solid var(--accent); padding-left: 15px; }
-main { padding: 15px; }
+body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; /* Место под меню */ }
 
-/* Сетки */
-.cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+/* ЗАГРУЗКА */
+#loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: url('https://i.imgur.com/8Qnui0t.jpeg') no-repeat center center/cover; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
+.loader-content { text-align: center; background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid var(--accent); }
+.spinner { width: 40px; height: 40px; border: 4px solid #fff; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+
+/* HEADER */
+header { display: flex; justify-content: space-between; padding: 15px; background: rgba(26,26,36,0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
+.logo { font-weight: 900; color: var(--accent); font-size: 1.2rem; }
+.balance-badge { color: var(--gold); font-weight: bold; border: 1px solid var(--gold); padding: 4px 12px; border-radius: 12px; }
+
+/* ВКЛАДКИ */
+.tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* НИЖНЕЕ МЕНЮ */
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; z-index: 500; }
+.nav-btn { background: none; border: none; color: #666; font-weight: bold; font-size: 0.9rem; padding: 10px; cursor: pointer; flex: 1; transition: 0.2s; }
+.nav-btn.active { color: var(--accent); text-shadow: 0 0 10px rgba(255,0,85,0.4); }
+
+/* КНОПКА ПРОДАЖИ */
+.sell-btn { display: block; width: 100%; background: #333; color: #fff; border: none; padding: 5px; font-size: 0.8rem; margin-top: 5px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+.sell-btn:active { transform: scale(0.95); }
+.sell-btn span { color: var(--gold); font-weight: bold; }
+
+/* Остальные стили (сетки, рулетка) такие же как в v4.0 */
+.cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
 .case-card, .item-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-.case-card:active { transform: scale(0.95); }
-.case-img, .item-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
-.case-price { color: #888; font-size: 0.8rem; }
-.item-card { position: relative; overflow: hidden; }
-.item-card::after { content:''; position: absolute; bottom:0; left:0; width:100%; height:3px; background: currentColor; }
-
-/* Цвета */
-.rarity-Common { color: #aaa; } .rarity-Uncommon { color: #5e98d9; } .rarity-Rare { color: #4b69ff; } .rarity-Mythical { color: #d32ce6; }
-
-/* Рулетка */
+.case-img, .item-img { width: 70px; height: 70px; object-fit: contain; }
 .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
 .hidden { display: none !important; }
-.roulette-wrapper { position: relative; margin: 20px 0; }
 .roulette-window { width: 300px; height: 100px; overflow: hidden; border: 2px solid #333; background: #111; position: relative; }
 .roulette-tape { display: flex; height: 100%; }
 .roulette-item { min-width: 100px; height: 100%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #222; }
 .roulette-item img { width: 70px; height: 70px; }
 .roulette-indicator { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 20px; z-index: 10; color: var(--gold); }
-.roulette-wrapper::after { content:''; position: absolute; top:0; bottom:0; left:50%; width: 2px; background: var(--gold); transform: translateX(-50%); z-index: 5; }
-
-/* Попап */
 .popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 300; display: flex; align-items: center; justify-content: center; }
 .popup-content { background: #1a1a24; padding: 20px; border-radius: 20px; text-align: center; border: 2px solid var(--gold); width: 80%; max-width: 300px; }
-#popup-img { width: 120px; height: 120px; object-fit: contain; margin: 10px 0; }
+#popup-img { width: 120px; height: 120px; object-fit: contain; }
 #claim-btn { background: var(--gold); border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-.loader { border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+.rarity-Common { color: #aaa; } .rarity-Uncommon { color: #5e98d9; } .rarity-Rare { color: #4b69ff; } .rarity-Mythical { color: #d32ce6; }
 @keyframes spin { 100% { transform: rotate(360deg); } }

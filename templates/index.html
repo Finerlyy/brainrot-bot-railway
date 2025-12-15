@@ -3,35 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Brainrot Drop</title>
-    <link rel="stylesheet" href="/static/styles.css?v=4.0">
+    <title>Brainrot Market</title>
+    <link rel="stylesheet" href="/static/styles.css?v=5.0">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <div class="logo">🧠 BRAINROT</div>
-        <div class="user-panel">
-            <span id="username">...</span>
-            <div class="balance-badge"><span id="balance">0</span> 💰</div>
+
+    <div id="loading-screen">
+        <div class="loader-content">
+            <h1>BRAINROT</h1>
+            <div class="spinner"></div>
+            <p>Загрузка экономики...</p>
         </div>
+    </div>
+
+    <header>
+        <div class="logo">🧠 DROP</div>
+        <div class="balance-badge"><span id="balance">0</span> 💰</div>
     </header>
 
     <main>
-        <section>
-            <h2 class="section-title">📦 Кейсы</h2>
-            <div id="cases-grid" class="cases-grid"><div class="loader"></div></div>
+        <section id="tab-cases" class="tab-content active">
+            <h2 class="section-title">📦 Магазин Кейсов</h2>
+            <div id="cases-grid" class="cases-grid"></div>
         </section>
 
-        <section>
-            <h2 class="section-title">🎒 Инвентарь</h2>
+        <section id="tab-inventory" class="tab-content">
+            <h2 class="section-title">🎒 Инвентарь & Продажа</h2>
             <div id="inventory-grid" class="inventory-grid"></div>
         </section>
 
-        <section>
-            <h2 class="section-title">👑 Топ</h2>
+        <section id="tab-leaderboard" class="tab-content">
+            <h2 class="section-title">🏆 Топ Магнатов</h2>
             <div id="leaderboard-list" class="leaderboard-list"></div>
         </section>
     </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-btn active" onclick="switchTab('cases')">📦 Кейсы</button>
+        <button class="nav-btn" onclick="switchTab('inventory')">🎒 Инвентарь</button>
+        <button class="nav-btn" onclick="switchTab('leaderboard')">🏆 Топ</button>
+    </nav>
 
     <div id="roulette-modal" class="modal hidden">
         <div class="modal-content">
@@ -52,12 +64,12 @@
             <img id="popup-img" src="" alt="">
             <h3 id="popup-name"></h3>
             <p id="popup-rarity"></p>
-            <button id="claim-btn">ЗАБРАТЬ</button>
+            <button id="claim-btn">В ИНВЕНТАРЬ</button>
         </div>
     </div>
 
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="/static/script.js?v=4.0"></script>
+    <script src="/static/script.js?v=5.0"></script>
 </body>
 </html>
