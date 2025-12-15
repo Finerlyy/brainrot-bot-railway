@@ -29,51 +29,54 @@ async def init_db():
         
         await db.commit()
 
-        # Получаем ID кейсов
-        c1 = (await db.execute("SELECT id FROM cases WHERE name = '📦 Bicara Case'")).fetchone_await()
-        c2 = (await db.execute("SELECT id FROM cases WHERE name = '🗿 Sigma Case'")).fetchone_await()
-        c3 = (await db.execute("SELECT id FROM cases WHERE name = '🚽 Skibidi Case'")).fetchone_await()
-        
-        # Исправление для aiosqlite (если fetchone_await не сработал бы, но тут мы используем await cursor)
-        # Упростим получение ID для надежности:
-        async with db.execute("SELECT id FROM cases WHERE name = '📦 Bicara Case'") as cur: c1_id = (await cur.fetchone())[0]
-        async with db.execute("SELECT id FROM cases WHERE name = '🗿 Sigma Case'") as cur: c2_id = (await cur.fetchone())[0]
-        async with db.execute("SELECT id FROM cases WHERE name = '🚽 Skibidi Case'") as cur: c3_id = (await cur.fetchone())[0]
+        # Получаем ID кейсов (ИСПРАВЛЕННАЯ ЧАСТЬ)
+        async with db.execute("SELECT id FROM cases WHERE name = '📦 Bicara Case'") as cursor:
+            row = await cursor.fetchone()
+            c1_id = row['id'] if row else None
+
+        async with db.execute("SELECT id FROM cases WHERE name = '🗿 Sigma Case'") as cursor:
+            row = await cursor.fetchone()
+            c2_id = row['id'] if row else None
+
+        async with db.execute("SELECT id FROM cases WHERE name = '🚽 Skibidi Case'") as cursor:
+            row = await cursor.fetchone()
+            c3_id = row['id'] if row else None
 
         # 2. Создаем ПРЕДМЕТЫ (Бреинроты)
-        # Формат: (Название, Редкость, Цена, Картинка, Звук, ID_Кейса)
-        items_data = [
-            # Bicara Case (Дешевые мемы)
-            ('Sad Hamster', 'Common', 50, 'https://i.pinimg.com/736x/8a/92/97/8a92973163773ba393a6703b413c604d.jpg', '-', c1_id),
-            ('Nerd Emoji', 'Common', 60, 'https://cdn-icons-png.flaticon.com/512/9681/9681329.png', '-', c1_id),
-            ('Pedro Raccoon', 'Uncommon', 150, 'https://media1.tenor.com/m/K7c0j3q5aE8AAAAC/raccoon-pedro.gif', '-', c1_id),
-            ('Chinese Cat', 'Uncommon', 180, 'https://i.pinimg.com/736x/55/88/47/55884766023246473857e4922154446a.jpg', '-', c1_id),
-            ('Bicara Boy', 'Rare', 500, 'https://i.imgur.com/example_bicara.png', '-', c1_id),
+        # Убедимся, что ID кейсов получены
+        if c1_id and c2_id and c3_id:
+            items_data = [
+                # Bicara Case (Дешевые мемы)
+                ('Sad Hamster', 'Common', 50, 'https://i.pinimg.com/736x/8a/92/97/8a92973163773ba393a6703b413c604d.jpg', '-', c1_id),
+                ('Nerd Emoji', 'Common', 60, 'https://cdn-icons-png.flaticon.com/512/9681/9681329.png', '-', c1_id),
+                ('Pedro Raccoon', 'Uncommon', 150, 'https://media1.tenor.com/m/K7c0j3q5aE8AAAAC/raccoon-pedro.gif', '-', c1_id),
+                ('Chinese Cat', 'Uncommon', 180, 'https://i.pinimg.com/736x/55/88/47/55884766023246473857e4922154446a.jpg', '-', c1_id),
+                ('Bicara Boy', 'Rare', 500, 'https://i.imgur.com/example_bicara.png', '-', c1_id),
 
-            # Sigma Case (Крутые)
-            ('Mewing Guy', 'Common', 300, 'https://i1.sndcdn.com/artworks-5wJ49g2GgH2K8z1e-0k8p2Q-t500x500.jpg', '-', c2_id),
-            ('Patrick Bateman', 'Uncommon', 600, 'https://i.pinimg.com/originals/a0/02/89/a002890538a83ce40875e5387431e78c.jpg', '-', c2_id),
-            ('Gigachad', 'Rare', 1200, 'https://cdn-icons-png.flaticon.com/512/11560/11560682.png', '-', c2_id),
-            ('Ryan Gosling', 'Rare', 1500, 'https://i.pinimg.com/736x/ea/5e/54/ea5e546112953258c7e6c40683a37b38.jpg', '-', c2_id),
-            ('Tyler Durden', 'Mythical', 5000, 'https://i.pinimg.com/736x/f6/e1/99/f6e19999056d686004b5003318255476.jpg', '-', c2_id),
+                # Sigma Case (Крутые)
+                ('Mewing Guy', 'Common', 300, 'https://i1.sndcdn.com/artworks-5wJ49g2GgH2K8z1e-0k8p2Q-t500x500.jpg', '-', c2_id),
+                ('Patrick Bateman', 'Uncommon', 600, 'https://i.pinimg.com/originals/a0/02/89/a002890538a83ce40875e5387431e78c.jpg', '-', c2_id),
+                ('Gigachad', 'Rare', 1200, 'https://cdn-icons-png.flaticon.com/512/11560/11560682.png', '-', c2_id),
+                ('Ryan Gosling', 'Rare', 1500, 'https://i.pinimg.com/736x/ea/5e/54/ea5e546112953258c7e6c40683a37b38.jpg', '-', c2_id),
+                ('Tyler Durden', 'Mythical', 5000, 'https://i.pinimg.com/736x/f6/e1/99/f6e19999056d686004b5003318255476.jpg', '-', c2_id),
 
-            # Skibidi Case (Самый жир)
-            ('Toilet Mini', 'Common', 800, 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Toilet_icon.svg/1200px-Toilet_icon.svg.png', '-', c3_id),
-            ('Cameraman', 'Uncommon', 1500, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/7/75/Cameraman_infobox.png', '-', c3_id),
-            ('Grimace Shake', 'Rare', 3000, 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Grimace_Shake.png/640px-Grimace_Shake.png', '-', c3_id),
-            ('G-Man Toilet', 'Mythical', 10000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/e/e4/G-Man_Skibidi_Toilet_infobox.png', '-', c3_id),
-            ('Titan Speakerman', 'Mythical', 25000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/2/22/TitanSpeakerman_infobox.png', '-', c3_id)
-        ]
+                # Skibidi Case (Самый жир)
+                ('Toilet Mini', 'Common', 800, 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Toilet_icon.svg/1200px-Toilet_icon.svg.png', '-', c3_id),
+                ('Cameraman', 'Uncommon', 1500, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/7/75/Cameraman_infobox.png', '-', c3_id),
+                ('Grimace Shake', 'Rare', 3000, 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Grimace_Shake.png/640px-Grimace_Shake.png', '-', c3_id),
+                ('G-Man Toilet', 'Mythical', 10000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/e/e4/G-Man_Skibidi_Toilet_infobox.png', '-', c3_id),
+                ('Titan Speakerman', 'Mythical', 25000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/2/22/TitanSpeakerman_infobox.png', '-', c3_id)
+            ]
 
-        for i in items_data:
-            # Проверяем по имени, чтобы не дублировать
-            async with db.execute("SELECT id FROM items WHERE name = ?", (i[0],)) as cur:
-                if not await cur.fetchone():
-                    await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
+            for i in items_data:
+                # Проверяем по имени, чтобы не дублировать
+                async with db.execute("SELECT id FROM items WHERE name = ?", (i[0],)) as cur:
+                    if not await cur.fetchone():
+                        await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
 
         await db.commit()
 
-# --- ОСНОВНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ, НО ВСТАВЬ ИХ СЮДА) ---
+# --- ОСНОВНЫЕ ФУНКЦИИ ---
 
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
