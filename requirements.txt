@@ -1,5 +1,6 @@
-aiogram==3.10.0
-aiohttp==3.9.5
-aiosqlite==0.20.0
-jinja2==3.1.4
-aiohttp-jinja2
+aiogram
+aiohttp
+aiohttp_jinja2
+aiosqlite
+jinja2
+google-generativeai
