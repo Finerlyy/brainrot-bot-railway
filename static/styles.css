@@ -1,46 +1,66 @@
+/* ... (Старые стили root, body, header, tabs, nav, grids, cards остаются) ... */
 :root { --bg: #0f0f13; --card: #1a1a24; --accent: #ff0055; --gold: #ffd700; --nav-bg: #14141a; }
-* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; /* Место под меню */ }
-
-/* ЗАГРУЗКА */
-#loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: url('https://i.imgur.com/8Qnui0t.jpeg') no-repeat center center/cover; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
-.loader-content { text-align: center; background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid var(--accent); }
-.spinner { width: 40px; height: 40px; border: 4px solid #fff; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
-
-/* HEADER */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; }
+#loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
+.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
 header { display: flex; justify-content: space-between; padding: 15px; background: rgba(26,26,36,0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
-.logo { font-weight: 900; color: var(--accent); font-size: 1.2rem; }
-.balance-badge { color: var(--gold); font-weight: bold; border: 1px solid var(--gold); padding: 4px 12px; border-radius: 12px; }
-
-/* ВКЛАДКИ */
+.logo { font-weight: 900; background: linear-gradient(45deg, var(--accent), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.2rem; }
+.balance-badge { color: var(--gold); font-weight: bold; border: 1px solid var(--gold); padding: 4px 12px; border-radius: 12px; transition: 0.3s; }
 .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
 .tab-content.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; padding: 10px 0; border-top: 1px solid #333; z-index: 50; }
+.nav-btn { background: none; border: none; color: #666; font-weight: bold; flex: 1; padding: 10px; transition: 0.2s; }
+.nav-btn.active { color: var(--accent); }
+.cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+.case-card, .item-card { background: var(--card); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
+.case-card:active, .item-card:active { transform: scale(0.97); }
+.case-img, .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3)); }
+.case-name { font-weight: bold; margin-bottom: 4px; }
+.case-price { color: #888; font-size: 0.9rem; }
+.sell-btn { width: 100%; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 6px; font-size: 0.8rem; margin-top: 8px; border-radius: 6px; }
+.sell-btn span { color: var(--gold); }
 
-/* НИЖНЕЕ МЕНЮ */
-.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; z-index: 500; }
-.nav-btn { background: none; border: none; color: #666; font-weight: bold; font-size: 0.9rem; padding: 10px; cursor: pointer; flex: 1; transition: 0.2s; }
-.nav-btn.active { color: var(--accent); text-shadow: 0 0 10px rgba(255,0,85,0.4); }
+/* --- НОВЫЕ СТИЛИ МОДАЛОК --- */
+.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 1; transition: 0.3s; }
+.modal.hidden { opacity: 0; pointer-events: none; }
+.modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; position: relative; }
+.open-case-content { padding-top: 40px; }
+.modal-main-img { width: 120px; height: 120px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255,0,85,0.3)); }
+.modal-price { font-size: 1.1rem; margin-bottom: 20px; color: #aaa; }
+.modal-price span { color: var(--gold); font-weight: bold; }
 
-/* КНОПКА ПРОДАЖИ */
-.sell-btn { display: block; width: 100%; background: #333; color: #fff; border: none; padding: 5px; font-size: 0.8rem; margin-top: 5px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-.sell-btn:active { transform: scale(0.95); }
-.sell-btn span { color: var(--gold); font-weight: bold; }
+/* Селектор количества */
+.multi-open-selector { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; margin-bottom: 20px; }
+.multi-open-selector p { margin-bottom: 10px; color: #aaa; font-size: 0.9rem; }
+.count-buttons { display: flex; gap: 10px; justify-content: center; }
+.count-btn { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+.count-btn.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
-/* Остальные стили (сетки, рулетка) такие же как в v4.0 */
-.cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-.case-card, .item-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-.case-img, .item-img { width: 70px; height: 70px; object-fit: contain; }
-.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
-.hidden { display: none !important; }
-.roulette-window { width: 300px; height: 100px; overflow: hidden; border: 2px solid #333; background: #111; position: relative; }
-.roulette-tape { display: flex; height: 100%; }
-.roulette-item { min-width: 100px; height: 100%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #222; }
-.roulette-item img { width: 70px; height: 70px; }
-.roulette-indicator { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 20px; z-index: 10; color: var(--gold); }
-.popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 300; display: flex; align-items: center; justify-content: center; }
-.popup-content { background: #1a1a24; padding: 20px; border-radius: 20px; text-align: center; border: 2px solid var(--gold); width: 80%; max-width: 300px; }
-#popup-img { width: 120px; height: 120px; object-fit: contain; }
-#claim-btn { background: var(--gold); border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-.rarity-Common { color: #aaa; } .rarity-Uncommon { color: #5e98d9; } .rarity-Rare { color: #4b69ff; } .rarity-Mythical { color: #d32ce6; }
+/* Кнопки действий */
+.main-action-btn { width: 100%; background: linear-gradient(45deg, var(--accent), #ff9900); border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; color: #fff; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(255,0,85,0.3); }
+.main-action-btn span { color: #fff; }
+.close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; }
+
+/* ПОПАП РЕЗУЛЬТАТОВ */
+.popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: 0.3s; }
+.popup.active { pointer-events: all; opacity: 1; }
+.popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--gold); width: 95%; max-width: 500px; position: relative; overflow: hidden; transform: scale(0.9); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.popup.active .popup-content { transform: scale(1); }
+.glow-bg { position: absolute; top:50%; left:50%; width: 300px; height: 300px; background: radial-gradient(circle, var(--gold), transparent 70%); transform: translate(-50%, -50%); opacity: 0.15; filter: blur(50px); z-index: 0; }
+.popup h2 { margin-bottom: 20px; color: var(--gold); font-size: 1.5rem; }
+
+/* Сетка дропа */
+.drop-grid { display: grid; gap: 15px; margin-bottom: 25px; position: relative; z-index: 1; max-height: 60vh; overflow-y: auto; padding: 5px; }
+.drop-grid.single { grid-template-columns: 1fr; }
+.drop-grid.multi { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+.drop-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid; animation: popIn 0.4s backwards; }
+.drop-item img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
+.drop-item h3 { font-size: 0.9rem; margin-bottom: 5px; }
+.drop-item p { font-size: 0.8rem; }
+@keyframes popIn { from { opacity:0; transform: scale(0.5); } to { opacity:1; transform: scale(1); } }
+
+/* Редкости и Рулетка (старые стили) */
+.rarity-Common { color: #aaa; border-color: #aaa; } .rarity-Uncommon { color: #5e98d9; border-color: #5e98d9; } .rarity-Rare { color: #4b69ff; border-color: #4b69ff; } .rarity-Mythical { color: #d32ce6; border-color: #d32ce6; }
+.roulette-wrapper { position: relative; margin: 20px 0; } .roulette-window { width: 100%; height: 120px; overflow: hidden; border: 2px solid #333; background: #111; position: relative; } .roulette-tape { display: flex; height: 100%; } .roulette-item { min-width: 120px; height: 100%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #222; } .roulette-item img { width: 80px; height: 80px; } .roulette-indicator { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 24px; z-index: 10; color: var(--gold); }
 @keyframes spin { 100% { transform: rotate(360deg); } }

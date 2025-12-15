@@ -8,7 +8,7 @@ async def init_db():
         db.row_factory = sqlite3.Row 
         
         # Создаем таблицы
-        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 1000)")
+        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (id INTEGER PRIMARY KEY, user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
@@ -17,55 +17,38 @@ async def init_db():
         
         # --- НАПОЛНЕНИЕ КОНТЕНТОМ ---
         
-        # 1. Создаем КЕЙСЫ
-        cases_data = [
-            ('📦 Bicara Case', 100, 'https://cdn-icons-png.flaticon.com/512/11560/11560682.png'),
-            ('🗿 Sigma Case', 500, 'https://cdn-icons-png.flaticon.com/512/12222/12222838.png'),
-            ('🚽 Skibidi Case', 1500, 'https://cdn-icons-png.flaticon.com/512/12406/12406859.png')
-        ]
-        
-        for name, price, icon in cases_data:
-            await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (name, price, icon))
+        # 1. Создаем ТВОЙ НОВЫЙ КЕЙС
+        case_name = '🧠 Ultimate Brainrot Case'
+        case_price = 300
+        case_icon = 'https://i.imgur.com/UOAnvOc.png' # Твоя обложка
+
+        await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
         
         await db.commit()
 
-        # Получаем ID кейсов (ИСПРАВЛЕННАЯ ЧАСТЬ)
-        async with db.execute("SELECT id FROM cases WHERE name = '📦 Bicara Case'") as cursor:
-            row = await cursor.fetchone()
-            c1_id = row['id'] if row else None
+        # Получаем ID этого кейса
+        async with db.execute("SELECT id FROM cases WHERE name = ?", (case_name,)) as cur:
+            row = await cur.fetchone()
+            case_id = row['id'] if row else None
 
-        async with db.execute("SELECT id FROM cases WHERE name = '🗿 Sigma Case'") as cursor:
-            row = await cursor.fetchone()
-            c2_id = row['id'] if row else None
-
-        async with db.execute("SELECT id FROM cases WHERE name = '🚽 Skibidi Case'") as cursor:
-            row = await cursor.fetchone()
-            c3_id = row['id'] if row else None
-
-        # 2. Создаем ПРЕДМЕТЫ (Бреинроты)
-        # Убедимся, что ID кейсов получены
-        if c1_id and c2_id and c3_id:
+        # 2. Создаем ПРЕДМЕТЫ
+        if case_id:
             items_data = [
-                # Bicara Case (Дешевые мемы)
-                ('Sad Hamster', 'Common', 50, 'https://i.pinimg.com/736x/8a/92/97/8a92973163773ba393a6703b413c604d.jpg', '-', c1_id),
-                ('Nerd Emoji', 'Common', 60, 'https://cdn-icons-png.flaticon.com/512/9681/9681329.png', '-', c1_id),
-                ('Pedro Raccoon', 'Uncommon', 150, 'https://media1.tenor.com/m/K7c0j3q5aE8AAAAC/raccoon-pedro.gif', '-', c1_id),
-                ('Chinese Cat', 'Uncommon', 180, 'https://i.pinimg.com/736x/55/88/47/55884766023246473857e4922154446a.jpg', '-', c1_id),
-                ('Bicara Boy', 'Rare', 500, 'https://i.imgur.com/example_bicara.png', '-', c1_id),
-
-                # Sigma Case (Крутые)
-                ('Mewing Guy', 'Common', 300, 'https://i1.sndcdn.com/artworks-5wJ49g2GgH2K8z1e-0k8p2Q-t500x500.jpg', '-', c2_id),
-                ('Patrick Bateman', 'Uncommon', 600, 'https://i.pinimg.com/originals/a0/02/89/a002890538a83ce40875e5387431e78c.jpg', '-', c2_id),
-                ('Gigachad', 'Rare', 1200, 'https://cdn-icons-png.flaticon.com/512/11560/11560682.png', '-', c2_id),
-                ('Ryan Gosling', 'Rare', 1500, 'https://i.pinimg.com/736x/ea/5e/54/ea5e546112953258c7e6c40683a37b38.jpg', '-', c2_id),
-                ('Tyler Durden', 'Mythical', 5000, 'https://i.pinimg.com/736x/f6/e1/99/f6e19999056d686004b5003318255476.jpg', '-', c2_id),
-
-                # Skibidi Case (Самый жир)
-                ('Toilet Mini', 'Common', 800, 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Toilet_icon.svg/1200px-Toilet_icon.svg.png', '-', c3_id),
-                ('Cameraman', 'Uncommon', 1500, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/7/75/Cameraman_infobox.png', '-', c3_id),
-                ('Grimace Shake', 'Rare', 3000, 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Grimace_Shake.png/640px-Grimace_Shake.png', '-', c3_id),
-                ('G-Man Toilet', 'Mythical', 10000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/e/e4/G-Man_Skibidi_Toilet_infobox.png', '-', c3_id),
-                ('Titan Speakerman', 'Mythical', 25000, 'https://static.wikia.nocookie.net/skibidi-toilet-official/images/2/22/TitanSpeakerman_infobox.png', '-', c3_id)
+                # (Название, Редкость, Цена, Картинка, Звук, ID_Кейса)
+                
+                # Common (Обычные)
+                ('Lirili Bat Guy', 'Common', 100, 'https://i.imgur.com/vZkT4cu.jpeg', '-', case_id),
+                ('Tung Tung Elephant', 'Common', 150, 'https://i.imgur.com/4RtWcWY.jpeg', '-', case_id),
+                
+                # Uncommon (Необычные)
+                ('Tatata Teapot', 'Uncommon', 400, 'https://i.imgur.com/DZDL8RI.jpeg', '-', case_id),
+                
+                # Rare (Редкие)
+                ('Tralala Shark', 'Rare', 1200, 'https://i.imgur.com/iDcJaMp.jpeg', '-', case_id),
+                
+                # Mythical (Легендарные)
+                ('Orcalero Orca', 'Mythical', 3500, 'https://i.imgur.com/EsqyjjW.jpeg', '-', case_id),
+                ('Chimpanzini Bananini', 'Mythical', 10000, 'https://i.imgur.com/0QTbLT8.jpeg', '-', case_id), # ГЛАВНЫЙ ПРИЗ
             ]
 
             for i in items_data:
@@ -76,7 +59,7 @@ async def init_db():
 
         await db.commit()
 
-# --- ОСНОВНЫЕ ФУНКЦИИ ---
+# --- ФУНКЦИИ БАЗЫ ДАННЫХ ---
 
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -100,8 +83,7 @@ async def update_user_balance(tg_id, amount):
 async def get_all_cases():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM cases") as cursor:
-            return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute("SELECT * FROM cases") as cursor: return [dict(row) for row in await cursor.fetchall()]
 
 async def get_case_data(case_id):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -115,26 +97,58 @@ async def get_case_items(case_id=None):
         db.row_factory = sqlite3.Row
         sql = "SELECT * FROM items" if case_id is None else "SELECT * FROM items WHERE case_id = ?"
         params = () if case_id is None else (case_id,)
-        async with db.execute(sql, params) as cursor:
-            return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute(sql, params) as cursor: return [dict(row) for row in await cursor.fetchall()]
 
 async def add_item_to_inventory(user_id, item):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (user_id, item['id']))
         await db.commit()
 
-async def get_inventory(user_id):
+# ФУНКЦИЯ ДЛЯ МУЛЬТИ-ОТКРЫТИЯ (BATCH INSERT)
+async def add_items_to_inventory_batch(tg_user_id, items_list):
+    async with aiosqlite.connect(DB_NAME) as db:
+        # Получаем PK ID юзера
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            user_row = await cursor.fetchone()
+            user_pk_id = user_row['id']
+
+        # Массовая вставка
+        insert_data = [(user_pk_id, item['id']) for item in items_list]
+        await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
+        await db.commit()
+
+async def get_inventory(user_id_tg):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
+        # Сначала получаем PK ID
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (user_id_tg,)) as cursor:
+            u = await cursor.fetchone()
+            if not u: return []
+            user_pk = u['id']
+
         sql = "SELECT inv.id as inv_id, i.id as item_id, i.name, i.rarity, i.image_url, i.price FROM inventory AS inv JOIN items AS i ON inv.item_id = i.id WHERE inv.user_id = ?"
-        async with db.execute(sql, (user_id,)) as cursor:
+        async with db.execute(sql, (user_pk,)) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
-async def sell_item_db(user_id, inv_id, price):
+async def sell_item_db(tg_user_id, inv_id, price):
     async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("DELETE FROM inventory WHERE id = ? AND user_id = ?", (inv_id, user_id))
-        await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (price, user_id))
+        db.row_factory = sqlite3.Row
+        # 1. Находим внутренний ID
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            user_row = await cursor.fetchone()
+            if not user_row: return False 
+            user_pk_id = user_row['id']
+
+        # 2. Удаляем предмет
+        cursor = await db.execute("DELETE FROM inventory WHERE id = ? AND user_id = ?", (inv_id, user_pk_id))
+        if cursor.rowcount == 0:
+            await db.commit()
+            return False 
+            
+        # 3. Начисляем баланс
+        await db.execute("UPDATE users SET balance = balance + ? WHERE tg_id = ?", (price, tg_user_id))
         await db.commit()
+        return True
 
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
@@ -142,6 +156,7 @@ async def get_leaderboard():
         async with db.execute("SELECT username, balance FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10") as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
+# Админские функции (заглушки для совместимости с admin_bot.py)
 async def admin_get_all_users():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row

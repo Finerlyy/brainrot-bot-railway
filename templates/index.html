@@ -4,21 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Brainrot Market</title>
-    <link rel="stylesheet" href="/static/styles.css?v=7.0">
+    <link rel="stylesheet" href="/static/styles.css?v={{ ver }}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div id="loading-screen">
         <div class="loader-content">
-            <h1>BRAINROT</h1>
+            <h1>🧠 ЗАГРУЗКА...</h1>
             <div class="spinner"></div>
-            <p>Загрузка экономики...</p>
         </div>
     </div>
 
     <header>
-        <div class="logo">🧠 DROP</div>
+        <div class="logo">🧠 BRAINROT DROP</div>
         <div class="balance-badge"><span id="balance">0</span> 💰</div>
     </header>
 
@@ -29,12 +28,12 @@
         </section>
 
         <section id="tab-inventory" class="tab-content">
-            <h2 class="section-title">🎒 Инвентарь & Продажа</h2>
+            <h2 class="section-title">🎒 Инвентарь</h2>
             <div id="inventory-grid" class="inventory-grid"></div>
         </section>
 
         <section id="tab-leaderboard" class="tab-content">
-            <h2 class="section-title">🏆 Топ Магнатов</h2>
+            <h2 class="section-title">🏆 Топ Сигм</h2>
             <div id="leaderboard-list" class="leaderboard-list"></div>
         </section>
     </main>
@@ -45,14 +44,32 @@
         <button class="nav-btn" onclick="switchTab('leaderboard')">🏆 Топ</button>
     </nav>
 
-    <div id="roulette-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Открытие...</h3>
-            <div class="roulette-wrapper">
-                <div class="roulette-indicator">⬇️</div>
-                <div class="roulette-window">
-                    <div id="roulette-tape" class="roulette-tape"></div>
+    <div id="open-modal" class="modal hidden">
+        <div class="modal-content open-case-content">
+            <h3 id="modal-case-name">Открытие Кейса</h3>
+            <img id="modal-case-img" src="" alt="" class="modal-main-img">
+            <p class="modal-price">Цена за один: <span id="modal-case-price">0</span> 💰</p>
+            
+            <div class="multi-open-selector">
+                <p>Сколько открыть?</p>
+                <div class="count-buttons">
+                    <button class="count-btn active" onclick="selectCount(1)">x1</button>
+                    <button class="count-btn" onclick="selectCount(2)">x2</button>
+                    <button class="count-btn" onclick="selectCount(5)">x5</button>
+                    <button class="count-btn" onclick="selectCount(10)">x10</button>
                 </div>
+            </div>
+
+            <button id="start-open-btn" class="main-action-btn">ОТКРЫТЬ ЗА <span id="total-price-btn">0</span> 💰</button>
+            <button class="close-btn" onclick="closeModal('open-modal')">Отмена</button>
+        </div>
+    </div>
+
+    <div id="roulette-modal" class="modal hidden" style="z-index: 300;">
+        <div class="modal-content">
+             <div class="roulette-wrapper">
+                <div class="roulette-indicator">⬇️</div>
+                <div class="roulette-window"><div id="roulette-tape" class="roulette-tape"></div></div>
             </div>
         </div>
     </div>
@@ -60,17 +77,14 @@
     <div id="drop-popup" class="popup hidden">
         <div class="popup-content">
             <div class="glow-bg"></div>
-            <h2>ВЫПАЛО!</h2>
-            <img id="popup-img" src="" alt="">
-            <h3 id="popup-name"></h3>
-            <p id="popup-rarity"></p>
-            <button id="claim-btn">В ИНВЕНТАРЬ</button>
+            <h2>🎉 ВЫПАЛО! 🎉</h2>
+            <div id="drop-results-grid" class="drop-grid single"></div>
+            <button id="claim-btn" class="main-action-btn">ЗАБРАТЬ ВСЁ</button>
         </div>
     </div>
 
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <script src="/static/script.js?v=7.0"></script>
+    <script src="/static/script.js?v={{ ver }}"></script>
 </body>
 </html>
