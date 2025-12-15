@@ -142,4 +142,4 @@ app.add_routes([
     web.post('/api/open', api_open_case),
     web.post('/api/sell', api_sell_item),
     web.static('/static', STATIC_DIR)
-])ы
+])
