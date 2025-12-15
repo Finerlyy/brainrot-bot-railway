@@ -1,335 +1,39 @@
-:root {
-    --bg-color: #0f0f13;
-    --card-bg: #1a1a24;
-    --accent: #ff0055;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0b0;
-    --gold: #ffd700;
-    --rare-common: #b0c3d9;
-    --rare-uncommon: #5e98d9;
-    --rare-rare: #4b69ff;
-    --rare-mythical: #8847ff;
-    --rare-legendary: #d32ce6;
-}
+:root { --bg: #0f0f13; --card: #1a1a24; --accent: #ff0055; --gold: #ffd700; }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 50px; }
+header { display: flex; justify-content: space-between; padding: 15px; background: rgba(26,26,36,0.9); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+.logo { font-weight: 900; background: linear-gradient(45deg, #ff0055, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.balance-badge { color: var(--gold); font-weight: bold; border: 1px solid var(--gold); padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
+.section-title { margin: 20px 0 10px; padding-left: 10px; border-left: 4px solid var(--accent); padding-left: 15px; }
+main { padding: 15px; }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    user-select: none; /* Убирает выделение текста */
-}
+/* Сетки */
+.cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.case-card, .item-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+.case-card:active { transform: scale(0.95); }
+.case-img, .item-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+.case-price { color: #888; font-size: 0.8rem; }
+.item-card { position: relative; overflow: hidden; }
+.item-card::after { content:''; position: absolute; bottom:0; left:0; width:100%; height:3px; background: currentColor; }
 
-body {
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    font-family: 'Montserrat', sans-serif;
-    padding-bottom: 50px;
-    -webkit-tap-highlight-color: transparent;
-}
+/* Цвета */
+.rarity-Common { color: #aaa; } .rarity-Uncommon { color: #5e98d9; } .rarity-Rare { color: #4b69ff; } .rarity-Mythical { color: #d32ce6; }
 
-/* --- HEADER --- */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background: rgba(26, 26, 36, 0.95);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-}
-
-.logo {
-    font-weight: 900;
-    font-size: 1.2rem;
-    background: linear-gradient(45deg, #ff0055, #ffcc00);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.user-panel {
-    text-align: right;
-}
-
-.balance-badge {
-    background: #2a2a35;
-    padding: 5px 10px;
-    border-radius: 12px;
-    color: var(--gold);
-    font-weight: bold;
-    margin-top: 4px;
-    border: 1px solid var(--gold);
-}
-
-/* --- SECTIONS --- */
-main {
-    padding: 20px;
-}
-
-.section-title {
-    margin: 25px 0 15px;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-left: 4px solid var(--accent);
-    padding-left: 10px;
-}
-
-/* --- CASES GRID --- */
-.cases-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 15px;
-}
-
-.case-card {
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: pointer;
-}
-
-.case-card:active {
-    transform: scale(0.95);
-}
-
-.case-img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    margin-bottom: 10px;
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
-}
-
-.case-name {
-    font-size: 0.9rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.case-price {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-/* --- INVENTORY --- */
-.inventory-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.item-card {
-    width: 80px;
-    background: #252530;
-    border-radius: 8px;
-    padding: 8px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Цветная полоска редкости внизу */
-.item-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: currentColor;
-}
-
-.item-img {
-    width: 100%;
-    height: 50px;
-    object-fit: contain;
-}
-
-.item-name {
-    font-size: 0.7rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 5px;
-}
-
-/* --- RARITY COLORS --- */
-.rarity-Common { color: var(--rare-common); border-color: var(--rare-common) !important; }
-.rarity-Uncommon { color: var(--rare-uncommon); border-color: var(--rare-uncommon) !important; }
-.rarity-Rare { color: var(--rare-rare); border-color: var(--rare-rare) !important; }
-.rarity-Mythical { color: var(--rare-mythical); border-color: var(--rare-mythical) !important; }
-
-/* --- ROULETTE MODAL --- */
-.modal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-}
-
-.modal.active {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.modal-content {
-    width: 95%;
-    max-width: 500px;
-    text-align: center;
-}
-
-.roulette-wrapper {
-    position: relative;
-    margin: 30px 0;
-}
-
-.roulette-indicator {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 24px;
-    z-index: 10;
-    text-shadow: 0 2px 4px black;
-}
-
-/* Вертикальная линия центра */
-.roulette-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    background: var(--gold);
-    z-index: 5;
-    transform: translateX(-50%);
-    box-shadow: 0 0 10px var(--gold);
-}
-
-.roulette-window {
-    width: 100%;
-    height: 120px;
-    background: #111;
-    border-top: 2px solid #333;
-    border-bottom: 2px solid #333;
-    overflow: hidden;
-    position: relative;
-}
-
-.roulette-tape {
-    display: flex;
-    height: 100%;
-    transition: transform 6s cubic-bezier(0.1, 0.8, 0.1, 1); /* Магия плавной остановки */
-    will-change: transform;
-}
-
-.roulette-item {
-    min-width: 100px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-right: 1px solid #222;
-    position: relative;
-}
-
-.roulette-item img {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-}
-
-/* --- POPUP (RESULT) --- */
-.popup {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: 0.3s;
-}
-
-.popup.active {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.popup-content {
-    background: #1a1a24;
-    padding: 30px;
-    border-radius: 20px;
-    text-align: center;
-    border: 2px solid var(--gold);
-    box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
-    transform: scale(0.8);
-    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    overflow: hidden;
-}
-
-.popup.active .popup-content {
-    transform: scale(1);
-}
-
-.glow-bg {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, var(--gold), transparent);
-    transform: translate(-50%, -50%);
-    opacity: 0.2;
-    filter: blur(40px);
-    z-index: 0;
-}
-
-#popup-img {
-    width: 150px;
-    height: 150px;
-    object-fit: contain;
-    margin: 15px 0;
-    position: relative;
-    z-index: 1;
-}
-
-#claim-btn {
-    background: linear-gradient(90deg, #ffcc00, #ff9900);
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    font-weight: 900;
-    color: black;
-    cursor: pointer;
-    font-size: 1rem;
-    margin-top: 15px;
-    box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
-}
-
-/* --- UTILS --- */
+/* Рулетка */
+.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
 .hidden { display: none !important; }
-.loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--accent);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.roulette-wrapper { position: relative; margin: 20px 0; }
+.roulette-window { width: 300px; height: 100px; overflow: hidden; border: 2px solid #333; background: #111; position: relative; }
+.roulette-tape { display: flex; height: 100%; }
+.roulette-item { min-width: 100px; height: 100%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #222; }
+.roulette-item img { width: 70px; height: 70px; }
+.roulette-indicator { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 20px; z-index: 10; color: var(--gold); }
+.roulette-wrapper::after { content:''; position: absolute; top:0; bottom:0; left:50%; width: 2px; background: var(--gold); transform: translateX(-50%); z-index: 5; }
+
+/* Попап */
+.popup { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 300; display: flex; align-items: center; justify-content: center; }
+.popup-content { background: #1a1a24; padding: 20px; border-radius: 20px; text-align: center; border: 2px solid var(--gold); width: 80%; max-width: 300px; }
+#popup-img { width: 120px; height: 120px; object-fit: contain; margin: 10px 0; }
+#claim-btn { background: var(--gold); border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+.loader { border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+@keyframes spin { 100% { transform: rotate(360deg); } }

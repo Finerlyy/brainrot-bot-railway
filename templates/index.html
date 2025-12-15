@@ -2,61 +2,62 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brainrot Case Opener</title>
-    <link rel="stylesheet" href="/static/styles.css"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brainrot Drop</title>
+    <link rel="stylesheet" href="/static/styles.css?v=4.0">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>🍕 Brainrot Case Opener</h1>
-        </header>
+    <header>
+        <div class="logo">🧠 BRAINROT</div>
+        <div class="user-panel">
+            <span id="username">...</span>
+            <div class="balance-badge"><span id="balance">0</span> 💰</div>
+        </div>
+    </header>
 
-        <section id="user-info">
-            <p>Привет, <span id="user-name">...!</span> | Баланс: <span id="user-balance">0</span> 💰</p>
+    <main>
+        <section>
+            <h2 class="section-title">📦 Кейсы</h2>
+            <div id="cases-grid" class="cases-grid"><div class="loader"></div></div>
         </section>
 
-        <section id="case-selection">
-            <h2>Выберите Кейс</h2>
-            <div id="case-list">
-                <p>Загрузка данных...</p>
+        <section>
+            <h2 class="section-title">🎒 Инвентарь</h2>
+            <div id="inventory-grid" class="inventory-grid"></div>
+        </section>
+
+        <section>
+            <h2 class="section-title">👑 Топ</h2>
+            <div id="leaderboard-list" class="leaderboard-list"></div>
+        </section>
+    </main>
+
+    <div id="roulette-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Открытие...</h3>
+            <div class="roulette-wrapper">
+                <div class="roulette-indicator">⬇️</div>
+                <div class="roulette-window">
+                    <div id="roulette-tape" class="roulette-tape"></div>
                 </div>
-        </section>
-
-        <section id="case-opening" style="display:none;">
-            <h2>Открытие Кейса</h2>
-            <button id="close-opening">Закрыть</button>
-            <div id="roulette-container">
-                </div>
-            
-            <div id="drop-result" style="display:none;">
-                <h2>🎁 Выпавший предмет!</h2>
-                <h3 id="dropped-item-name">Dropped Item</h3>
-                <img id="dropped-item-image" src="" alt="Dropped Item" style="max-width: 100px;">
-                <p id="drop-status">Предмет добавлен в ваш инвентарь!</p>
-                <button id="open-again">Открыть еще</button>
             </div>
-        </section>
-
-        <section id="inventory">
-            <h2>Ваш Инвентарь</h2>
-            <div id="inventory-list">
-                <p>Инвентарь пуст.</p>
-            </div>
-        </section>
-
-        <section id="leaderboard">
-            <h2>🏆 Топ по Балансу</h2>
-            <ol id="leaderboard-list">
-                <p>Загрузка данных...</p>
-            </ol>
-        </section>
-
-        <footer>
-            <p>@CaseUngaBungaBot</p>
-        </footer>
+        </div>
     </div>
-    
-    <script src="/static/script.js"></script>
+
+    <div id="drop-popup" class="popup hidden">
+        <div class="popup-content">
+            <div class="glow-bg"></div>
+            <h2>ВЫПАЛО!</h2>
+            <img id="popup-img" src="" alt="">
+            <h3 id="popup-name"></h3>
+            <p id="popup-rarity"></p>
+            <button id="claim-btn">ЗАБРАТЬ</button>
+        </div>
+    </div>
+
+    <audio id="audio-player"></audio>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="/static/script.js?v=4.0"></script>
 </body>
 </html>
