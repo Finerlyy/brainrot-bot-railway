@@ -9,23 +9,40 @@
 </head>
 <body>
 
-    <div id="loading-screen">
-        <div class="loader-content">
-            <div class="spinner"></div>
-        </div>
-    </div>
+    <div id="loading-screen"><div class="loader-content"><div class="spinner"></div></div></div>
 
     <header>
         <div class="logo">🧠 BRAINROT <span>DROP</span></div>
-        <div class="balance-badge">
-            <span class="star-icon">⭐️</span> 
-            <span id="balance">0</span>
-        </div>
+        <div class="balance-badge"><span class="star-icon">⭐️</span> <span id="balance">0</span></div>
     </header>
 
     <main>
         <section id="tab-cases" class="tab-content active">
             <div id="cases-grid" class="cases-grid"></div>
+        </section>
+
+        <section id="tab-upgrade" class="tab-content">
+            <h2 style="text-align:center;margin-bottom:10px">APGREYD 🔮</h2>
+            <div class="upgrade-container">
+                <div class="upgrade-slots">
+                    <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
+                        <p>ВЫБЕРИ<br>ПРЕДМЕТ</p>
+                    </div>
+                    <div class="u-arrow">➤</div>
+                    <div id="u-slot-right" class="u-slot" onclick="openItemSelect('right')">
+                        <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
+                    </div>
+                </div>
+                <div class="upgrade-circle" id="u-circle">
+                    <span class="upgrade-percent" id="u-chance">0%</span>
+                </div>
+                <button id="upgrade-btn" class="main-action-btn" disabled>ПРОКАЧАТЬ</button>
+            </div>
+        </section>
+        
+        <section id="tab-market" class="tab-content">
+            <h2 style="text-align:center;color:#666;margin-top:50px">СКОРО... 🚧</h2>
+            <p style="text-align:center;font-size:0.8rem;color:#888">Торговля между игроками в разработке</p>
         </section>
 
         <section id="tab-inventory" class="tab-content">
@@ -38,32 +55,32 @@
     </main>
 
     <nav class="bottom-nav">
-        <button class="nav-btn active" onclick="switchTab('cases')">📦 Кейсы</button>
-        <button class="nav-btn" onclick="switchTab('inventory')">🎒 Инвентарь</button>
-        <button class="nav-btn" onclick="switchTab('leaderboard')">🏆 Топ</button>
+        <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span>Кейсы</button>
+        <button class="nav-btn" onclick="switchTab('upgrade')"><span>🔮</span>Апгрейд</button>
+        <button class="nav-btn" onclick="switchTab('market')"><span>⚖️</span>Маркет</button>
+        <button class="nav-btn" onclick="switchTab('inventory')"><span>🎒</span>Инвент</button>
     </nav>
+
+    <div id="select-modal" class="item-select-modal hidden">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <h3>Выбери предмет</h3>
+            <button onclick="document.getElementById('select-modal').classList.add('hidden')" style="background:none;border:none;color:#fff;font-size:1.5rem">&times;</button>
+        </div>
+        <div id="select-grid" class="item-select-grid"></div>
+    </div>
 
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name">...</h3>
             <img id="modal-case-img" src="" alt="" class="modal-main-img">
-            <p class="modal-price">
-                Цена: <span class="star-icon">⭐️</span> 
-                <span id="modal-case-price">0</span>
-            </p>
+            <p class="modal-price">Цена: <span class="star-icon">⭐️</span> <span id="modal-case-price">0</span></p>
             
-            <div class="multi-open-selector">
-                <div class="count-buttons">
-                    <button class="count-btn active" onclick="selectCount(1)">x1</button>
-                    <button class="count-btn" onclick="selectCount(2)">x2</button>
-                    <button class="count-btn" onclick="selectCount(5)">x5</button>
-                    <button class="count-btn" onclick="selectCount(10)">x10</button>
-                </div>
+            <div class="slider-container">
+                <span class="slider-val">Открыть: <span id="slider-count">1</span></span>
+                <input type="range" min="1" max="10" value="1" id="case-slider" oninput="updateSlider(this.value)">
             </div>
 
-            <button id="start-open-btn" class="main-action-btn">
-                ОТКРЫТЬ (<span class="star-icon">⭐️</span> <span id="total-price-btn">0</span>)
-            </button>
+            <button id="start-open-btn" class="main-action-btn">ОТКРЫТЬ (<span class="star-icon">⭐️</span> <span id="total-price-btn">0</span>)</button>
             <button class="close-btn" onclick="closeModal('open-modal')">Отмена</button>
         </div>
     </div>
@@ -71,7 +88,7 @@
     <div id="drop-popup" class="popup hidden">
         <div class="popup-content">
             <div class="glow-bg"></div>
-            <h2>🎉 ВЫПАЛО! 🎉</h2>
+            <h2 id="drop-title">🎉 ВЫПАЛО! 🎉</h2>
             <div id="drop-results-grid" class="drop-grid single"></div>
             <button id="claim-btn" class="main-action-btn">ЗАБРАТЬ</button>
         </div>

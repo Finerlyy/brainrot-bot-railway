@@ -1,217 +1,142 @@
-window.switchTab = function(t){
-    document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
-    document.getElementById(`tab-${t}`).classList.add('active');
-    document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`).classList.add('active');
-}
-window.closeModal = function(id){
-    document.getElementById(id).classList.add('hidden');
-}
+window.switchTab=function(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${t}`).classList.add('active');if(t!=='market')document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`).classList.add('active');}
+window.closeModal=function(id){document.getElementById(id).classList.add('hidden')}
 
 document.addEventListener('DOMContentLoaded', () => {
-    const tg = window.Telegram.WebApp; 
-    tg.expand();
-    
+    const tg = window.Telegram.WebApp; tg.expand();
     const API = window.location.origin + '/api';
     let userId = tg.initDataUnsafe?.user?.id || 0;
     let username = tg.initDataUnsafe?.user?.username || 'Guest';
-    let allItems=[], currentBal=0, selectedCaseId=0, selectedCasePrice=0, selectedCount=1;
+    let allItems=[], inventory=[], allItemsSorted=[], currentBal=0;
+    let selectedCase={id:0, price:0}, openCount=1;
+    let upgMy=null, upgTarget=null;
 
-    const el = {
-        bal: document.getElementById('balance'), 
-        cases: document.getElementById('cases-grid'),
-        inv: document.getElementById('inventory-grid'), 
-        top: document.getElementById('leaderboard-list'),
-        loader: document.getElementById('loading-screen'), 
-        openModal: document.getElementById('open-modal'),
-        mImg: document.getElementById('modal-case-img'), 
-        mName: document.getElementById('modal-case-name'),
-        mPrice: document.getElementById('modal-case-price'), 
-        totalBtn: document.getElementById('total-price-btn'),
-        popup: document.getElementById('drop-popup'), 
-        dropGrid: document.getElementById('drop-results-grid'),
-        audio: document.getElementById('audio-player')
+    const el={
+        bal:document.getElementById('balance'), cases:document.getElementById('cases-grid'), inv:document.getElementById('inventory-grid'), 
+        loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), 
+        mImg:document.getElementById('modal-case-img'), mPrice:document.getElementById('modal-case-price'), 
+        slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), totalBtn:document.getElementById('total-price-btn'),
+        popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'),
+        // Upgrade
+        selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'),
+        uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'),
+        uChance:document.getElementById('u-chance'), uBtn:document.getElementById('upgrade-btn'), uCircle:document.getElementById('u-circle')
     };
 
-    function upBal(n){
-        // Защита от NaN/Undefined
-        if (n === undefined || n === null) return;
-        
-        if(currentBal !== n){
-            el.bal.style.color = '#fff';
-            setTimeout(() => el.bal.style.color = '', 300);
-        }
-        currentBal = n;
-        el.bal.innerText = n; // Просто обновляем число
-    }
+    function upBal(n){if(n===undefined)return; if(currentBal!==n){el.bal.style.color='#fff'; setTimeout(()=>el.bal.style.color='',300);} currentBal=n; el.bal.innerText=n;}
 
     async function load(){
         try {
-            const res = await fetch(`${API}/data`, {method:'POST', body:JSON.stringify({user_id:userId, username})});
-            if (!res.ok) throw new Error("Server Error");
-            
-            const d = await res.json();
-            allItems = d.case_items || []; 
-            
+            const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
+            const d=await res.json();
+            allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
             if(d.user) upBal(d.user.balance);
 
-            // КЕЙСЫ
-            el.cases.innerHTML = '';
-            d.cases.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'case-card';
-                div.innerHTML = `
-                    <img src="${c.icon_url}" class="case-img">
-                    <div class="case-name">${c.name}</div>
-                    <div class="case-price"><span class="star-icon">⭐️</span> ${c.price}</div>
-                `;
-                div.onclick = () => showOpenModal(c);
-                el.cases.appendChild(div);
+            // Кейсы
+            el.cases.innerHTML=''; d.cases.forEach(c=>{
+                const div=document.createElement('div'); div.className='case-card';
+                div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${c.price}</div>`;
+                div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
             });
 
-            // ИНВЕНТАРЬ
-            el.inv.innerHTML = '';
-            if(d.inventory.length === 0) el.inv.innerHTML = "<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
-            
-            d.inventory.reverse().forEach(i => {
-                const div = document.createElement('div');
-                div.className = `item-card rarity-${i.rarity}`;
-                div.id = `inv-${i.inv_id}`;
-                div.innerHTML = `
-                    <img src="${i.image_url}" class="item-img">
-                    <div class="case-name">${i.name}</div>
-                    <button class="sell-btn" onclick="sell(${i.inv_id},${i.sell_price})">
-                        Продать: <span>⭐️ ${i.sell_price}</span>
-                    </button>
-                `;
+            // Инвентарь
+            el.inv.innerHTML=''; if(!inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
+            inventory.reverse().forEach(i=>{
+                const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; div.id=`inv-${i.inv_id}`;
+                div.innerHTML=`<img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="sell(${i.inv_id},${i.sell_price})">Продать: <span>⭐️ ${i.sell_price}</span></button>`;
                 el.inv.appendChild(div);
             });
-
-            // ТОП
-            el.top.innerHTML = '';
-            d.leaderboard.forEach((u, i) => {
-                el.top.innerHTML += `
-                    <div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center">
-                        <span>#${i+1} ${u.username}</span>
-                        <span style="color:#FFD700;font-weight:bold">⭐️ ${u.balance}</span>
-                    </div>`;
-            });
-
-            setTimeout(() => el.loader.style.opacity = '0', 200);
-            setTimeout(() => el.loader.style.display = 'none', 700);
-        } catch(e) { 
-            console.error(e); 
-        }
+            setTimeout(()=>el.loader.style.display='none',500);
+        } catch(e){}
     }
 
-    // --- ЛОГИКА ОТКРЫТИЯ ---
-    window.showOpenModal = function(c) {
-        selectedCaseId = c.id; 
-        selectedCasePrice = c.price;
-        el.mImg.src = c.icon_url; 
-        el.mName.innerText = c.name; 
-        el.mPrice.innerText = c.price;
-        selectCount(1);
-        el.openModal.classList.remove('hidden');
+    // --- ОТКРЫТИЕ (Слайдер) ---
+    window.showOpenModal=()=>{
+        el.mImg.src=selectedCase.icon_url; el.mPrice.innerText=selectedCase.price;
+        el.slider.value=1; updateSlider(1); el.openModal.classList.remove('hidden');
     }
-
-    window.selectCount = function(n) {
-        selectedCount = n;
-        document.querySelectorAll('.count-btn').forEach(b => b.classList.toggle('active', b.innerText === `x${n}`));
-        el.totalBtn.innerText = selectedCasePrice * n;
+    window.updateSlider=(v)=>{
+        openCount=parseInt(v); el.sliderVal.innerText=openCount; el.totalBtn.innerText=selectedCase.price*openCount;
     }
-
-    document.getElementById('start-open-btn').onclick = async () => {
-        const totalPrice = selectedCasePrice * selectedCount;
-        if(currentBal < totalPrice) return tg.showAlert("Недостаточно звезд!");
+    document.getElementById('start-open-btn').onclick=async()=>{
+        const price=selectedCase.price*openCount;
+        if(currentBal<price) return tg.showAlert("Мало звезд!");
+        el.openModal.classList.add('hidden'); upBal(currentBal-price);
         
-        el.openModal.classList.add('hidden');
-        upBal(currentBal - totalPrice); // Визуальное списание
-
-        // Показываем лоадер в попапе
-        el.popup.classList.add('active');
-        el.dropGrid.innerHTML = '<div class="spinner"></div>';
-
+        el.popup.classList.add('active'); el.dropGrid.innerHTML='<div class="spinner"></div>';
         try {
-            const res = await fetch(`${API}/open`, {
-                method:'POST', 
-                body:JSON.stringify({user_id:userId, case_id:selectedCaseId, count:selectedCount})
-            });
-            const data = await res.json();
-            
-            if(data.error) { 
-                el.popup.classList.remove('active');
-                load(); // Возвращаем баланс
-                return tg.showAlert(data.error); 
-            }
-
-            showResults(data.dropped);
-        } catch(e) {
-             console.error(e);
-             tg.showAlert("Ошибка: " + e.message); 
-             load();
-        }
+            const res=await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
+            const d=await res.json();
+            if(d.error){ el.popup.classList.remove('active'); load(); return tg.showAlert(d.error); }
+            showResults(d.dropped);
+        } catch{ load(); }
     };
 
-    function showResults(items) {
-        el.dropGrid.innerHTML = '';
-        el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
-        
-        items.forEach((item, i) => {
-            const div = document.createElement('div'); 
-            div.className = `drop-item rarity-${item.rarity}`; 
-            div.style.animationDelay = `${i * 0.1}s`;
-            div.innerHTML = `
-                <img src="${item.image_url}">
-                <div class="case-name" style="font-size:0.8rem">${item.name}</div>
-                <div style="font-size:0.7rem;opacity:0.7">${item.rarity}</div>
-            `;
+    function showResults(items){
+        el.dropGrid.innerHTML=''; el.dropGrid.className=items.length>1?'drop-grid multi':'drop-grid single';
+        document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
+        items.forEach((item,i)=>{
+            const div=document.createElement('div'); div.className=`drop-item rarity-${item.rarity}`; 
+            div.style.animationDelay=`${i*0.2}s`; // Анимация очереди
+            div.innerHTML=`<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
             el.dropGrid.appendChild(div);
-            
-            // ИСПРАВЛЕНИЕ: Проверяем, что ссылка на звук не является прочерком "-"
-            if(i === 0 && item.sound_url && item.sound_url !== '-' && item.sound_url.startsWith('http')) { 
-                el.audio.src = item.sound_url; 
-                el.audio.play().catch(err => console.log("Audio error:", err)); 
-            }
+            if(i===0 && item.sound_url && item.sound_url!=='-') { el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); }
         });
-        load(); // Фоновое обновление инвентаря
+        load();
     }
 
-    // --- ПРОДАЖА ---
-    window.sell = async function(id, p) {
-        // Убрал confirm для скорости, можно вернуть если нужно
-        // if(!confirm(`Продать за ${p}?`)) return;
-        
-        upBal(currentBal + p); 
-        const itemNode = document.getElementById(`inv-${id}`);
-        if(itemNode) itemNode.remove();
+    // --- АПГРЕЙД ---
+    window.openItemSelect=(side)=>{
+        el.selGrid.innerHTML=''; el.selModal.classList.remove('hidden');
+        const list = side==='left' ? inventory : allItemsSorted;
+        list.forEach(i=>{
+            const div=document.createElement('div'); div.className='select-card';
+            div.innerHTML=`<img src="${i.image_url}"><span>${i.price} ⭐️</span>`;
+            div.onclick=()=>{ selectUpgradeItem(side, i); el.selModal.classList.add('hidden'); };
+            el.selGrid.appendChild(div);
+        });
+    }
 
-        try {
-            const res = await fetch(`${API}/sell`, {
-                method:'POST',
-                body:JSON.stringify({user_id:userId, inv_id:id, price:p})
-            });
-            const d = await res.json();
-            if(d.status !== 'ok') load(); // Если ошибка - откатываем
-        } catch(e) {
-            load();
+    function selectUpgradeItem(side, item){
+        if(side==='left'){
+            upgMy=item; el.uLeft.innerHTML=`<img src="${item.image_url}"><p>${item.price} ⭐️</p>`; el.uLeft.classList.add('selected');
+        } else {
+            upgTarget=item; el.uRight.innerHTML=`<img src="${item.image_url}"><p>${item.price} ⭐️</p>`; el.uRight.classList.add('selected');
         }
-    };
+        calcChance();
+    }
 
-    document.getElementById('claim-btn').onclick = () => { 
-        el.popup.classList.remove('active'); 
-        el.audio.pause(); 
-    };
-    
-    // Загрузка
+    function calcChance(){
+        if(!upgMy || !upgTarget) { el.uChance.innerText="0%"; el.uBtn.disabled=true; return; }
+        let ch = (upgMy.price / upgTarget.price) * 100 * 0.95;
+        if(ch>80) ch=80; if(ch<1) ch=1;
+        el.uChance.innerText=ch.toFixed(1)+"%"; el.uBtn.disabled=false;
+    }
+
+    el.uBtn.onclick=async()=>{
+        if(!upgMy || !upgTarget) return;
+        el.uBtn.disabled=true; el.uCircle.classList.add('spinning');
+        
+        try{
+            const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, inv_id:upgMy.inv_id, target_id:upgTarget.id})});
+            const d=await res.json();
+            
+            setTimeout(()=>{
+                el.uCircle.classList.remove('spinning');
+                if(d.status==='win'){
+                    tg.showAlert("УСПЕХ! 🎉");
+                    showResults([d.item]); // Показываем выигрыш
+                } else {
+                    tg.showAlert("СГОРЕЛ 🔥");
+                    load();
+                }
+                // Сброс
+                upgMy=null; upgTarget=null; el.uLeft.innerHTML="<p>ВЫБЕРИ<br>ПРЕДМЕТ</p>"; el.uLeft.classList.remove('selected');
+                el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); el.uChance.innerText="0%";
+            }, 2000); // 2 сек крутим
+        } catch{ load(); }
+    }
+
+    window.sell=async(id,p)=>{ upBal(currentBal+p); document.getElementById(`inv-${id}`)?.remove(); await fetch(`${API}/sell`,{method:'POST',body:JSON.stringify({user_id:userId,inv_id:id,price:p})}); };
+    document.getElementById('claim-btn').onclick=()=>{el.popup.classList.remove('active');};
     load();
-    
-    // Авто-обновление баланса (каждые 4 сек)
-    setInterval(() => {
-        if(document.hidden || el.popup.classList.contains('active')) return;
-        fetch(`${API}/data`, {method:'POST', body:JSON.stringify({user_id:userId, username})})
-            .then(r => r.json())
-            .then(d => { if(d.user) upBal(d.user.balance); })
-            .catch(() => {});
-    }, 4000);
 });
