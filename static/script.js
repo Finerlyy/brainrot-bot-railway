@@ -1,237 +1,213 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const WEB_APP_URL = window.location.origin;
-    const roller = document.getElementById('roller');
-    const caseOpener = document.getElementById('case-opener');
-    const caseSelection = document.getElementById('case-selection');
-    const resultDisplay = document.getElementById('result-display');
-    const closeRollerBtn = document.getElementById('close-roller');
-    const openAnotherBtn = document.getElementById('open-another');
-    const casesContainer = document.getElementById('cases-container');
-    const inventoryList = document.getElementById('inventory-list');
-    const loadingMessage = document.getElementById('loading-message');
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Раскрываем на весь экран
 
-    let CURRENT_USER_DATA = null;
-    let ALL_ITEMS = []; // Все предметы для генерации рулетки
-    let CURRENT_CASE = null;
-    let USER_ID = null;
-    let USER_USERNAME = "MemeLover";
+    // --- КОНФИГУРАЦИЯ ---
+    const API_URL = window.location.origin + '/api';
+    const CARD_WIDTH = 100; // Ширина карточки в пикселях (из CSS)
+    
+    // Элементы DOM
+    const els = {
+        balance: document.getElementById('balance'),
+        username: document.getElementById('username'),
+        casesGrid: document.getElementById('cases-grid'),
+        inventoryGrid: document.getElementById('inventory-grid'),
+        leaderboardList: document.getElementById('leaderboard-list'),
+        
+        // Рулетка
+        rouletteModal: document.getElementById('roulette-modal'),
+        rouletteTape: document.getElementById('roulette-tape'),
+        
+        // Попап результата
+        dropPopup: document.getElementById('drop-popup'),
+        popupImg: document.getElementById('popup-img'),
+        popupName: document.getElementById('popup-name'),
+        popupRarity: document.getElementById('popup-rarity'),
+        claimBtn: document.getElementById('claim-btn'),
+        
+        // Аудио
+        audioPlayer: document.getElementById('audio-player'),
+        tickSound: document.getElementById('tick-sound')
+    };
 
-    // Инициализация Telegram WebApp
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        const initData = window.Telegram.WebApp.initDataUnsafe;
-        if (initData.user) {
-            USER_ID = initData.user.id;
-            USER_USERNAME = initData.user.username || initData.user.first_name;
-        }
-    }
+    let userId = tg.initDataUnsafe?.user?.id || 12345; // Фолбек для теста в браузере
+    let username = tg.initDataUnsafe?.user?.username || 'Tester';
+    let allItems = []; // Кэш всех предметов для генерации фейков в рулетке
 
-    // --- 1. Основные функции API ---
-
-    // Функция для получения всех данных (пользователь, баланс, кейсы, инвентарь)
-    async function fetchData() {
+    // --- 1. ЗАГРУЗКА ДАННЫХ ---
+    async function loadData() {
         try {
-            const response = await fetch(`${WEB_APP_URL}/api/data`, {
+            const res = await fetch(`${API_URL}/data`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: USER_ID, username: USER_USERNAME })
+                body: JSON.stringify({ user_id: userId, username: username })
             });
-
-            if (!response.ok) throw new Error("Failed to fetch data from API");
-
-            const data = await response.json();
-            CURRENT_USER_DATA = data.user;
-            ALL_ITEMS = data.case_items; // Все предметы для рулетки
+            const data = await res.json();
             
             updateUI(data);
-            createCaseButtons(data.cases);
-
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            loadingMessage.textContent = "Ошибка загрузки данных. Убедитесь, что бот запущен.";
+            allItems = data.case_items || []; // Сохраняем для рулетки
+            
+        } catch (e) {
+            console.error("Ошибка загрузки:", e);
         }
     }
 
-    // Обновление UI (баланс, имя, инвентарь)
     function updateUI(data) {
-        document.getElementById('username').textContent = data.user.username || 'Игрок';
-        document.getElementById('balance').textContent = data.user.balance;
-        
-        // Обновление инвентаря
-        inventoryList.innerHTML = '';
-        data.inventory.forEach(item => {
+        // Обновляем шапку
+        if(data.user) {
+            els.balance.textContent = data.user.balance;
+            els.username.textContent = data.user.username;
+        }
+
+        // Рендерим кейсы
+        els.casesGrid.innerHTML = '';
+        data.cases.forEach(c => {
             const div = document.createElement('div');
-            div.className = `inventory-item rarity-${item.rarity}`;
-            div.innerHTML = `<img src="${item.image_url}" alt="${item.name}"><p>${item.name}</p>`;
-            inventoryList.appendChild(div);
-        });
-
-        // Скрываем сообщение о загрузке
-        loadingMessage.classList.add('hidden');
-    }
-    
-    // --- 2. Функции выбора кейсов ---
-    
-    function createCaseButtons(cases) {
-        casesContainer.innerHTML = ''; // Очистка
-        cases.forEach(caseItem => {
-            const button = document.createElement('button');
-            button.className = 'case-button';
-            button.dataset.caseId = caseItem.id;
-            button.innerHTML = `
-                <img src="${caseItem.icon_url || 'https://i.imgur.com/default_case.png'}" alt="${caseItem.name}">
-                <h4>${caseItem.name}</h4>
-                <p>Открыть за ${caseItem.price} 💰</p>
+            div.className = 'case-card';
+            div.innerHTML = `
+                <img src="${c.icon_url}" class="case-img" onerror="this.src='https://placehold.co/100?text=CASE'">
+                <div class="case-name">${c.name}</div>
+                <div class="case-price">${c.price} 💰</div>
             `;
-            
-            // Проверка, можно ли открыть
-            if (CURRENT_USER_DATA && CURRENT_USER_DATA.balance < caseItem.price) {
-                button.disabled = true;
-            }
-            
-            button.addEventListener('click', () => startOpening(caseItem));
-            casesContainer.appendChild(button);
+            div.onclick = () => openCase(c.id, c.price, data.user.balance);
+            els.casesGrid.appendChild(div);
+        });
+
+        // Рендерим инвентарь
+        els.inventoryGrid.innerHTML = '';
+        if(data.inventory.length === 0) {
+            els.inventoryGrid.innerHTML = '<div class="empty-msg">Пусто...</div>';
+        } else {
+            data.inventory.reverse().forEach(item => { // Новые сверху
+                const div = document.createElement('div');
+                div.className = `item-card rarity-${item.rarity}`;
+                div.innerHTML = `
+                    <img src="${item.image_url}" class="item-img">
+                    <div class="item-name">${item.name}</div>
+                `;
+                els.inventoryGrid.appendChild(div);
+            });
+        }
+
+        // Лидерборд
+        els.leaderboardList.innerHTML = '';
+        data.leaderboard.forEach((u, index) => {
+            const div = document.createElement('div');
+            div.style.padding = '5px';
+            div.style.borderBottom = '1px solid #333';
+            div.innerHTML = `<b>#${index+1}</b> ${u.username} — <span>${u.balance} 💰</span>`;
+            els.leaderboardList.appendChild(div);
         });
     }
 
-    // --- 3. Функции открытия кейса и анимации ---
-
-    function startOpening(caseItem) {
-        CURRENT_CASE = caseItem;
-        
-        // Проверка баланса перед началом
-        if (CURRENT_USER_DATA.balance < caseItem.price) {
-            alert("Недостаточно средств!");
+    // --- 2. ЛОГИКА ОТКРЫТИЯ (Рулетка) ---
+    async function openCase(caseId, price, balance) {
+        if (balance < price) {
+            tg.showAlert("Недостаточно денег! Иди работай!");
             return;
         }
-        
-        // Скрываем выбор, показываем рулетку
-        caseSelection.classList.add('hidden');
-        resultDisplay.classList.add('hidden');
-        caseOpener.classList.remove('hidden');
-        
-        // Начальный звук открытия (опционально)
-        // const openSound = new Audio('path/to/opening_sound.mp3');
-        // openSound.play();
 
-        // 1. Генерируем элементы для рулетки
-        generateRollerItems();
+        // 1. Показываем модалку рулетки
+        els.rouletteModal.classList.add('active');
+        els.rouletteModal.classList.remove('hidden');
+        els.rouletteTape.style.transition = 'none';
+        els.rouletteTape.style.transform = 'translateX(0px)';
+        els.rouletteTape.innerHTML = ''; // Чистим ленту
 
-        // 2. Отправляем запрос на открытие
-        fetchDroppedItem(caseItem.id);
-    }
-
-    // Генерирует ленту предметов для прокрутки
-    function generateRollerItems() {
-        roller.innerHTML = '';
-        const itemsToDisplay = 100; // Для плавной прокрутки нужно много предметов
-        const visibleItems = 10;
-        
-        // Заполняем рулетку случайными предметами
-        for (let i = 0; i < itemsToDisplay; i++) {
-            // Выбираем случайный предмет из ВСЕХ (или только из этого кейса, если ALL_ITEMS фильтровать)
-            const randomItem = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
-            
-            const itemElement = document.createElement('div');
-            itemElement.className = `roller-item rarity-${randomItem.rarity}`;
-            itemElement.innerHTML = `<img src="${randomItem.image_url}" alt="${randomItem.name}"><p>${randomItem.name}</p>`;
-            roller.appendChild(itemElement);
-        }
-
-        // Устанавливаем начальное положение (чтобы центр был чистым)
-        roller.style.transition = 'none';
-        roller.style.transform = `translateX(0px)`;
-    }
-
-    // Запрос выпавшего предмета
-    async function fetchDroppedItem(caseId) {
+        // 2. Делаем запрос к серверу (узнаем результат заранее)
         try {
-            const response = await fetch(`${WEB_APP_URL}/api/open`, {
+            const res = await fetch(`${API_URL}/open`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: USER_ID, case_id: caseId })
+                body: JSON.stringify({ user_id: userId, case_id: caseId })
             });
             
-            if (!response.ok) throw new Error("API failed to open case or insufficient balance.");
-
-            const data = await response.json();
+            const result = await res.json();
             
-            // 3. Запускаем анимацию прокрутки
-            animateRoller(data.dropped);
+            if (result.error) {
+                tg.showAlert(result.error);
+                els.rouletteModal.classList.remove('active');
+                return;
+            }
 
-        } catch (error) {
-            console.error("Error opening case:", error);
-            alert("Не удалось открыть кейс. Возможно, ошибка сервера или недостаточно средств.");
-            // Возвращаемся к выбору
-            caseOpener.classList.add('hidden');
-            caseSelection.classList.remove('hidden');
-            fetchData(); // Обновить данные
+            // 3. Генерируем ленту
+            // Нам нужно, чтобы выигрышный предмет был на определенной позиции (например, 50-й)
+            const WIN_INDEX = 50; 
+            const TOTAL_ITEMS = 60;
+            
+            // Заполняем ленту фейками
+            for (let i = 0; i < TOTAL_ITEMS; i++) {
+                let item = allItems[Math.floor(Math.random() * allItems.length)];
+                
+                // Вставляем ВЫИГРЫШНЫЙ предмет на нужную позицию
+                if (i === WIN_INDEX) {
+                    item = result.dropped;
+                }
+
+                const div = document.createElement('div');
+                div.className = `roulette-item rarity-${item.rarity}`;
+                div.innerHTML = `<img src="${item.image_url}">`;
+                els.rouletteTape.appendChild(div);
+            }
+
+            // 4. Запускаем анимацию
+            // Небольшая задержка перед стартом
+            setTimeout(() => {
+                // Вычисляем смещение. 
+                // (WIN_INDEX * CARD_WIDTH) - (Половина экрана) + (Половина карточки) + (Рандом внутри карточки для реализма)
+                const windowWidth = document.querySelector('.roulette-window').offsetWidth;
+                const randomOffset = Math.floor(Math.random() * 40) - 20; // +/- 20px
+                const scrollPosition = (WIN_INDEX * CARD_WIDTH) - (windowWidth / 2) + (CARD_WIDTH / 2) + randomOffset;
+                
+                els.rouletteTape.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.15, 1)'; // Эффект замедления
+                els.rouletteTape.style.transform = `translateX(-${scrollPosition}px)`;
+                
+                // Проигрываем тиканье (упрощенно - один звук старта)
+                // В идеале нужно синхронизировать тиканье с прохождением карточек, но это сложно для JS без библиотек
+                // Просто проиграем звук вращения
+                // els.tickSound.play(); 
+
+            }, 100);
+
+            // 5. Когда анимация закончилась (через 6 секунд)
+            setTimeout(() => {
+                showResult(result.dropped);
+                loadData(); // Обновляем баланс и инвентарь на фоне
+            }, 6200);
+
+        } catch (e) {
+            console.error(e);
+            els.rouletteModal.classList.remove('active');
         }
     }
 
-    // Функция анимации
-    function animateRoller(droppedItem) {
-        const rollerWidth = roller.offsetWidth;
-        const itemWidth = 100 + 2; // Ширина элемента + margin
-        const targetIndex = 94; // Целевая позиция (ближе к концу ленты)
-        
-        // 1. Находим нужный элемент в рулетке (для имитации)
-        const items = roller.querySelectorAll('.roller-item');
-        
-        // Заменяем предмет на целевой позиции (для гарантии выигрыша)
-        if (items[targetIndex]) {
-            items[targetIndex].className = `roller-item rarity-${droppedItem.rarity}`;
-            items[targetIndex].innerHTML = `<img src="${droppedItem.image_url}" alt="${droppedItem.name}"><p>${droppedItem.name}</p>`;
+    // --- 3. ПОКАЗ РЕЗУЛЬТАТА ---
+    function showResult(item) {
+        els.rouletteModal.classList.remove('active'); // Скрываем рулетку
+        els.dropPopup.classList.remove('hidden');
+        setTimeout(() => els.dropPopup.classList.add('active'), 10); // Плавное появление
+
+        // Заполняем данные
+        els.popupImg.src = item.image_url;
+        els.popupName.textContent = item.name;
+        els.popupRarity.textContent = item.rarity;
+        els.popupRarity.className = `rarity-${item.rarity}`; // Цвет текста
+
+        // Звук выпадения (ИМЯ ПРЕДМЕТА)
+        if (item.sound_url) {
+            els.audioPlayer.src = item.sound_url;
+            els.audioPlayer.play().catch(e => console.log("Auto-play blocked:", e));
         }
-        
-        // 2. Рассчитываем конечную позицию
-        // Смещение, чтобы целевой элемент оказался прямо под индикатором (50% окна)
-        const offset = rollerWidth / 2 - (itemWidth / 2); 
-        const targetPosition = targetIndex * itemWidth;
-        const finalTransform = offset - targetPosition;
-
-        // 3. Запускаем CSS-анимацию
-        roller.style.transition = 'transform 6s cubic-bezier(0.05, 0.65, 0.1, 1.0)';
-        roller.style.transform = `translateX(${finalTransform}px)`;
-
-        // 4. После завершения анимации (6 секунд) показываем результат
-        setTimeout(() => {
-            showResult(droppedItem);
-        }, 6500); // Немного больше, чем длительность transition
     }
 
-    // --- 4. Отображение результатов ---
+    // Кнопка "ЗАБРАТЬ"
+    els.claimBtn.onclick = () => {
+        els.dropPopup.classList.remove('active');
+        setTimeout(() => els.dropPopup.classList.add('hidden'), 300);
+        els.audioPlayer.pause();
+        els.audioPlayer.currentTime = 0;
+    };
 
-    function showResult(droppedItem) {
-        caseOpener.classList.add('hidden');
-        resultDisplay.classList.remove('hidden');
-        
-        document.getElementById('dropped-img').src = droppedItem.image_url;
-        document.getElementById('dropped-name').textContent = droppedItem.name;
-        document.getElementById('dropped-rarity').textContent = `Редкость: ${droppedItem.rarity}`;
-        
-        // Проигрывание звука
-        if (droppedItem.sound_url) {
-            const dropSound = new Audio(droppedItem.sound_url);
-            dropSound.play().catch(e => console.error("Error playing sound:", e));
-        }
-
-        // Обновляем UI после выигрыша (баланс, инвентарь)
-        fetchData();
-    }
-    
-    // --- 5. Обработчики кнопок ---
-    
-    openAnotherBtn.addEventListener('click', () => {
-        resultDisplay.classList.add('hidden');
-        caseSelection.classList.remove('hidden');
-    });
-
-    closeRollerBtn.addEventListener('click', () => {
-        caseOpener.classList.add('hidden');
-        caseSelection.classList.remove('hidden');
-    });
-
-    // Запуск при загрузке страницы
-    fetchData();
+    // Запуск
+    loadData();
 });
