@@ -1,3 +1,4 @@
+// Глобальная функция для переключения вкладок
 window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -8,13 +9,14 @@ window.switchTab = function(tabName) {
 document.addEventListener('DOMContentLoaded', () => {
     const tg = window.Telegram.WebApp;
     tg.expand();
+    
     const API_URL = window.location.origin + '/api';
     const CARD_WIDTH = 100;
     
     let userId = tg.initDataUnsafe?.user?.id || 0;
     let username = tg.initDataUnsafe?.user?.username || 'Guest';
     let allItems = [];
-    let currentBalance = 0; // Локальная переменная для мгновенного обновления
+    let currentBalance = 0;
 
     const els = {
         bal: document.getElementById('balance'),
@@ -31,12 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loader: document.getElementById('loading-screen')
     };
 
-    // Функция обновления отображения баланса
     function updateBalanceDisplay(newBalance) {
+        // Если баланс изменился, делаем небольшую анимацию цвета
+        if (currentBalance !== newBalance) {
+            els.bal.style.color = '#fff'; // Вспышка белым
+            setTimeout(() => els.bal.style.color = '#ffd700', 300); // Возврат к золотому
+        }
         currentBalance = newBalance;
-        // Анимация числа
         els.bal.innerText = newBalance;
-        // Можно добавить анимацию цвета, если изменился
     }
 
     async function load() {
@@ -45,9 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             allItems = data.case_items || [];
             
-            if(data.user) {
-                updateBalanceDisplay(data.user.balance);
-            }
+            if(data.user) updateBalanceDisplay(data.user.balance);
             
             // КЕЙСЫ
             els.cases.innerHTML = '';
@@ -65,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data.inventory.reverse().forEach(i => {
                 const d = document.createElement('div'); 
                 d.className = `item-card rarity-${i.rarity}`;
-                d.id = `inv-item-${i.inv_id}`; // ID для удаления
+                d.id = `inv-item-${i.inv_id}`;
                 d.innerHTML = `
                     <img src="${i.image_url}" class="item-img">
                     <div class="item-name">${i.name}</div>
@@ -86,16 +88,33 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) { console.error(e); }
     }
 
-    // МГНОВЕННАЯ ПРОДАЖА
+    // --- НОВАЯ ФУНКЦИЯ: СИНХРОНИЗАЦИЯ БАЛАНСА ---
+    async function startBalanceSync() {
+        setInterval(async () => {
+            // Если открыта рулетка или попап, не обновляем, чтобы не отвлекать
+            if (!els.modal.classList.contains('hidden') || !els.popup.classList.contains('hidden')) return;
+
+            try {
+                // Запрашиваем только данные пользователя для экономии трафика
+                // Но так как у нас один эндпоинт /api/data, используем его
+                const res = await fetch(`${API_URL}/data`, { method: 'POST', body: JSON.stringify({ user_id: userId, username }) });
+                const data = await res.json();
+                if(data.user) {
+                    updateBalanceDisplay(data.user.balance);
+                }
+            } catch (e) {
+                console.log("Ошибка синхронизации:", e);
+            }
+        }, 3000); // Проверяем каждые 3 секунды
+    }
+
     window.sellItem = async function(invId, price) {
         if(!confirm(`Продать за ${price} монет?`)) return;
         
-        // 1. Оптимистичное обновление (сразу меняем интерфейс)
         updateBalanceDisplay(currentBalance + price);
         const itemEl = document.getElementById(`inv-item-${invId}`);
         if(itemEl) itemEl.remove();
 
-        // 2. Отправляем запрос на сервер
         const res = await fetch(`${API_URL}/sell`, { 
             method: 'POST', 
             body: JSON.stringify({ user_id: userId, inv_id: invId, price: price }) 
@@ -103,15 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const d = await res.json();
         if(d.status !== 'ok') {
-            tg.showAlert("Ошибка продажи! Откат...");
-            load(); // Если ошибка - перезагружаем все данные обратно
+            tg.showAlert("Ошибка продажи!");
+            load();
         }
     };
 
     async function openCase(cid, price) {
         if(currentBalance < price) return tg.showAlert("Недостаточно денег!");
         
-        // Сразу списываем деньги визуально
         updateBalanceDisplay(currentBalance - price);
 
         els.modal.classList.remove('hidden');
@@ -124,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(resD.error) { 
             els.modal.classList.add('hidden'); 
-            load(); // Возвращаем баланс, если ошибка
+            load(); 
             return tg.showAlert(resD.error); 
         }
 
@@ -150,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
             els.pRar.innerText = resD.dropped.rarity;
             if(resD.dropped.sound_url) { els.audio.src = resD.dropped.sound_url; els.audio.play().catch(()=>{}); }
             
-            // После закрытия кейса - полная синхронизация, чтобы предмет появился в инвентаре
             load();
         }, 5200);
     }
@@ -161,4 +178,5 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     load();
+    startBalanceSync(); // ЗАПУСКАЕМ ТАЙМЕР
 });
