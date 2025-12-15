@@ -3,4 +3,3 @@ aiohttp
 aiohttp_jinja2
 aiosqlite
 jinja2
-google-generativeai
