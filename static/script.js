@@ -1,26 +1,20 @@
-// Глобальная функция для переключения вкладок
 window.switchTab = function(tabName) {
-    // Скрываем все секции
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    // Убираем подсветку кнопок
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    
-    // Показываем нужную
     document.getElementById(`tab-${tabName}`).classList.add('active');
-    // Подсвечиваем кнопку (хитрый способ найти кнопку по onclick)
     document.querySelector(`.nav-btn[onclick="switchTab('${tabName}')"]`).classList.add('active');
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     const tg = window.Telegram.WebApp;
     tg.expand();
-    
     const API_URL = window.location.origin + '/api';
     const CARD_WIDTH = 100;
     
     let userId = tg.initDataUnsafe?.user?.id || 0;
     let username = tg.initDataUnsafe?.user?.username || 'Guest';
     let allItems = [];
+    let currentBalance = 0; // Локальная переменная для мгновенного обновления
 
     const els = {
         bal: document.getElementById('balance'),
@@ -37,29 +31,41 @@ document.addEventListener('DOMContentLoaded', () => {
         loader: document.getElementById('loading-screen')
     };
 
+    // Функция обновления отображения баланса
+    function updateBalanceDisplay(newBalance) {
+        currentBalance = newBalance;
+        // Анимация числа
+        els.bal.innerText = newBalance;
+        // Можно добавить анимацию цвета, если изменился
+    }
+
     async function load() {
         try {
             const res = await fetch(`${API_URL}/data`, { method: 'POST', body: JSON.stringify({ user_id: userId, username }) });
             const data = await res.json();
             allItems = data.case_items || [];
             
-            if(data.user) els.bal.innerText = data.user.balance;
+            if(data.user) {
+                updateBalanceDisplay(data.user.balance);
+            }
             
-            // Кейсы
+            // КЕЙСЫ
             els.cases.innerHTML = '';
             data.cases.forEach(c => {
                 const d = document.createElement('div'); d.className = 'case-card';
                 d.innerHTML = `<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">${c.price} 💰</div>`;
-                d.onclick = () => openCase(c.id, c.price, data.user.balance);
+                d.onclick = () => openCase(c.id, c.price);
                 els.cases.appendChild(d);
             });
 
-            // Инвентарь с кнопкой продажи
+            // ИНВЕНТАРЬ
             els.inv.innerHTML = '';
             if (data.inventory.length === 0) els.inv.innerHTML = "<p style='text-align:center;width:100%;color:#666'>Пусто</p>";
             
             data.inventory.reverse().forEach(i => {
-                const d = document.createElement('div'); d.className = `item-card rarity-${i.rarity}`;
+                const d = document.createElement('div'); 
+                d.className = `item-card rarity-${i.rarity}`;
+                d.id = `inv-item-${i.inv_id}`; // ID для удаления
                 d.innerHTML = `
                     <img src="${i.image_url}" class="item-img">
                     <div class="item-name">${i.name}</div>
@@ -68,39 +74,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.inv.appendChild(d);
             });
 
-            // Топ
+            // ТОП
             els.top.innerHTML = '';
             data.leaderboard.forEach((u, i) => {
                 els.top.innerHTML += `<div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between;"><span>#${i+1} ${u.username}</span> <span>${u.balance}💰</span></div>`;
             });
 
-            // Убираем экран загрузки
             setTimeout(() => els.loader.style.opacity = '0', 500);
             setTimeout(() => els.loader.style.display = 'none', 1000);
 
         } catch(e) { console.error(e); }
     }
 
-    // Функция продажи (глобальная для onclick)
+    // МГНОВЕННАЯ ПРОДАЖА
     window.sellItem = async function(invId, price) {
         if(!confirm(`Продать за ${price} монет?`)) return;
         
+        // 1. Оптимистичное обновление (сразу меняем интерфейс)
+        updateBalanceDisplay(currentBalance + price);
+        const itemEl = document.getElementById(`inv-item-${invId}`);
+        if(itemEl) itemEl.remove();
+
+        // 2. Отправляем запрос на сервер
         const res = await fetch(`${API_URL}/sell`, { 
             method: 'POST', 
             body: JSON.stringify({ user_id: userId, inv_id: invId, price: price }) 
         });
+        
         const d = await res.json();
-        if(d.status === 'ok') {
-            tg.showAlert(`Продано за ${price}!`);
-            load(); // Обновляем
-        } else {
-            tg.showAlert("Ошибка продажи");
+        if(d.status !== 'ok') {
+            tg.showAlert("Ошибка продажи! Откат...");
+            load(); // Если ошибка - перезагружаем все данные обратно
         }
     };
 
-    async function openCase(cid, price, bal) {
-        if(bal < price) return tg.showAlert("Недостаточно денег!");
+    async function openCase(cid, price) {
+        if(currentBalance < price) return tg.showAlert("Недостаточно денег!");
         
+        // Сразу списываем деньги визуально
+        updateBalanceDisplay(currentBalance - price);
+
         els.modal.classList.remove('hidden');
         els.tape.style.transition = 'none';
         els.tape.style.transform = 'translateX(0)';
@@ -109,7 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`${API_URL}/open`, { method: 'POST', body: JSON.stringify({ user_id: userId, case_id: cid }) });
         const resD = await res.json();
         
-        if(resD.error) { els.modal.classList.add('hidden'); return tg.showAlert(resD.error); }
+        if(resD.error) { 
+            els.modal.classList.add('hidden'); 
+            load(); // Возвращаем баланс, если ошибка
+            return tg.showAlert(resD.error); 
+        }
 
         const WIN = 40; 
         for(let i=0; i<50; i++) {
@@ -132,6 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
             els.pName.innerText = resD.dropped.name;
             els.pRar.innerText = resD.dropped.rarity;
             if(resD.dropped.sound_url) { els.audio.src = resD.dropped.sound_url; els.audio.play().catch(()=>{}); }
+            
+            // После закрытия кейса - полная синхронизация, чтобы предмет появился в инвентаре
             load();
         }, 5200);
     }
