@@ -5,6 +5,7 @@ DB_NAME = "brainrot.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
+        # Включаем поддержку доступа по названиям колонок
         db.row_factory = sqlite3.Row 
         
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000)")
@@ -14,10 +15,11 @@ async def init_db():
         
         await db.commit()
         
-        # Контент
+        # --- НАПОЛНЕНИЕ БАЗЫ (Чтобы апгрейд не был пустым) ---
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.imgur.com/UOAnvOc.png' 
+
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
         await db.commit()
 
@@ -35,18 +37,20 @@ async def init_db():
                 ('Chimpanzini Bananini', 'Mythical', 10000, 'https://i.imgur.com/0QTbLT8.jpeg', '-', case_id),
             ]
             for i in items_data:
+                # Проверяем, есть ли предмет, чтобы не дублировать
                 async with db.execute("SELECT id FROM items WHERE name = ?", (i[0],)) as cur:
                     if not await cur.fetchone():
                         await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
         await db.commit()
 
-# --- ФУНКЦИИ ---
+# --- ФУНКЦИИ (С исправлениями ошибок tuple) ---
 
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
             user = await cursor.fetchone()
+        
         if user is None:
             try:
                 await db.execute("INSERT INTO users (tg_id, username) VALUES (?, ?)", (tg_id, username))
@@ -54,6 +58,8 @@ async def get_user(tg_id, username):
             except sqlite3.IntegrityError: pass
             async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
                 user = await cursor.fetchone()
+        
+        # ! ВАЖНО: Преобразуем в словарь, чтобы не было ошибки tuple indices
         return dict(user) if user else None
 
 async def update_user_balance(tg_id, amount):
@@ -64,7 +70,8 @@ async def update_user_balance(tg_id, amount):
 async def get_all_cases():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM cases") as cursor: return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute("SELECT * FROM cases") as cursor: 
+            return [dict(row) for row in await cursor.fetchall()]
 
 async def get_case_data(case_id):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -78,25 +85,28 @@ async def get_case_items(case_id=None):
         db.row_factory = sqlite3.Row
         sql = "SELECT * FROM items" if case_id is None else "SELECT * FROM items WHERE case_id = ?"
         params = () if case_id is None else (case_id,)
-        async with db.execute(sql, params) as cursor: return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute(sql, params) as cursor: 
+            return [dict(row) for row in await cursor.fetchall()]
 
-# НОВАЯ: Получить ВСЕ предметы для выбора в апгрейде
 async def get_all_items_sorted():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
+        # Сортируем по цене, чтобы в апгрейде было удобно
         async with db.execute("SELECT * FROM items ORDER BY price ASC") as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
+        # Получаем ID пользователя (числовой PK)
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             user_row = await cursor.fetchone()
             user_pk_id = user_row[0] 
+
         insert_data = [(user_pk_id, item['id']) for item in items_list]
         await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
         await db.commit()
 
-async def add_item_to_inventory(tg_user_id, item): # Для одиночного добавления (апгрейд)
+async def add_item_to_inventory(tg_user_id, item):
     await add_items_to_inventory_batch(tg_user_id, [item])
 
 async def get_inventory(user_id_tg):
@@ -105,7 +115,9 @@ async def get_inventory(user_id_tg):
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (user_id_tg,)) as cursor:
             u = await cursor.fetchone()
             if not u: return []
-            user_pk = u['id']
+            user_pk = u['id'] # Берем ID правильно
+
+        # JOIN запрос для получения полных данных о предметах
         sql = "SELECT inv.id as inv_id, i.id as item_id, i.name, i.rarity, i.image_url, i.price FROM inventory AS inv JOIN items AS i ON inv.item_id = i.id WHERE inv.user_id = ?"
         async with db.execute(sql, (user_pk,)) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
@@ -116,10 +128,12 @@ async def sell_item_db(tg_user_id, inv_id, price):
             user_row = await cursor.fetchone()
             if not user_row: return False 
             user_pk_id = user_row[0]
+
         cursor = await db.execute("DELETE FROM inventory WHERE id = ? AND user_id = ?", (inv_id, user_pk_id))
         if cursor.rowcount == 0:
             await db.commit()
             return False 
+            
         await db.execute("UPDATE users SET balance = balance + ? WHERE tg_id = ?", (price, tg_user_id))
         await db.commit()
         return True
@@ -138,19 +152,14 @@ async def get_leaderboard():
         async with db.execute("SELECT username, balance FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10") as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
-# Заглушки для админа
+# Функции для админа
 async def admin_get_all_users():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM users WHERE tg_id != 0") as cursor: return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute("SELECT * FROM users WHERE tg_id != 0") as cursor:
+            return [dict(row) for row in await cursor.fetchall()]
 
 async def admin_add_new_item(item):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", (item['name'], item['rarity'], item['price'], item['image_url'], item['sound_url'], item['case_id']))
-        await db.commit()
-
+    pass # Заглушка
 async def admin_update_item_field(item_id, field, value):
-    async with aiosqlite.connect(DB_NAME) as db:
-        query = f"UPDATE items SET {field} = ? WHERE id = ?"
-        await db.execute(query, (value, item_id))
-        await db.commit()
+    pass # Заглушка
