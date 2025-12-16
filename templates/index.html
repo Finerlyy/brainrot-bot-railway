@@ -3,318 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Upgrade Battle</title>
+    <title>Tung Tung App</title>
     <style>
-        /* === ОСНОВНОЙ СТИЛЬ === */
+        /* === ГЛОБАЛЬНЫЕ СТИЛИ (ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ) === */
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: #1e1e1e;
+            --accent: #ffcc00;
+            --text-main: #ffffff;
+            --text-sec: #888888;
+        }
+
         body {
-            background-color: #0f0f0f; /* Очень темный фон */
-            color: white;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* === БАЛАНС (Вверху) === */
-        .header-balance {
-            margin-top: 15px;
-            background: #1e1e1e;
-            padding: 8px 16px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            font-size: 16px;
-            font-weight: bold;
+        /* === ШАПКА (БАЛАНС) - ВИДНА ВСЕГДА === */
+        header {
+            background: var(--card-bg);
+            padding: 15px 20px;
             display: flex;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
             z-index: 100;
         }
-        .star-icon { color: #ffcc00; }
 
-        /* === ГЛАВНЫЙ КОНТЕЙНЕР (ЦЕНТРИРОВАНИЕ) === */
+        .user-info { font-weight: bold; font-size: 14px; }
+        
+        .balance-box {
+            background: #2a2a2a;
+            padding: 5px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            color: var(--accent);
+            border: 1px solid #333;
+        }
+
+        /* === ЭКРАНЫ (СТРАНИЦЫ) === */
+        .screen {
+            flex: 1;
+            display: none; /* Скрываем все экраны по умолчанию */
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .screen.active {
+            display: flex; /* Показываем активный экран */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === СТИЛИ ГЛАВНОГО МЕНЮ === */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .menu-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #333;
+            transition: transform 0.1s;
+        }
+        .menu-card:active { transform: scale(0.95); }
+        
+        .menu-icon { font-size: 30px; margin-bottom: 10px; display: block; }
+        .menu-title { font-weight: bold; font-size: 14px; }
+
+        .banner {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(45deg, #ffcc00, #ff5500);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 24px;
+            color: #000;
+            text-transform: uppercase;
+        }
+
+        /* === СТИЛИ ИГРЫ UPGRADE (ТВОЯ РУЛЕТКА) === */
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             width: 100%;
-            max-width: 400px; /* Ограничение ширины для мобилок */
-            padding: 20px;
-            box-sizing: border-box;
-            flex-grow: 1; /* Растягиваем на высоту */
+            max-width: 400px;
+            margin: 0 auto;
         }
 
-        /* === КАРТОЧКИ (ПРЕДМЕТЫ) === */
-        .card {
+        /* Карточки предметов */
+        .item-card {
             background: #1a1a1a;
             width: 100%;
             padding: 15px;
             border-radius: 16px;
             text-align: center;
-            border: 1px solid #2a2a2a;
-            margin-bottom: 20px;
+            border: 1px solid #333;
+            margin-bottom: 15px;
             position: relative;
         }
+        .card-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+        .item-img { width: 90px; height: 60px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.1)); }
+        .price-badge { background: #252525; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 
-        .card-title {
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .item-image {
-            width: 100px;
-            height: 70px;
-            object-fit: contain;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
-        }
-
-        .price-badge {
-            display: inline-block;
-            background: #252525;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        /* === РУЛЕТКА (СЛОИ) === */
+        /* Рулетка */
         .roulette-wrapper {
             position: relative;
-            width: 260px;
-            height: 260px;
-            margin: 10px 0 30px 0; /* Отступы сверху и снизу */
+            width: 240px;
+            height: 240px;
+            margin: 10px 0;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* СЛОЙ 1: Крутящееся кольцо (СЗАДИ) */
         .spinning-ring {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             border-radius: 50%;
-            /* Градиент шанса */
             background: conic-gradient(#ffcc00 0% 32.29%, #2a2a2a 32.29% 100%);
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            /* Важно: transition для плавного вращения */
             transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1);
-            z-index: 1; 
+            z-index: 1;
         }
+        .spinning-ring.win { box-shadow: 0 0 40px #00ff00; }
+        .spinning-ring.lose { box-shadow: 0 0 40px #ff0000; }
 
-        /* Неоновая подсветка кольца при результате */
-        .spinning-ring.glow-win { box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
-        .spinning-ring.glow-lose { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
-
-        /* СЛОЙ 2: Статичный центр (ПОВЕРХ КОЛЬЦА) */
         .static-center {
             position: absolute;
-            width: 230px; /* Чуть меньше кольца */
-            height: 230px;
-            background: #121212;
+            width: 210px; height: 210px;
+            background: var(--bg-color);
             border-radius: 50%;
-            z-index: 2; /* Выше кольца */
+            z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
 
-        /* Логотип Тун Туна */
-        .logo-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #333;
-            margin-bottom: 5px;
-        }
+        .logo-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 5px; }
+        .chance-big { font-size: 24px; font-weight: 800; color: var(--accent); }
+        
+        .arrow-marker { position: absolute; top: -10px; z-index: 5; font-size: 20px; color: white; }
 
-        .chance-text {
-            font-size: 28px;
-            font-weight: 800;
-            color: #ffcc00;
-        }
-        .chance-label {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-        }
-
-        /* СЛОЙ 3: Текст результата (ПОВЕРХ ВСЕГО) */
         .result-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            font-size: 36px;
-            font-weight: 900;
-            text-transform: uppercase;
-            z-index: 10;
-            opacity: 0;
-            transform: scale(0.5);
-            transition: all 0.3s ease;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
-            pointer-events: none;
+            position: absolute; width: 100%; text-align: center;
+            font-size: 32px; font-weight: 900; text-transform: uppercase;
+            z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            text-shadow: 0 0 10px black;
         }
+        .result-text.show { opacity: 1; }
+        .res-win { color: #00ff00; }
+        .res-lose { color: #ff0000; }
 
-        .result-text.show {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .res-win { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
-        .res-lose { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
-
-        /* СЛОЙ 4: Стрелка (МАРКЕР) */
-        .arrow-marker {
-            position: absolute;
-            top: -12px;
-            z-index: 5;
-            font-size: 24px;
-            color: white;
-            filter: drop-shadow(0 2px 2px black);
-        }
-
-        /* === КНОПКА === */
         .upgrade-btn {
             background: linear-gradient(90deg, #ffcc00, #ff9900);
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 900;
-            color: black;
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2);
-            transition: transform 0.1s;
+            border: none; width: 100%; padding: 14px;
+            border-radius: 12px; font-size: 16px; font-weight: 900;
+            color: black; text-transform: uppercase; cursor: pointer;
+            margin-top: 10px;
         }
-        .upgrade-btn:active { transform: scale(0.98); }
-        .upgrade-btn:disabled { filter: grayscale(1); opacity: 0.7; }
+        .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); }
+
+        /* Кнопка "Назад" */
+        .back-btn {
+            background: transparent; border: none; color: #666;
+            font-size: 14px; margin-bottom: 10px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .back-btn:hover { color: white; }
 
     </style>
 </head>
 <body>
 
-    <div class="header-balance">
-        Баланс: <span id="balanceVal">47 362</span> <span class="star-icon">★</span>
-    </div>
+    <header>
+        <div class="user-info">@UngaBungaUser</div>
+        <div class="balance-box">
+            <span id="globalBalance">47 362</span> <span>★</span>
+        </div>
+    </header>
 
-    <div class="game-container">
-        
-        <div class="card">
-            <div class="card-title">Твой предмет</div>
-            <img src="https://cdn-icons-png.flaticon.com/512/2553/2553644.png" alt="Weapon" class="item-image">
-            <br>
-            <span class="price-badge">1,000 P</span>
+    <div id="screen-menu" class="screen active">
+        <div class="banner">
+            Tung Tung<br>Event
         </div>
 
-        <div class="roulette-wrapper">
-            <div class="arrow-marker">▼</div>
-
-            <div class="spinning-ring" id="ring"></div>
-
-            <div class="static-center">
-                <img src="https://i.ibb.co/6rQzZ0r/tung-placeholder.jpg" 
-                     alt="Tung Tung" 
-                     class="logo-img" 
-                     id="https://imgur.com/a/VpDSFGu">
-                
-                <div class="chance-text">32.29%</div>
-                <div class="chance-label">шанс успеха</div>
+        <h3>Игры</h3>
+        <div class="menu-grid">
+            <div class="menu-card" onclick="switchScreen('screen-upgrade')">
+                <span class="menu-icon">🔫</span>
+                <span class="menu-title">UPGRADE</span>
             </div>
 
-            <div id="resultLabel" class="result-text"></div>
+            <div class="menu-card">
+                <span class="menu-icon">📦</span>
+                <span class="menu-title">CASES</span>
+            </div>
+            
+            <div class="menu-card">
+                <span class="menu-icon">🎰</span>
+                <span class="menu-title">COINFLIP</span>
+            </div>
+
+            <div class="menu-card">
+                <span class="menu-icon">👤</span>
+                <span class="menu-title">ПРОФИЛЬ</span>
+            </div>
         </div>
+    </div>
 
-        <button class="upgrade-btn" onclick="playGame()" id="playBtn">UPGRADE</button>
+    <div id="screen-upgrade" class="screen">
+        
+        <button class="back-btn" onclick="switchScreen('screen-menu')">← Назад в меню</button>
 
-        <div class="card" style="margin-top: 20px;">
-            <div class="card-title">Цель</div>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Anonymous_emblem.svg/1200px-Anonymous_emblem.svg.png" 
-                 alt="Target" 
-                 class="item-image">
-            <br>
-            <span class="price-badge">44,165.5 P</span>
+        <div class="game-container">
+            
+            <div class="item-card">
+                <div class="card-label">Твой предмет</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2553/2553644.png" class="item-img">
+                <div class="price-badge">1,000 P</div>
+            </div>
+
+            <div class="roulette-wrapper">
+                <div class="arrow-marker">▼</div>
+                
+                <div class="spinning-ring" id="ring"></div>
+                
+                <div class="static-center">
+                    <img src="https://i.ibb.co/6rQzZ0r/tung-placeholder.jpg" class="logo-img" id="https://imgur.com/a/VpDSFGu">
+                    <div class="chance-big">32.29%</div>
+                </div>
+
+                <div id="resultText" class="result-text"></div>
+            </div>
+
+            <button class="upgrade-btn" id="playBtn" onclick="runGame()">UPGRADE</button>
+
+            <div class="item-card" style="margin-top: 20px">
+                <div class="card-label">Цель</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Anonymous_emblem.svg/1200px-Anonymous_emblem.svg.png" class="item-img">
+                <div class="price-badge">44,165 P</div>
+            </div>
+
         </div>
-
     </div>
 
     <script>
-        // Настройки
+        // === ЛОГИКА НАВИГАЦИИ ===
+        function switchScreen(screenId) {
+            // 1. Скрываем все экраны
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            // 2. Показываем нужный
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // === ЛОГИКА ИГРЫ ===
         const winChance = 32.29; 
         const ring = document.getElementById('ring');
-        const resultLabel = document.getElementById('resultLabel');
+        const resultText = document.getElementById('resultText');
         const playBtn = document.getElementById('playBtn');
+        const balanceDisplay = document.getElementById('globalBalance');
 
-        // Рисуем градиент (желтый сектор = шанс)
+        // Рисуем сектор
         ring.style.background = `conic-gradient(#ffcc00 0% ${winChance}%, #2a2a2a ${winChance}% 100%)`;
 
-        function playGame() {
-            // 1. Блокируем кнопку
+        function runGame() {
             playBtn.disabled = true;
-
-            // 2. Сброс
-            resultLabel.className = 'result-text'; // скрываем текст
-            ring.classList.remove('glow-win', 'glow-lose');
+            resultText.className = 'result-text'; // сброс классов
+            ring.classList.remove('win', 'lose');
             ring.style.transition = 'none';
             ring.style.transform = 'rotate(0deg)';
 
-            // 3. Результат (Симуляция)
+            // СИМУЛЯЦИЯ (Потом заменишь на fetch запрос к серверу)
             const isWin = Math.random() * 100 < winChance;
-            console.log("Win:", isWin);
-
-            // 4. Расчет угла остановки
-            // Нам нужно, чтобы сектор "победы" оказался под стрелкой (сверху, 0deg)
-            let stopAngle;
-            if (isWin) {
-                // Попадаем в желтую зону (0..32.29)
-                stopAngle = Math.random() * winChance;
-            } else {
-                // Попадаем в серую зону (32.29..100)
-                stopAngle = winChance + Math.random() * (100 - winChance);
-            }
-
-            // Перевод % в градусы (360 * x / 100)
-            const stopDeg = (stopAngle / 100) * 360;
             
-            // Вращаем на 5 оборотов (1800) МИНУС угол, чтобы нужная точка встала вверх
-            const rotation = (360 * 5) - stopDeg;
+            // Расчет угла
+            let stopAngle = isWin ? Math.random() * winChance : winChance + Math.random() * (100 - winChance);
+            const stopDeg = (stopAngle / 100) * 360;
+            const finalRotate = (360 * 5) - stopDeg;
 
-            // 5. Запуск анимации
+            // Анимация
             setTimeout(() => {
-                ring.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.2, 1)';
-                ring.style.transform = `rotate(${rotation}deg)`;
+                ring.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.2, 1)';
+                ring.style.transform = `rotate(${finalRotate}deg)`;
             }, 50);
 
-            // 6. Показ результата через 4 сек
+            // Итог
             setTimeout(() => {
-                resultLabel.classList.add('show');
-                
+                resultText.classList.add('show');
                 if (isWin) {
-                    resultLabel.innerText = "УСПЕХ";
-                    resultLabel.classList.add('res-win');
-                    ring.classList.add('glow-win');
+                    resultText.innerText = "УСПЕХ";
+                    resultText.classList.add('res-win');
+                    ring.classList.add('win');
+                    updateBalance(1000); // Пример начисления
                 } else {
-                    resultLabel.innerText = "НЕУДАЧА";
-                    resultLabel.classList.add('res-lose');
-                    ring.classList.add('glow-lose');
+                    resultText.innerText = "НЕУДАЧА";
+                    resultText.classList.add('res-lose');
+                    ring.classList.add('lose');
+                    updateBalance(-500); // Пример списания
                 }
-                
                 playBtn.disabled = false;
             }, 4050);
         }
+
+        // Функция обновления баланса (визуально)
+        function updateBalance(amount) {
+            let current = parseInt(balanceDisplay.innerText.replace(/\s/g, ''));
+            let newVal = current + amount;
+            balanceDisplay.innerText = newVal.toLocaleString();
+        }
+
     </script>
 </body>
 </html>
