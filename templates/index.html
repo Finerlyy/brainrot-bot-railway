@@ -402,7 +402,7 @@
                 el.uArrow.style.transform = `rotate(${randomDeg}deg)`;
                 
                 try{
-                    # Передаем item_id типа предмета, а не конкретный inv_id
+                    // Передаем item_id типа предмета, а не конкретный inv_id
                     const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:upgMy.item_id, target_id:upgTarget.id})});
                     const d=await res.json();
                     setTimeout(()=>{
