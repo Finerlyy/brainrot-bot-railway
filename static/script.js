@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Кейсы
             el.cases.innerHTML=''; d.cases.forEach(c=>{
                 const div=document.createElement('div'); div.className='case-card';
-                div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${c.price}</div>`;
+                div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price"⭐️ ${c.price}</div>`;
                 div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
             });
 
