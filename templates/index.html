@@ -10,6 +10,10 @@
         :root { --bg: #18181b; --card: #27272a; --accent: #FFD700; --star-gradient: linear-gradient(45deg, #FFD700, #FFA500); --nav-bg: #202023; }
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; }
+        
+        /* Исправленный класс для скрытия элементов */
+        .hidden { display: none !important; opacity: 0; pointer-events: none; }
+
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(39, 39, 42, 0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
@@ -31,8 +35,10 @@
         .case-price { color: #aaa; font-size: 0.85rem; display: flex; justify-content: center; align-items: center; gap: 4px; }
         .sell-btn { width: 100%; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; font-size: 0.85rem; margin-top: 8px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px; }
         .sell-btn span { color: var(--accent); font-weight: bold; }
+        
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.3s; }
-        .modal.hidden { opacity: 0; pointer-events: none; }
+        /* ВОТ ТУТ БЫЛА ОШИБКА, ТЕПЕРЬ ИСПРАВЛЕНО ЧЕРЕЗ ГЛОБАЛЬНЫЙ КЛАСС .hidden */
+        
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; }
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .modal-price { font-size: 1.2rem; margin-bottom: 20px; color: #fff; display: flex; justify-content: center; align-items: center; gap: 5px; }
