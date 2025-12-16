@@ -3,342 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tung Tung App</title>
+    <title>Upgrade Case Battle</title>
     <style>
-        /* === ГЛОБАЛЬНЫЕ СТИЛИ (ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ) === */
-        :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #1e1e1e;
-            --accent: #ffcc00;
-            --text-main: #ffffff;
-            --text-sec: #888888;
-        }
-
+        /* === ОБЩИЕ СТИЛИ === */
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f0f0f; /* Темный фон */
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        /* === ШАПКА (БАЛАНС) - ВИДНА ВСЕГДА === */
-        header {
-            background: var(--card-bg);
-            padding: 15px 20px;
+        /* === ШАПКА С БАЛАНСОМ === */
+        .header {
+            width: 100%;
+            padding: 15px 0;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-            z-index: 100;
+            justify-content: center; /* Центрируем баланс */
+            background: #161616;
+            border-bottom: 1px solid #2a2a2a;
+            margin-bottom: 30px;
         }
 
-        .user-info { font-weight: bold; font-size: 14px; }
-        
-        .balance-box {
-            background: #2a2a2a;
-            padding: 5px 12px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .balance-container {
+            background: #252525;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            font-size: 18px;
             font-weight: bold;
-            color: var(--accent);
-            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .balance-val { color: #fff; }
+        .star-icon { color: #ffcc00; }
 
-        /* === ЭКРАНЫ (СТРАНИЦЫ) === */
-        .screen {
-            flex: 1;
-            display: none; /* Скрываем все экраны по умолчанию */
-            flex-direction: column;
-            overflow-y: auto;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .screen.active {
-            display: flex; /* Показываем активный экран */
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* === СТИЛИ ГЛАВНОГО МЕНЮ === */
-        .menu-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .menu-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid #333;
-            transition: transform 0.1s;
-        }
-        .menu-card:active { transform: scale(0.95); }
-        
-        .menu-icon { font-size: 30px; margin-bottom: 10px; display: block; }
-        .menu-title { font-weight: bold; font-size: 14px; }
-
-        .banner {
-            width: 100%;
-            height: 120px;
-            background: linear-gradient(45deg, #ffcc00, #ff5500);
-            border-radius: 15px;
-            margin-bottom: 20px;
+        /* === КОНТЕЙНЕР ИГРЫ === */
+        .game-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 900;
-            font-size: 24px;
-            color: #000;
-            text-transform: uppercase;
-        }
-
-        /* === СТИЛИ ИГРЫ UPGRADE (ТВОЯ РУЛЕТКА) === */
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            gap: 40px; /* Отступ между карточками и рулеткой */
+            padding: 20px;
+            max-width: 900px;
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            box-sizing: border-box;
         }
 
-        /* Карточки предметов */
+        /* === КАРТОЧКИ ПРЕДМЕТОВ === */
         .item-card {
-            background: #1a1a1a;
-            width: 100%;
-            padding: 15px;
-            border-radius: 16px;
+            background: #1b1b1b;
+            width: 160px;
+            padding: 20px;
+            border-radius: 15px;
             text-align: center;
             border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: #777;
+            text-transform: uppercase;
+            font-weight: bold;
             margin-bottom: 15px;
+        }
+
+        .item-img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.05));
+        }
+
+        .price-badge {
+            background: #2a2a2a;
+            color: #eee;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* === ЦЕНТРАЛЬНАЯ РУЛЕТКА === */
+        .roulette-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             position: relative;
         }
-        .card-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
-        .item-img { width: 90px; height: 60px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.1)); }
-        .price-badge { background: #252525; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 
-        /* Рулетка */
-        .roulette-wrapper {
+        .roulette-container {
             position: relative;
-            width: 240px;
-            height: 240px;
-            margin: 10px 0;
+            width: 280px;
+            height: 280px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-bottom: 25px;
         }
 
+        /* Стрелка */
+        .arrow-marker {
+            position: absolute;
+            top: -15px;
+            z-index: 10; /* Поверх всего */
+            font-size: 30px;
+            color: white;
+            filter: drop-shadow(0 2px 2px #000);
+            transform: scaleY(0.7);
+        }
+
+        /* Крутящееся кольцо (Задний план) */
         .spinning-ring {
             position: absolute;
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
+            /* Градиент задается JS */
             background: conic-gradient(#ffcc00 0% 32.29%, #2a2a2a 32.29% 100%);
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1);
-            z-index: 1;
+            z-index: 1; 
         }
-        .spinning-ring.win { box-shadow: 0 0 40px #00ff00; }
-        .spinning-ring.lose { box-shadow: 0 0 40px #ff0000; }
 
+        /* Подсветка при результате */
+        .win-glow { box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
+        .lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
+
+        /* Статичный центр (Передний план, не крутится) */
         .static-center {
             position: absolute;
-            width: 210px; height: 210px;
-            background: var(--bg-color);
+            width: 250px;
+            height: 250px;
+            background: #141414;
             border-radius: 50%;
-            z-index: 2;
+            z-index: 2; /* Поверх кольца */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            overflow: hidden; /* Чтобы оверлей не вылезал */
         }
 
-        .logo-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 5px; }
-        .chance-big { font-size: 24px; font-weight: 800; color: var(--accent); }
-        
-        .arrow-marker { position: absolute; top: -10px; z-index: 5; font-size: 20px; color: white; }
+        /* Логотип */
+        .center-logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #333;
+            margin-bottom: 10px;
+        }
+
+        .chance-value { font-size: 28px; font-weight: 800; color: #ffcc00; }
+        .chance-label { font-size: 12px; color: #666; text-transform: uppercase; }
+
+        /* Оверлей результата (текст) */
+        .result-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); /* Затемнение фона */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 20;
+        }
+        .result-overlay.show { opacity: 1; }
 
         .result-text {
-            position: absolute; width: 100%; text-align: center;
-            font-size: 32px; font-weight: 900; text-transform: uppercase;
-            z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            text-shadow: 0 0 10px black;
+            font-size: 36px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-        .result-text.show { opacity: 1; }
-        .res-win { color: #00ff00; }
-        .res-lose { color: #ff0000; }
+        .text-win { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
+        .text-lose { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
 
+        /* Кнопка */
         .upgrade-btn {
             background: linear-gradient(90deg, #ffcc00, #ff9900);
-            border: none; width: 100%; padding: 14px;
-            border-radius: 12px; font-size: 16px; font-weight: 900;
-            color: black; text-transform: uppercase; cursor: pointer;
-            margin-top: 10px;
+            border: none;
+            padding: 15px 60px;
+            border-radius: 8px;
+            color: #000;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 204, 0, 0.2);
+            transition: transform 0.1s;
         }
-        .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); }
+        .upgrade-btn:active { transform: scale(0.95); }
+        .upgrade-btn:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
 
-        /* Кнопка "Назад" */
-        .back-btn {
-            background: transparent; border: none; color: #666;
-            font-size: 14px; margin-bottom: 10px; cursor: pointer;
-            display: flex; align-items: center; gap: 5px;
+        /* АДАПТИВНОСТЬ (Мобильные) */
+        @media (max-width: 800px) {
+            .game-wrapper {
+                flex-direction: column; /* Элементы друг под друга */
+                gap: 30px;
+            }
+            .roulette-section { order: 2; /* Рулетка посередине */ }
+            .item-card:first-child { order: 1; } /* Твой предмет сверху */
+            .item-card:last-child { order: 3; } /* Цель снизу */
         }
-        .back-btn:hover { color: white; }
-
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="user-info">@UngaBungaUser</div>
-        <div class="balance-box">
-            <span id="globalBalance">47 362</span> <span>★</span>
+    <header class="header">
+        <div class="balance-container">
+            <span>Баланс:</span>
+            <span id="balanceDisplay" class="balance-val">Loading...</span>
+            <span class="star-icon">★</span>
         </div>
     </header>
 
-    <div id="screen-menu" class="screen active">
-        <div class="banner">
-            Tung Tung<br>Event
-        </div>
-
-        <h3>Игры</h3>
-        <div class="menu-grid">
-            <div class="menu-card" onclick="switchScreen('screen-upgrade')">
-                <span class="menu-icon">🔫</span>
-                <span class="menu-title">UPGRADE</span>
-            </div>
-
-            <div class="menu-card">
-                <span class="menu-icon">📦</span>
-                <span class="menu-title">CASES</span>
-            </div>
-            
-            <div class="menu-card">
-                <span class="menu-icon">🎰</span>
-                <span class="menu-title">COINFLIP</span>
-            </div>
-
-            <div class="menu-card">
-                <span class="menu-icon">👤</span>
-                <span class="menu-title">ПРОФИЛЬ</span>
-            </div>
-        </div>
-    </div>
-
-    <div id="screen-upgrade" class="screen">
+    <div class="game-wrapper">
         
-        <button class="back-btn" onclick="switchScreen('screen-menu')">← Назад в меню</button>
+        <div class="item-card">
+            <div class="card-label">Твой предмет</div>
+            <img src="https://cdn-icons-png.flaticon.com/512/2553/2553644.png" alt="My Item" class="item-img">
+            <div class="price-badge">1,000 P</div>
+        </div>
 
-        <div class="game-container">
-            
-            <div class="item-card">
-                <div class="card-label">Твой предмет</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/2553/2553644.png" class="item-img">
-                <div class="price-badge">1,000 P</div>
-            </div>
-
-            <div class="roulette-wrapper">
+        <div class="roulette-section">
+            <div class="roulette-container">
                 <div class="arrow-marker">▼</div>
                 
-                <div class="spinning-ring" id="ring"></div>
+                <div class="spinning-ring" id="spinRing"></div>
                 
                 <div class="static-center">
-                    <img src="https://i.ibb.co/6rQzZ0r/tung-placeholder.jpg" class="logo-img" id="https://imgur.com/a/VpDSFGu">
-                    <div class="chance-big">32.29%</div>
+                    <img src="https://i.imgur.com/VpDSFGu.png" alt="Tung Tung" class="center-logo">
+                    
+                    <div class="chance-value">32.29%</div>
+                    <div class="chance-label">шанс успеха</div>
+
+                    <div id="resultLayer" class="result-overlay">
+                        <div id="resultMsg" class="result-text"></div>
+                    </div>
                 </div>
-
-                <div id="resultText" class="result-text"></div>
             </div>
 
-            <button class="upgrade-btn" id="playBtn" onclick="runGame()">UPGRADE</button>
-
-            <div class="item-card" style="margin-top: 20px">
-                <div class="card-label">Цель</div>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Anonymous_emblem.svg/1200px-Anonymous_emblem.svg.png" class="item-img">
-                <div class="price-badge">44,165 P</div>
-            </div>
-
+            <button id="startBtn" class="upgrade-btn" onclick="startUpgrade()">UPGRADE</button>
         </div>
+
+        <div class="item-card">
+            <div class="card-label">Цель</div>
+            <img src="https://i.imgur.com/kQQXAj8.jpeg" alt="Target" class="item-img" onerror="this.src='https://via.placeholder.com/150?text=Error'">
+            <div class="price-badge">44,165.5 P</div>
+        </div>
+
     </div>
 
     <script>
-        // === ЛОГИКА НАВИГАЦИИ ===
-        function switchScreen(screenId) {
-            // 1. Скрываем все экраны
-            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-            // 2. Показываем нужный
-            document.getElementById(screenId).classList.add('active');
-        }
+        // === НАСТРОЙКИ ===
+        const winChance = 32.29; // Шанс выигрыша
+        const spinTime = 4000;   // Время вращения (мс)
 
-        // === ЛОГИКА ИГРЫ ===
-        const winChance = 32.29; 
-        const ring = document.getElementById('ring');
-        const resultText = document.getElementById('resultText');
-        const playBtn = document.getElementById('playBtn');
-        const balanceDisplay = document.getElementById('globalBalance');
+        // Элементы
+        const ring = document.getElementById('spinRing');
+        const resultLayer = document.getElementById('resultLayer');
+        const resultMsg = document.getElementById('resultMsg');
+        const btn = document.getElementById('startBtn');
+        const balEl = document.getElementById('balanceDisplay');
 
-        // Рисуем сектор
+        // Инициализация (рисуем желтый сектор шанса)
         ring.style.background = `conic-gradient(#ffcc00 0% ${winChance}%, #2a2a2a ${winChance}% 100%)`;
 
-        function runGame() {
-            playBtn.disabled = true;
-            resultText.className = 'result-text'; // сброс классов
-            ring.classList.remove('win', 'lose');
+        // === 1. ФУНКЦИЯ ИГРЫ ===
+        async function startUpgrade() {
+            // Блокируем кнопку
+            btn.disabled = true;
+
+            // Сброс (убираем старые результаты)
+            resultLayer.classList.remove('show');
+            ring.classList.remove('win-glow', 'lose-glow');
             ring.style.transition = 'none';
             ring.style.transform = 'rotate(0deg)';
 
-            // СИМУЛЯЦИЯ (Потом заменишь на fetch запрос к серверу)
-            const isWin = Math.random() * 100 < winChance;
-            
-            // Расчет угла
-            let stopAngle = isWin ? Math.random() * winChance : winChance + Math.random() * (100 - winChance);
-            const stopDeg = (stopAngle / 100) * 360;
-            const finalRotate = (360 * 5) - stopDeg;
+            // --- ЛОГИКА (Здесь имитация, потом подключишь сервер) ---
+            // Генерируем случайное число 0..100
+            const isWin = (Math.random() * 100) < winChance;
+            console.log("Результат:", isWin ? "ПОБЕДА" : "ПРОИГРЫШ");
+            // -------------------------------------------------------
 
-            // Анимация
+            // Рассчитываем, где должно остановиться колесо
+            let stopAngle;
+            if (isWin) {
+                // Если победа: выбираем точку ВНУТРИ желтого сектора
+                stopAngle = Math.random() * winChance;
+            } else {
+                // Если поражение: выбираем точку В СЕРОМ секторе
+                stopAngle = winChance + (Math.random() * (100 - winChance));
+            }
+
+            // Математика вращения:
+            // Чтобы сектор встал под стрелку (которая сверху, на 0 градусов),
+            // нужно повернуть круг на: (5 оборотов) - (угол точки)
+            const deg = (stopAngle / 100) * 360;
+            const finalRotation = (360 * 5) - deg;
+
+            // Запускаем вращение с небольшой задержкой (чтобы CSS увидел сброс)
             setTimeout(() => {
-                ring.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.2, 1)';
-                ring.style.transform = `rotate(${finalRotate}deg)`;
+                ring.style.transition = `transform ${spinTime}ms cubic-bezier(0.15, 0, 0.2, 1)`;
+                ring.style.transform = `rotate(${finalRotation}deg)`;
             }, 50);
 
-            // Итог
+            // Когда вращение закончилось
             setTimeout(() => {
-                resultText.classList.add('show');
+                resultLayer.classList.add('show');
+
                 if (isWin) {
-                    resultText.innerText = "УСПЕХ";
-                    resultText.classList.add('res-win');
-                    ring.classList.add('win');
-                    updateBalance(1000); // Пример начисления
+                    resultMsg.innerText = "УСПЕХ";
+                    resultMsg.className = "result-text text-win";
+                    ring.classList.add('win-glow');
+                    // Тут можно визуально начислить предмет
                 } else {
-                    resultText.innerText = "НЕУДАЧА";
-                    resultText.classList.add('res-lose');
-                    ring.classList.add('lose');
-                    updateBalance(-500); // Пример списания
+                    resultMsg.innerText = "НЕУДАЧА";
+                    resultMsg.className = "result-text text-lose";
+                    ring.classList.add('lose-glow');
+                    // Тут предмет пропадает
                 }
-                playBtn.disabled = false;
-            }, 4050);
+                
+                // Разблокируем кнопку
+                btn.disabled = false;
+                
+                // Обновляем баланс (имитация изменения)
+                updateBalanceSimulated(isWin ? 0 : -100); 
+
+            }, spinTime + 50);
         }
 
-        // Функция обновления баланса (визуально)
-        function updateBalance(amount) {
-            let current = parseInt(balanceDisplay.innerText.replace(/\s/g, ''));
-            let newVal = current + amount;
-            balanceDisplay.innerText = newVal.toLocaleString();
+        // === 2. ФУНКЦИЯ БАЛАНСА (POLLING) ===
+        // Эта функция сама обновляет баланс каждые 2 секунды
+        async function fetchBalance() {
+            try {
+                // ТУТ БУДЕТ ЗАПРОС К СЕРВЕРУ:
+                // const res = await fetch('/api/get-balance');
+                // const data = await res.json();
+                // balEl.innerText = data.balance;
+                
+                // ПОКА ЗАГЛУШКА (чтобы не было ошибок):
+                if(balEl.innerText === "Loading...") {
+                     balEl.innerText = "47 362";
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
+        
+        // Вспомогательная функция для обновления цифр без сервера (визуально)
+        function updateBalanceSimulated(change) {
+            let current = parseInt(balEl.innerText.replace(/\s/g, ''));
+            if(!isNaN(current)) {
+                balEl.innerText = (current + change).toLocaleString();
+            }
+        }
+
+        // Запуск проверки баланса
+        setInterval(fetchBalance, 2000);
+        fetchBalance(); // Первый вызов сразу
 
     </script>
 </body>
