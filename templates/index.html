@@ -7,13 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* --- СТИЛИ (CSS) --- */
-        :root { --bg: #18181b; --card: #27272a; --accent: #FFD700; --star-gradient: linear-gradient(45deg, #FFD700, #FFA500); --nav-bg: #202023; }
+        :root { --bg: #18181b; --card: #27272a; --accent: #FFD700; --star-gradient: linear-gradient(45deg, #FFD700, #FFA500); --nav-bg: #202023; --lose: #ff3333; --win: #33ff33;}
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 80px; }
-        
-        /* Исправленный класс для скрытия элементов */
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
-
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(39, 39, 42, 0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
@@ -36,9 +33,11 @@
         .sell-btn { width: 100%; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; font-size: 0.85rem; margin-top: 8px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px; }
         .sell-btn span { color: var(--accent); font-weight: bold; }
         
+        /* НОВЫЕ СТИЛИ ДЛЯ ИНВЕНТАРЯ (Счетчик) */
+        .item-card { position: relative; }
+        .item-quantity { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #fff; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); }
+
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.3s; }
-        /* ВОТ ТУТ БЫЛА ОШИБКА, ТЕПЕРЬ ИСПРАВЛЕНО ЧЕРЕЗ ГЛОБАЛЬНЫЙ КЛАСС .hidden */
-        
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; }
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .modal-price { font-size: 1.2rem; margin-bottom: 20px; color: #fff; display: flex; justify-content: center; align-items: center; gap: 5px; }
@@ -64,6 +63,7 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
         .slider-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); margin-top: 10px; display: block; }
 
+        /* --- ОБНОВЛЕННЫЕ СТИЛИ АПГРЕЙДА --- */
         .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
         .upgrade-slots { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 400px; align-items: center; }
         .u-slot { width: 45%; background: rgba(0,0,0,0.3); border: 2px dashed #444; border-radius: 15px; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; position: relative; padding: 10px; }
@@ -72,19 +72,30 @@
         .u-slot p { font-size: 0.8rem; color: #888; text-align: center; }
         .u-arrow { font-size: 1.5rem; color: #555; }
 
-        .upgrade-circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #333; display: flex; align-items: center; justify-content: center; position: relative; margin: 20px 0; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .upgrade-circle::before { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 10px solid var(--accent); border-top-color: transparent; border-right-color: transparent; transform: rotate(-45deg); transition: 1s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
-        .upgrade-circle.spinning::before { opacity: 1; animation: spinCircle 1s linear infinite; }
-        .upgrade-percent { font-size: 1.5rem; font-weight: 900; color: #fff; }
+        /* Круг со стрелкой */
+        .upgrade-circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #333; display: flex; align-items: center; justify-content: center; position: relative; margin: 20px 0; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
+        /* СТРЕЛКА ВНУТРИ КРУГА */
+        .upgrade-arrow-spinner { position: absolute; top: 0; left: 50%; width: 4px; height: 50%; background: var(--accent); transform-origin: bottom center; transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 1; border-radius: 2px; }
+        .upgrade-arrow-spinner::after { content: ''; position: absolute; top: -10px; left: -6px; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid var(--accent); }
+        
+        .upgrade-circle.spinning .upgrade-arrow-spinner { animation: spinArrow 1s linear infinite; }
+        .upgrade-circle.win { border-color: var(--win); } .upgrade-circle.lose { border-color: var(--lose); }
+        .upgrade-percent { font-size: 1.5rem; font-weight: 900; color: #fff; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+        /* Кнопки быстрого шанса */
+        .quick-chance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 400px; margin-bottom: 10px; }
+        .chance-btn { background: rgba(255,255,255,0.1); border: 1px solid #444; color: #fff; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .chance-btn:hover { background: rgba(255,215,0,0.2); border-color: var(--accent); color: var(--accent); }
 
         .item-select-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
         .item-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 50px; }
-        .select-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid transparent; }
+        .select-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid transparent; position: relative;}
         .select-card:hover { border-color: var(--accent); }
         .select-card img { width: 50px; height: 50px; object-fit: contain; }
         .select-card span { font-size: 0.7rem; display: block; color: var(--accent); }
 
         @keyframes spinCircle { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spinArrow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -102,7 +113,7 @@
         </section>
 
         <section id="tab-upgrade" class="tab-content">
-            <h2 style="text-align:center;margin-bottom:10px">APGREYD 🔮</h2>
+            <h2 style="text-align:center;margin-bottom:10px">Апгрейд 🔮</h2>
             <div class="upgrade-container">
                 <div class="upgrade-slots">
                     <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
@@ -113,7 +124,16 @@
                         <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
                     </div>
                 </div>
+                
+                <div class="quick-chance-grid">
+                    <button class="chance-btn" onclick="autoSelectTarget(50)">50%</button>
+                    <button class="chance-btn" onclick="autoSelectTarget(30)">30%</button>
+                    <button class="chance-btn" onclick="autoSelectTarget(20)">20%</button>
+                    <button class="chance-btn" onclick="autoSelectTarget(10)">10%</button>
+                </div>
+
                 <div class="upgrade-circle" id="u-circle">
+                    <div class="upgrade-arrow-spinner" id="u-arrow-spin"></div>
                     <span class="upgrade-percent" id="u-chance">0%</span>
                 </div>
                 <button id="upgrade-btn" class="main-action-btn" disabled>ПРОКАЧАТЬ</button>
@@ -122,7 +142,6 @@
         
         <section id="tab-market" class="tab-content">
             <h2 style="text-align:center;color:#666;margin-top:50px">СКОРО... 🚧</h2>
-            <p style="text-align:center;font-size:0.8rem;color:#888">Торговля между игроками в разработке</p>
         </section>
 
         <section id="tab-inventory" class="tab-content">
@@ -136,7 +155,7 @@
 
     <nav class="bottom-nav">
         <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span>Кейсы</button>
-        <button class="nav-btn" onclick="switchTab('upgrade')"><span>🔮</span>Апгрейд</button>
+        <button class="nav-btn" onclick="switchTab('upgrade')"><span>📈</span>Апгрейд</button>
         <button class="nav-btn" onclick="switchTab('market')"><span>⚖️</span>Маркет</button>
         <button class="nav-btn" onclick="switchTab('inventory')"><span>🎒</span>Инвент</button>
     </nav>
@@ -160,6 +179,21 @@
             </div>
             <button id="start-open-btn" class="main-action-btn">ОТКРЫТЬ (<span class="star-icon">⭐️</span> <span id="total-price-btn">0</span>)</button>
             <button class="close-btn" onclick="closeModal('open-modal')">Отмена</button>
+        </div>
+    </div>
+
+    <div id="sell-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="sell-item-name">Продажа</h3>
+            <img id="sell-item-img" src="" alt="" class="modal-main-img" style="width: 100px; height: 100px;">
+            <p style="color:#aaa; margin-bottom: 10px;">У вас есть: <span id="sell-owned-count" style="color:#fff; font-weight:bold;">0</span> шт.</p>
+            
+            <div class="slider-container">
+                <span class="slider-val">Продать: <span id="sell-slider-count">1</span></span>
+                <input type="range" min="1" max="1" value="1" id="sell-slider" oninput="updateSellSlider(this.value)">
+            </div>
+            <button id="confirm-sell-btn" class="main-action-btn">ПРОДАТЬ ЗА <span class="star-icon">⭐️</span> <span id="total-sell-price">0</span></button>
+            <button class="close-btn" onclick="closeModal('sell-modal')">Отмена</button>
         </div>
     </div>
 
@@ -187,6 +221,8 @@
             let allItems=[], inventory=[], allItemsSorted=[], currentBal=0;
             let selectedCase={id:0, price:0}, openCount=1;
             let upgMy=null, upgTarget=null;
+            // Переменные для продажи
+            let sellingItem=null, sellCount=1;
 
             const el={
                 bal:document.getElementById('balance'), cases:document.getElementById('cases-grid'), inv:document.getElementById('inventory-grid'), 
@@ -196,7 +232,12 @@
                 popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'),
                 selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'),
                 uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'),
-                uChance:document.getElementById('u-chance'), uBtn:document.getElementById('upgrade-btn'), uCircle:document.getElementById('u-circle')
+                uChance:document.getElementById('u-chance'), uBtn:document.getElementById('upgrade-btn'), uCircle:document.getElementById('u-circle'),
+                uArrow:document.getElementById('u-arrow-spin'), // Стрелка апгрейда
+                // Елементы продажи
+                sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'),
+                sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'),
+                sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn')
             };
 
             function upBal(n){if(n===undefined)return; if(currentBal!==n){el.bal.style.color='#fff'; setTimeout(()=>el.bal.style.color='',300);} currentBal=n; el.bal.innerText=n;}
@@ -214,16 +255,61 @@
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
 
+                    // ОБНОВЛЕННЫЙ РЕНДЕР ИНВЕНТАРЯ (С группировкой и кнопкой продажи)
                     el.inv.innerHTML=''; if(!inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
                     inventory.reverse().forEach(i=>{
-                        const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; div.id=`inv-${i.inv_id}`;
-                        div.innerHTML=`<img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="sell(${i.inv_id},${i.sell_price})">Продать: <span>⭐️ ${i.sell_price}</span></button>`;
+                        const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; div.id=`inv-item-${i.item_id}`;
+                        // Добавлен счетчик количества (xN)
+                        div.innerHTML=`<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id})">Продать: <span>⭐️ ${i.sell_price}</span></button>`;
                         el.inv.appendChild(div);
                     });
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){}
             }
 
+            // --- ФУНКЦИИ МАССОВОЙ ПРОДАЖИ ---
+            window.openSellModal=(itemId)=>{
+                sellingItem = inventory.find(i => i.item_id === itemId);
+                if(!sellingItem) return;
+                
+                el.sellName.innerText = sellingItem.name;
+                el.sellImg.src = sellingItem.image_url;
+                el.sellOwned.innerText = sellingItem.quantity;
+                
+                // Настраиваем слайдер
+                el.sellSlider.max = sellingItem.quantity;
+                el.sellSlider.value = 1;
+                updateSellSlider(1);
+                
+                el.sellModal.classList.remove('hidden');
+            }
+
+            window.updateSellSlider=(v)=>{
+                sellCount = parseInt(v);
+                el.sellSliderVal.innerText = sellCount;
+                el.sellTotalBtn.innerText = sellingItem.sell_price * sellCount;
+            }
+
+            el.confirmSellBtn.onclick = async() => {
+                if(!sellingItem) return;
+                const totalPrice = sellingItem.sell_price * sellCount;
+                const itemId = sellingItem.item_id;
+
+                el.sellModal.classList.add('hidden');
+                
+                // Визуально обновляем баланс сразу
+                upBal(currentBal + totalPrice);
+
+                try {
+                    await fetch(`${API}/sell_batch`,{
+                        method:'POST',
+                        body:JSON.stringify({user_id:userId, item_id:itemId, count:sellCount, price_per_item:sellingItem.sell_price})
+                    });
+                    load(); // Перезагружаем инвентарь
+                } catch(e) { load(); }
+            }
+
+            // --- ОТКРЫТИЕ КЕЙСОВ ---
             window.showOpenModal=()=>{
                 el.mImg.src=selectedCase.icon_url; el.mPrice.innerText=selectedCase.price;
                 el.slider.value=1; updateSlider(1); el.openModal.classList.remove('hidden');
@@ -257,12 +343,16 @@
                 load();
             }
 
+            // --- АПГРЕЙД ---
             window.openItemSelect=(side)=>{
                 el.selGrid.innerHTML=''; el.selModal.classList.remove('hidden');
-                const list = side==='left' ? inventory : allItemsSorted;
+                // Если выбираем слева - показываем только то, что есть в инвентаре
+                const list = side==='left' ? inventory.filter(i=>i.quantity>0) : allItemsSorted;
                 list.forEach(i=>{
                     const div=document.createElement('div'); div.className='select-card';
-                    div.innerHTML=`<img src="${i.image_url}"><span>${i.price} ⭐️</span>`;
+                    // Для инвентаря показываем счетчик
+                    const countBadge = (side==='left') ? `<span class="item-quantity">x${i.quantity}</span>` : '';
+                    div.innerHTML=`${countBadge}<img src="${i.image_url}"><span>${i.price} ⭐️</span>`;
                     div.onclick=()=>{ selectUpgradeItem(side, i); el.selModal.classList.add('hidden'); };
                     el.selGrid.appendChild(div);
                 });
@@ -277,6 +367,21 @@
                 calcChance();
             }
 
+            // НОВАЯ ФУНКЦИЯ: Автовыбор цели по шансу
+            window.autoSelectTarget=(desiredChance)=>{
+                if(!upgMy) return tg.showAlert("Сначала выбери свой предмет слева!");
+                
+                // Формула: target = (my * 95) / chance
+                let targetPrice = (upgMy.price * 95) / desiredChance;
+
+                // Ищем ближайший предмет по цене
+                let closestItem = allItemsSorted.reduce((prev, curr) => {
+                    return (Math.abs(curr.price - targetPrice) < Math.abs(prev.price - targetPrice) ? curr : prev);
+                });
+
+                selectUpgradeItem('right', closestItem);
+            }
+
             function calcChance(){
                 if(!upgMy || !upgTarget) { el.uChance.innerText="0%"; el.uBtn.disabled=true; return; }
                 let ch = (upgMy.price / upgTarget.price) * 100 * 0.95;
@@ -287,20 +392,33 @@
             el.uBtn.onclick=async()=>{
                 if(!upgMy || !upgTarget) return;
                 el.uBtn.disabled=true; el.uCircle.classList.add('spinning');
+                
+                // Вычисляем угол поворота для стрелки
+                let finalChance = parseFloat(el.uChance.innerText);
+                let randomDeg = Math.random() * 360 + 1800; // Крутим минимум 5 оборотов
+                
+                // Простая анимация - просто крутим, результат покажет сервер
+                el.uArrow.style.transition = "transform 2s cubic-bezier(0.2, 0.8, 0.2, 1)";
+                el.uArrow.style.transform = `rotate(${randomDeg}deg)`;
+                
                 try{
-                    const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, inv_id:upgMy.inv_id, target_id:upgTarget.id})});
+                    # Передаем item_id типа предмета, а не конкретный inv_id
+                    const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:upgMy.item_id, target_id:upgTarget.id})});
                     const d=await res.json();
                     setTimeout(()=>{
                         el.uCircle.classList.remove('spinning');
+                        // Сброс вращения стрелки
+                        setTimeout(()=>{ el.uArrow.style.transition = 'none'; el.uArrow.style.transform = 'rotate(0deg)'; }, 100);
+                        
                         if(d.status==='win'){ tg.showAlert("УСПЕХ! 🎉"); showResults([d.item]); } 
                         else { tg.showAlert("СГОРЕЛ 🔥"); load(); }
+                        
                         upgMy=null; upgTarget=null; el.uLeft.innerHTML="<p>ВЫБЕРИ<br>ПРЕДМЕТ</p>"; el.uLeft.classList.remove('selected');
                         el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); el.uChance.innerText="0%";
                     }, 2000);
                 } catch{ load(); }
             }
-
-            window.sell=async(id,p)=>{ upBal(currentBal+p); document.getElementById(`inv-${id}`)?.remove(); await fetch(`${API}/sell`,{method:'POST',body:JSON.stringify({user_id:userId,inv_id:id,price:p})}); };
+            
             document.getElementById('claim-btn').onclick=()=>{el.popup.classList.remove('active');};
             load();
         });
