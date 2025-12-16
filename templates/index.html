@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upgrade Case Battle</title>
     <style>
-        /* === ОСНОВНОЙ СТИЛЬ === */
+        /* === БАЗОВЫЕ СТИЛИ СТРАНИЦЫ === */
         body {
             background-color: #121212;
             color: white;
@@ -16,211 +16,208 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
+            overflow: hidden; /* Чтобы не было прокрутки при анимациях */
         }
 
-        /* Отображение баланса */
+        /* БАЛАНС В ВЕРХНЕМ ПРАВОМ УГЛУ */
         .header-balance {
             position: absolute;
             top: 20px;
             right: 40px;
             background: #1e1e1e;
-            padding: 10px 20px;
+            padding: 10px 25px;
             border-radius: 8px;
             border: 1px solid #333;
             font-size: 18px;
             font-weight: bold;
             display: flex;
+            align-items: center;
             gap: 10px;
+            z-index: 100;
         }
         .balance-amount { color: #ffcc00; }
 
-        /* Контейнер апгрейда */
-        .upgrade-container {
+        /* === ГЛАВНЫЙ КОНТЕЙНЕР АПГРЕЙДА === */
+        .upgrade-ui-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 60px; /* Расстояние между кейсами и рулеткой */
-            padding: 50px;
-            background: #161616;
+            gap: 50px;
+            padding: 40px;
+            background: #181818;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
         }
 
-        /* Карточки оружия */
+        /* КАРТОЧКИ ОРУЖИЯ (ЛЕВАЯ И ПРАВАЯ) */
         .item-card {
-            background: #202020;
+            background: #222;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 15px;
             text-align: center;
             width: 220px;
-            position: relative;
             border: 1px solid #333;
-            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        
-        .item-card h3 {
-            margin: 0 0 15px 0;
-            font-size: 14px;
-            color: #888;
+
+        .card-label {
+            font-size: 12px;
+            color: #777;
             text-transform: uppercase;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
 
         .weapon-img {
             width: 100%;
-            height: auto;
-            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+            height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+            margin-bottom: 15px;
         }
 
         .price-tag {
-            margin-top: 15px;
+            font-size: 16px;
             font-weight: bold;
-            color: #fff;
+            color: #eee;
+            background: #111;
+            padding: 5px 15px;
+            border-radius: 5px;
         }
 
-        /* === РУЛЕТКА (Центр) === */
+        /* === ЦЕНТРАЛЬНАЯ РУЛЕТКА (СЛОЖНАЯ ЧАСТЬ) === */
         .roulette-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             position: relative;
-            z-index: 10;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Стрелка-указатель */
+        /* 1. СТРЕЛКА (ВСЕГДА СВЕРХУ) */
         .roulette-marker {
             position: absolute;
-            top: -15px;
+            top: -5px;
             z-index: 20;
-            font-size: 24px;
+            font-size: 30px;
             color: white;
-            filter: drop-shadow(0 0 2px #000);
-            /* Стрелка смотрит вниз */
-            transform: scaleY(0.8); 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+            transform: scaleY(0.7); /* Сплющить стрелку */
         }
 
-        /* Вращающееся кольцо */
+        /* 2. КОЛЬЦО (ЭТОТ ЭЛЕМЕНТ БУДЕТ КРУТИТЬСЯ) */
         .roulette-ring {
-            width: 280px;
-            height: 280px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
-            /* Градиент задается в JS */
+            /* Градиент устанавливается через JS */
             background: conic-gradient(#ffcc00 0% 32.29%, #2a2a2a 32.29% 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            transition: box-shadow 0.3s ease;
-            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            z-index: 5;
+            /* Важно: здесь нет transition по умолчанию, чтобы не дергалось при сбросе */
         }
 
-        /* Эффекты свечения */
-        .roulette-ring.win-glow {
-            box-shadow: 0 0 20px #00ff00, 0 0 50px #00ff00;
-        }
-        .roulette-ring.lose-glow {
-            box-shadow: 0 0 20px #ff0000, 0 0 50px #ff0000;
-        }
+        /* Эффекты свечения для кольца */
+        .roulette-ring.win-glow { box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
+        .roulette-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
 
-        /* Внутренний круг (дырка бублика) */
-        .roulette-inner {
-            width: 250px;
-            height: 250px;
+        /* 3. ВНУТРЕННИЙ КРУГ (СТАТИЧНЫЙ ФОН) */
+        .roulette-static-center {
+            position: absolute;
+            width: 260px; /* Меньше чем кольцо */
+            height: 260px;
             background: #161616;
             border-radius: 50%;
+            z-index: 10; /* Лежит ПОВЕРХ крутящегося кольца */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 15;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* Логотип в центре */
+        /* Логотип */
         .center-logo {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            object-fit: cover;
             margin-bottom: 10px;
+            object-fit: cover;
             border: 2px solid #333;
         }
 
-        /* Текст результата */
-        .result-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 30;
-        }
-        
-        .result-overlay.show {
-            opacity: 1;
-        }
-
-        .result-text {
+        .chance-big {
             font-size: 32px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .text-win { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
-        .text-lose { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
-
-        /* Процент шанса */
-        .chance-display {
-            font-size: 28px;
-            font-weight: bold;
+            font-weight: 800;
             color: #ffcc00;
         }
-        .chance-label {
+        .chance-small {
             font-size: 12px;
             color: #666;
             text-transform: uppercase;
         }
 
-        /* Кнопка */
-        .upgrade-btn {
-            margin-top: 30px;
-            padding: 15px 50px;
-            background: linear-gradient(90deg, #ffcc00, #ffaa00);
-            border: none;
-            color: #111;
-            font-size: 16px;
-            font-weight: 800;
-            border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: filter 0.2s;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
+        /* 4. ТЕКСТ РЕЗУЛЬТАТА (ПОВЕРХ ВСЕГО) */
+        .result-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.9);
+            z-index: 15;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
         
-        .upgrade-btn:hover {
-            filter: brightness(1.1);
-        }
-        .upgrade-btn:disabled {
-            background: #444;
-            color: #888;
-            cursor: not-allowed;
-            box-shadow: none;
+        .result-overlay.visible {
+            opacity: 1;
         }
 
-        /* Адаптив для мобильных */
+        .result-text {
+            font-size: 36px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .res-win { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
+        .res-lose { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
+
+        /* КНОПКА UPGRADE */
+        .btn-container {
+            position: absolute;
+            bottom: -80px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .upgrade-btn {
+            padding: 15px 60px;
+            background: linear-gradient(90deg, #ffcc00, #ff9900);
+            border: none;
+            color: #111;
+            font-size: 18px;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 204, 0, 0.3);
+            transition: transform 0.1s;
+        }
+        .upgrade-btn:active { transform: scale(0.95); }
+        .upgrade-btn:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
+
+        /* Адаптив */
         @media (max-width: 800px) {
-            .upgrade-container {
-                flex-direction: column;
-                padding: 20px;
-            }
+            .upgrade-ui-container { flex-direction: column; gap: 30px; padding-bottom: 100px; }
+            .btn-container { bottom: 20px; }
         }
     </style>
 </head>
@@ -228,165 +225,163 @@
 
     <div class="header-balance">
         <span>Баланс:</span>
-        <span id="userBalanceDisplay" class="balance-amount">Loading...</span>
+        <span id="balanceValue" class="balance-amount">Loading...</span>
         <span>★</span>
     </div>
 
-    <div class="upgrade-container">
+    <div class="upgrade-ui-container">
         
         <div class="item-card">
-            <h3>Твой предмет</h3>
-            <img src="https://via.placeholder.com/200x120?text=M4A1-S" alt="Weapon In" class="weapon-img">
-            <div class="price-tag">1000 P</div>
+            <div class="card-label">Твой предмет</div>
+            <img src="https://via.placeholder.com/150?text=Weapon" alt="My Item" class="weapon-img">
+            <div class="price-tag">1,000 P</div>
         </div>
 
         <div class="roulette-wrapper">
             <div class="roulette-marker">▼</div>
 
-            <div class="roulette-ring" id="rouletteRing">
-                <div class="roulette-inner">
-                    <img src="https://via.placeholder.com/80?text=LOGO" alt="Tung Tung Sahur" class="center-logo" id="centerLogo">
-                    
-                    <div class="chance-display">32.29%</div>
-                    <div class="chance-label">шанс успеха</div>
+            <div class="roulette-ring" id="spinRing"></div>
 
-                    <div id="resultOverlay" class="result-overlay">
-                        <div id="resultText" class="result-text"></div>
-                    </div>
+            <div class="roulette-static-center">
+                <img src="https://via.placeholder.com/80?text=LOGO" alt="Logo" class="center-logo">
+                
+                <div class="chance-big">32.29%</div>
+                <div class="chance-small">средний шанс</div>
+
+                <div class="result-overlay" id="resultLayer">
+                    <div id="resultMsg" class="result-text"></div>
                 </div>
             </div>
 
-            <button onclick="runUpgrade()" id="upgradeBtn" class="upgrade-btn">UPGRADE</button>
+            <div class="btn-container">
+                <button class="upgrade-btn" id="startBtn" onclick="doUpgrade()">UPGRADE</button>
+            </div>
         </div>
 
         <div class="item-card">
-            <h3>Цель</h3>
-            <img src="https://i.imgur.com/kQQXAj8.jpg" onerror="this.src='https://via.placeholder.com/200x120?text=Target+Item'" alt="Target Case" class="weapon-img">
-            <div class="price-tag">44165.5 P</div>
+            <div class="card-label">Цель</div>
+            <img src="https://i.imgur.com/kQQXAj8.jpeg" alt="Target Item" class="weapon-img" onerror="this.src='https://via.placeholder.com/150?text=Error'">
+            <div class="price-tag">44,165.5 P</div>
         </div>
 
     </div>
 
     <script>
         // === НАСТРОЙКИ ===
-        const winChance = 32.29; // Шанс с сервера
-        const ring = document.getElementById('rouletteRing');
-        const resultOverlay = document.getElementById('resultOverlay');
-        const resultText = document.getElementById('resultText');
-        const upgradeBtn = document.getElementById('upgradeBtn');
-        const balanceDisplay = document.getElementById('userBalanceDisplay');
+        const winChance = 32.29; // Шанс выигрыша в %
+        const spinDuration = 4000; // 4 секунды
+        
+        // Элементы
+        const ring = document.getElementById('spinRing');
+        const resultLayer = document.getElementById('resultLayer');
+        const resultMsg = document.getElementById('resultMsg');
+        const btn = document.getElementById('startBtn');
+        const balanceEl = document.getElementById('balanceValue');
 
-        // Инициализация градиента рулетки
-        // Желтый сектор (победа) от 0 до winChance%
+        // Инициализация цвета кольца (Желтый - победа, Серый - поражение)
         ring.style.background = `conic-gradient(#ffcc00 0% ${winChance}%, #2a2a2a ${winChance}% 100%)`;
 
-        // === ФУНКЦИЯ ЗАПУСКА ИГРЫ ===
-        async function runUpgrade() {
-            // 1. Блокируем кнопку
-            upgradeBtn.disabled = true;
-            
-            // 2. Сброс стилей
-            ring.style.transition = 'none';
-            ring.style.transform = 'rotate(0deg)';
-            ring.classList.remove('win-glow', 'lose-glow');
-            resultOverlay.classList.remove('show');
-            resultText.className = 'result-text';
-
-            // 3. (ВАЖНО) Здесь должен быть запрос к твоему серверу
-            // const response = await fetch('/api/upgrade', { method: 'POST' });
-            // const data = await response.json();
-            // const isWin = data.success; // true или false от сервера
-            
-            // --- СИМУЛЯЦИЯ СЕРВЕРА (УДАЛИ ЭТОТ БЛОК КОГДА ПОДКЛЮЧИШЬ API) ---
-            const roll = Math.random() * 100;
-            const isWin = roll < winChance;
-            console.log("Результат:", isWin ? "WIN" : "LOSE", "Roll:", roll);
-            // ----------------------------------------------------------------
-
-            // 4. Расчет угла остановки
-            // Нам нужно прокрутить, например, 5 оборотов (360 * 5) + угол остановки.
-            // У CSS conic-gradient 0 градусов обычно сверху (12 часов).
-            // Чтобы нужный сектор оказался под стрелкой, нужно повернуть колесо в минус.
-            
-            let targetDegree;
-
-            if (isWin) {
-                // Если победа: выбираем случайную точку внутри желтого сектора (0...winChance)
-                // Чтобы эта точка оказалась наверху, вращаем: -(точка).
-                // Пример: сектор 0-30. Выпало 15. Вращаем на -15deg (плюс обороты).
-                const randomSpot = Math.random() * winChance;
-                targetDegree = randomSpot;
-            } else {
-                // Если проигрыш: выбираем точку в сером секторе (winChance...100)
-                // Конвертируем проценты в градусы: (x / 100) * 360
-                const randomPercent = winChance + (Math.random() * (100 - winChance));
-                targetDegree = (randomPercent / 100) * 360;
-            }
-
-            // Добавляем 5 полных оборотов + смещение, чтобы крутилось против часовой (или по часовой, если минус)
-            // Чтобы крутилось по часовой и встало нужным местом вверх:
-            // Rotate = (360 * 5) - targetDegree
-            const totalRotation = (360 * 5) - targetDegree;
-
-            // 5. Запуск анимации (небольшая задержка, чтобы браузер понял сброс)
-            setTimeout(() => {
-                ring.style.transition = "transform 4s cubic-bezier(0.15, 0, 0.20, 1)";
-                ring.style.transform = `rotate(${totalRotation}deg)`;
-            }, 50);
-
-            // 6. Показ результата
-            setTimeout(() => {
-                resultOverlay.classList.add('show');
-                
-                if (isWin) {
-                    resultText.innerText = "УСПЕХ";
-                    resultText.classList.add('text-win');
-                    ring.classList.add('win-glow');
-                    // Тут можно обновить картинку слева на новую
-                } else {
-                    resultText.innerText = "НЕУДАЧА";
-                    resultText.classList.add('text-lose');
-                    ring.classList.add('lose-glow');
-                    // Тут можно затемнить картинку предмета
-                }
-                
-                upgradeBtn.disabled = false;
-                
-                // Принудительно обновляем баланс после игры
-                updateBalance(); 
-
-            }, 4050); // Ждем 4 секунды (время анимации) + 50мс
-        }
-
-        // === ОБНОВЛЕНИЕ БАЛАНСА (POLLING) ===
-        // Эта функция решает проблему с обновлением звезд только после перезахода
-        async function updateBalance() {
+        // === ФУНКЦИЯ ОБНОВЛЕНИЯ БАЛАНСА ===
+        async function fetchBalance() {
             try {
-                // !!! ЗАМЕНИ URL НИЖЕ НА ТВОЙ РЕАЛЬНЫЙ API ПУТЬ !!!
-                // Например: '/api/user/get-balance' или 'get_user_info.php'
-                // const response = await fetch('/api/get-balance'); 
+                // ТУТ ВСТАВЬ СВОЙ URL, например '/api/get-balance'
+                // const response = await fetch('/api/user/balance');
                 // const data = await response.json();
                 
-                // СИМУЛЯЦИЯ ОТВЕТА СЕРВЕРА (для демонстрации)
-                // Удали этот блок и раскомментируй fetch выше
-                const data = { balance: Math.floor(Math.random() * 50000) }; 
+                // ПОКА АПИ НЕТ, ПРОСТО ПОКАЗЫВАЕМ СТАТИЧНОЕ ЧИСЛО (чтобы не скакало)
+                // Раскомментируй строки выше, когда будет сервер
+                const fakeBalance = 47362; 
+                
+                // Если данные пришли, обновляем
+                // if (data.balance) balanceEl.innerText = data.balance;
+                
+                // Временная заглушка:
+                balanceEl.innerText = fakeBalance.toLocaleString(); 
 
-                // Обновляем текст на странице
-                if(data.balance !== undefined) {
-                    balanceDisplay.innerText = data.balance.toLocaleString(); 
-                }
-
-            } catch (error) {
-                console.error("Ошибка получения баланса:", error);
+            } catch (e) {
+                console.log("Ошибка баланса", e);
             }
         }
-
-        // Запускаем обновление баланса каждые 2 секунды
-        setInterval(updateBalance, 2000);
         
-        // Первичный запуск
-        updateBalance();
+        // Запуск проверки баланса каждые 2 секунды
+        setInterval(fetchBalance, 2000);
+        fetchBalance(); // Первый запуск сразу
 
+        // === ЛОГИКА ИГРЫ ===
+        async function doUpgrade() {
+            // 1. Блокируем кнопку
+            btn.disabled = true;
+
+            // 2. Сброс предыдущего состояния
+            resultLayer.classList.remove('visible');
+            ring.classList.remove('win-glow', 'lose-glow');
+            ring.style.transition = 'none';
+            ring.style.transform = 'rotate(0deg)';
+
+            // 3. (ВАЖНО) ОПРЕДЕЛЕНИЕ РЕЗУЛЬТАТА
+            // Сейчас тут рандом. В реальном проекте: const isWin = await requestToServer();
+            const roll = Math.random() * 100;
+            const isWin = roll < winChance;
+            
+            console.log("Roll:", roll.toFixed(2), "Win:", isWin);
+
+            // 4. МАТЕМАТИКА ВРАЩЕНИЯ
+            // Нам нужно, чтобы нужный сектор остановился ровно под стрелкой (0 градусов).
+            // CSS поворачивает по часовой стрелке.
+            // Стрелка находится наверху (0 deg).
+            
+            let targetAngle;
+            
+            if (isWin) {
+                // ПОБЕДА: Нужно попасть в желтую зону (0...winChance)
+                // Выбираем случайную точку в этой зоне
+                const randomWinPoint = Math.random() * winChance;
+                targetAngle = randomWinPoint;
+            } else {
+                // ПОРАЖЕНИЕ: Нужно попасть в серую зону (winChance...100)
+                const randomLosePoint = winChance + (Math.random() * (100 - winChance));
+                targetAngle = randomLosePoint; 
+            }
+
+            // Переводим проценты (0-100) в градусы (0-360)
+            const angleInDegrees = (targetAngle / 100) * 360;
+
+            // Формула: (Полные обороты) - (Угол цели)
+            // Минус, потому что мы крутим кольцо вправо, значит "цель" уезжает вправо.
+            // Чтобы она вернулась к верху, нужно провернуть на (360 - цель).
+            const spins = 5 * 360; // 5 оборотов
+            const finalRotate = spins - angleInDegrees;
+
+            // 5. ЗАПУСК АНИМАЦИИ
+            // Небольшая задержка (20мс), чтобы браузер успел применить сброс стилей
+            setTimeout(() => {
+                ring.style.transition = `transform ${spinDuration}ms cubic-bezier(0.15, 0, 0.20, 1)`;
+                ring.style.transform = `rotate(${finalRotate}deg)`;
+            }, 20);
+
+            // 6. ЗАВЕРШЕНИЕ
+            setTimeout(() => {
+                // Показываем текст
+                resultLayer.classList.add('visible');
+
+                if (isWin) {
+                    resultMsg.innerText = "УСПЕХ";
+                    resultMsg.className = "result-text res-win";
+                    ring.classList.add('win-glow');
+                    // Тут можно вызвать функцию обновления инвентаря
+                } else {
+                    resultMsg.innerText = "НЕУДАЧА";
+                    resultMsg.className = "result-text res-lose";
+                    ring.classList.add('lose-glow');
+                }
+
+                btn.disabled = false;
+                
+                // Обновить баланс после игры
+                fetchBalance();
+
+            }, spinDuration + 50);
+        }
     </script>
 </body>
 </html>
