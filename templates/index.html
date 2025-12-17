@@ -51,17 +51,11 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        /* РУЛЕТКА В КЕЙСЕ */
-        .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
-        .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
-        .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
-        
+        /* --- НОВЫЙ БЛОК: МУЛЬТИ-РУЛЕТКА --- */
         #multi-roulette-container {
             width: 100%;
-            max-height: 300px; /* Ограничение высоты, если много кейсов */
-            overflow-y: auto;  /* Скролл */
+            max-height: 300px; 
+            overflow-y: auto; 
             display: none;
             margin-bottom: 20px;
             border-radius: 10px;
@@ -75,7 +69,31 @@
             border-bottom: 1px solid #333;
             background: #151515;
         }
+        
+        .roulette-center-line { 
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; 
+            background: #fff; z-index: 10; transform: translateX(-50%); 
+            box-shadow: 0 0 10px #fff; 
+        }
+        
+        .roulette-track { 
+            display: flex; height: 100%; align-items: center; 
+            will-change: transform; 
+        }
+        
+        /* Исправлен CSS карточки рулетки: жесткая ширина */
+        .roulette-card { 
+            width: 100px; /* Фиксированная ширина */
+            height: 90px; 
+            background: #222; border: 1px solid #444; 
+            margin: 0 5px; /* Отступы 5px слева и 5px справа */
+            border-radius: 8px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            flex-shrink: 0; /* ЗАПРЕЩАЕМ сжиматься */
+        }
+        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
 
+        /* Кнопки действий */
         .actions-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -101,29 +119,20 @@
             opacity: 0; 
             transform: scale(0.5);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
-            position: relative; /* Для позиционирования счетчика */
+            position: relative;
         }
         .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
         .drop-item .case-name { font-size: 0.7rem; }
 
-        /* Счетчик для выпавших предметов */
         .drop-quantity {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--accent);
-            color: #000;
-            font-weight: 900;
-            font-size: 0.8rem;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            top: -5px; right: -5px;
+            background: var(--accent); color: #000;
+            font-weight: 900; font-size: 0.8rem;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            z-index: 15;
-            animation: popIn 0.3s forwards;
+            z-index: 15; animation: popIn 0.3s forwards;
         }
 
         .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
@@ -142,7 +151,6 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
         
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
@@ -419,12 +427,10 @@
             
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
-                
                 if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
-
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -505,7 +511,7 @@
                 const track = document.createElement('div');
                 track.className = 'roulette-track';
                 
-                const WIN_INDEX = 35;
+                const WIN_INDEX = 29; // 30-й элемент
                 for(let i=0; i<45; i++) {
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
                     const card = document.createElement('div');
@@ -518,10 +524,22 @@
                 row.appendChild(track);
                 el.multiBox.appendChild(row);
                 
-                const CARD_WIDTH = 98; 
-                const offset = Math.floor(Math.random() * 60) - 30; 
-                const containerWidth = el.multiBox.clientWidth || 350; 
-                const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (containerWidth / 2) + (CARD_WIDTH / 2) + offset;
+                // Фиксированные размеры
+                const CARD_WIDTH = 100;
+                const CARD_GAP = 10;
+                const UNIT_WIDTH = CARD_WIDTH + CARD_GAP; // 110px
+                const containerWidth = el.multiBox.clientWidth || 350;
+                
+                // Центр контейнера
+                const centerOfContainer = containerWidth / 2;
+                // Центр выигрышной карточки (ее левый край + половина ширины)
+                const centerOfWinningCard = (UNIT_WIDTH * WIN_INDEX) + (UNIT_WIDTH / 2);
+                
+                // Рандомный сдвиг внутри карточки (+/- 35px)
+                const randomOffset = Math.floor(Math.random() * 70) - 35;
+                
+                // Итоговое смещение:
+                const scrollAmount = centerOfWinningCard - centerOfContainer + randomOffset;
 
                 setTimeout(() => {
                     track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
@@ -537,10 +555,9 @@
                 
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
-                // --- НОВАЯ ЛОГИКА ГРУППИРОВКИ ---
+                // ГРУППИРОВКА ПРЕДМЕТОВ (Стаки)
                 const grouped = {};
                 items.forEach(item => {
-                    // Используем ID как ключ
                     if (grouped[item.id]) {
                         grouped[item.id].count++;
                     } else {
@@ -555,7 +572,6 @@
                     div.className=`drop-item rarity-${item.rarity}`; 
                     div.style.animationDelay = `${index * 0.1}s`; 
                     
-                    // Если больше 1 предмета, добавляем бейдж
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
                     
                     div.innerHTML=`${countBadge}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
