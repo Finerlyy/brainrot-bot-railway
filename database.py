@@ -7,23 +7,27 @@ DB_NAME = "brainrot.db"
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row 
-        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000)")
+        # Создаем таблицы (в users добавлено поле ip)
+        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
+        
+        # --- МИГРАЦИЯ (Если база старая, добавляем колонку ip) ---
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except:
+            pass # Колонка уже есть, игнорируем ошибку
+
         await db.commit()
         
         # --- НАПОЛНЕНИЕ БАЗЫ ---
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
-        # НОВАЯ КАРТИНКА КЕЙСА (Твоя ссылка)
-        case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg' 
+        case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg'
 
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
-        
-        # Обновляем иконку, если кейс уже был в базе (чтобы старая "коляска" пропала)
         await db.execute("UPDATE cases SET icon_url = ? WHERE name = ?", (case_icon, case_name))
-        
         await db.commit()
 
         async with db.execute("SELECT id FROM cases WHERE name = ?", (case_name,)) as cur:
@@ -61,6 +65,12 @@ async def get_user(tg_id, username):
             async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
                 user = await cursor.fetchone()
         return user
+
+# НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ IP
+async def update_user_ip(tg_id, ip_address):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("UPDATE users SET ip = ? WHERE tg_id = ?", (ip_address, tg_id))
+        await db.commit()
 
 async def update_user_balance(tg_id, amount):
     async with aiosqlite.connect(DB_NAME) as db:

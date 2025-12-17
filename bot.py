@@ -9,12 +9,12 @@ import aiohttp_jinja2
 import jinja2
 import sqlite3
 
-# Импортируем функции БД
+# Импортируем функции БД (добавили update_user_ip)
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, add_items_to_inventory_batch, update_user_balance, 
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
-    delete_one_item_by_id, add_item_to_inventory
+    delete_one_item_by_id, add_item_to_inventory, update_user_ip
 )
 
 # --- КОНФИГУРАЦИЯ ---
@@ -58,6 +58,18 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
+        # --- ЛОГИКА ЗАХВАТА IP ---
+        # Railway передает реальный IP в заголовке X-Forwarded-For
+        ip_header = request.headers.get('X-Forwarded-For')
+        if ip_header:
+            ip = ip_header.split(',')[0].strip() # Берем первый IP из списка
+        else:
+            ip = request.remote # Локальный IP, если нет прокси
+            
+        if ip:
+            await update_user_ip(user_id, ip)
+        # -------------------------
+
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
@@ -68,10 +80,7 @@ async def api_get_data(request):
         for item in raw_inv:
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
-            
-            # --- 60% от стоимости ---
             i_dict['sell_price'] = max(1, int(p * 0.60)) 
-            
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()
@@ -98,7 +107,6 @@ async def api_open_case(request):
         case_id = int(data.get('case_id'))
         count = int(data.get('count', 1))
         
-        # --- ЛИМИТ ДО 50 КЕЙСОВ ---
         if count > 50: count = 50
         if count < 1: count = 1
         
