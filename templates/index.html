@@ -42,6 +42,16 @@
         .sell-btn:active { box-shadow: 0 0 0 #111; }
         .sell-btn span { color: var(--accent); }
         .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        /* КНОПКА ПРОДАТЬ ВСЕ */
+        .sell-all-container { margin: 10px 0; display: flex; justify-content: center; }
+        .sell-all-btn { 
+            background: #ff3333; color: #fff; border: none; 
+            padding: 10px 20px; border-radius: 12px; 
+            font-weight: 900; font-size: 0.9rem; cursor: pointer;
+            box-shadow: 0 4px 0 #990000; width: 100%; max-width: 300px;
+        }
+        .sell-all-btn:active { transform: translateY(4px); box-shadow: none; }
 
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.3s; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto;}
@@ -51,7 +61,7 @@
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+        .roulette-card { width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
         #multi-roulette-container { width: 100%; max-height: 300px; overflow-y: auto; display: none; margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333; }
@@ -218,6 +228,9 @@
         </section>
 
         <section id="tab-inventory" class="tab-content">
+            <div class="sell-all-container">
+                <button class="sell-all-btn" onclick="sellAllItems()">🔥 ПРОДАТЬ ВСЕ ПРЕДМЕТЫ</button>
+            </div>
             <div id="inventory-grid" class="inventory-grid"></div>
         </section>
     </main>
@@ -292,7 +305,6 @@
         
         window.closeModal=function(id){document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('hidden');}
 
-        // --- JSON STATE FOR AUTO UPDATE ---
         let lastDataJSON = ""; 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -337,17 +349,14 @@
 
             function upBal(n){ if(n!==undefined){ currentBal=n; el.bal.innerText = formatBalance(n); } }
 
-            // Универсальная функция отрисовки (для load и update)
             function renderAll(d, isInitial) {
                 if(d.user) {
                     upBal(d.user.balance);
-                    // Обновляем профиль только если это "мой" профиль
                     if(document.getElementById('back-to-my-profile').style.display === 'none') {
                         renderProfile(d.user, d.user.best_item, true);
                     }
                 }
 
-                // Сравниваем данные кейсов
                 const casesJSON = JSON.stringify(d.cases);
                 if (isInitial || el.cases.dataset.hash !== casesJSON) {
                     el.cases.dataset.hash = casesJSON;
@@ -361,13 +370,11 @@
                     });
                 }
 
-                // Сравниваем инвентарь
                 const invJSON = JSON.stringify(d.inventory);
                 if (isInitial || el.inv.dataset.hash !== invJSON) {
                     el.inv.dataset.hash = invJSON;
                     el.inv.innerHTML=''; 
                     if(!d.inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
-                    // Reverse чтобы новые были сверху, но без мутации исходного массива для проверки
                     [...d.inventory].reverse().forEach(i=>{
                         const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; 
                         div.innerHTML=`<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id})">Продать: <span>⭐️ ${formatBalance(i.sell_price)}</span></button>`;
@@ -375,7 +382,6 @@
                     });
                 }
                 
-                // Лидерборд обновляем всегда (он легкий)
                 if(d.leaderboard) {
                     el.lbList.innerHTML = '';
                     d.leaderboard.forEach((u, idx) => {
@@ -400,41 +406,29 @@
                 } catch(e){ console.error(e); }
             }
 
-            // --- AUTO UPDATE (POLLING) ---
             async function autoUpdate(){
-                // Не обновляем, если открыта модалка или идет анимация
                 if(el.popup.classList.contains('active') || !el.openModal.classList.contains('hidden') || el.loader.style.display !== 'none') return;
-                
                 try {
-                    const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})}); // фото не шлем каждый раз
+                    const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
                     const d=await res.json();
                     if(d.error) return;
-                    
-                    // Обновляем глобальные переменные
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
-                    
                     renderAll(d, false);
                 } catch(e){ console.error("AutoUpdate Error", e); }
             }
-
-            // Запуск таймера (каждые 3 сек)
             setInterval(autoUpdate, 3000);
 
-            // --- ФУНКЦИИ ИНТЕРФЕЙСА ---
             function renderProfile(user, best_item, isMe) {
                 el.profUser.innerText = user.username;
                 el.profBal.innerText = formatBalance(user.balance);
                 el.profNet.innerText = formatBalance(user.net_worth);
                 el.profCases.innerText = user.cases_opened;
-                
                 const regDate = new Date(user.reg_date);
                 const diffTime = Math.abs(new Date() - regDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
                 el.profDays.innerText = diffDays;
-
                 if(user.photo_url) el.profAvatar.innerHTML = `<img src="${user.photo_url}">`;
                 else el.profAvatar.innerHTML = '👤';
-
                 if(best_item) {
                     el.profBest.innerHTML = `
                         <div class="item-card rarity-${best_item.rarity}" style="width:120px;margin:0 auto">
@@ -443,7 +437,6 @@
                             <div class="case-price">⭐️ ${formatBalance(best_item.price)}</div>
                         </div>`;
                 } else el.profBest.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Нет предметов</div>';
-                
                 if(isMe) el.backBtn.style.display = 'none';
                 else el.backBtn.style.display = 'block';
             }
@@ -481,6 +474,29 @@
                 el.sellModal.classList.add('hidden');
                 upBal(currentBal + totalPrice);
                 try { await fetch(`${API}/sell_batch`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:itemId, count:sellCount, price_per_item:sellingItem.sell_price})}); load(); } catch(e) { load(); }
+            }
+
+            // --- НОВАЯ ФУНКЦИЯ ПРОДАТЬ ВСЕ ---
+            window.sellAllItems = async () => {
+                if(inventory.length === 0) return tg.showAlert("Инвентарь пуст!");
+                if(!confirm("Вы точно хотите продать ВЕСЬ инвентарь?")) return;
+                
+                el.loader.style.display = 'flex';
+                try {
+                    const res = await fetch(`${API}/sell_all`, {
+                        method: 'POST',
+                        body: JSON.stringify({user_id: userId})
+                    });
+                    const d = await res.json();
+                    
+                    if(d.status === 'ok') {
+                        tg.showAlert(`Продано на ${formatBalance(d.total)} звезд!`);
+                        load(); // Перезагружаем данные
+                    } else {
+                        tg.showAlert("Ошибка продажи");
+                    }
+                } catch(e) { console.error(e); }
+                el.loader.style.display = 'none';
             }
 
             window.showOpenModal=()=>{

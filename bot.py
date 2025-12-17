@@ -55,12 +55,10 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # IP
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
 
-        # PHOTO URL (если пришла с фронта)
         photo_url = data.get('photo_url')
         if photo_url: await update_user_photo(user_id, photo_url)
 
@@ -103,13 +101,11 @@ async def api_get_data(request):
         logging.error(f"Error api_get_data: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
-# --- НОВЫЙ РОУТ ДЛЯ ПРОСМОТРА ЧУЖОГО ПРОФИЛЯ ---
 async def api_get_profile(request):
     try:
         data = await request.json()
         target_id = int(data.get('target_id'))
         profile = await get_public_profile(target_id)
-        
         if profile: return web.json_response({"profile": profile})
         else: return web.json_response({"error": "User not found"}, status=404)
     except Exception as e:
@@ -175,6 +171,40 @@ async def api_sell_batch(request):
         logging.error(f"Error api_sell_batch: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
+# --- НОВЫЙ МЕТОД: ПРОДАТЬ ВСЕ ---
+async def api_sell_all(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        
+        # Получаем весь инвентарь чтобы посчитать сумму и удалить
+        raw_inv = await get_inventory_grouped(user_id)
+        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
+        
+        total_sell_price = 0
+        
+        for item in raw_inv:
+            i_dict = force_dict(item, INV_KEYS)
+            p = i_dict.get('price', 0)
+            r = i_dict.get('rarity', 'Common')
+            count = i_dict.get('quantity', 0)
+            
+            # Та же логика цены
+            price_one = max(1, int(p * 0.90)) if r == 'Secret' else max(1, int(p * 0.60))
+            total_sell_price += price_one * count
+            
+            # Удаляем пачками (можно оптимизировать через DELETE FROM inventory WHERE user_id=...)
+            await sell_items_batch_db(user_id, i_dict['item_id'], count, 0) # 0 т.к. начислим в конце сумму
+            
+        # Начисляем общую сумму
+        if total_sell_price > 0:
+            await update_user_balance(user_id, total_sell_price)
+            
+        return web.json_response({"status": "ok", "total": total_sell_price})
+    except Exception as e:
+        logging.error(f"Error api_sell_all: {e}", exc_info=True)
+        return web.json_response({"error": str(e)}, status=500)
+
 async def api_upgrade(request):
     try:
         data = await request.json()
@@ -216,9 +246,10 @@ async def api_upgrade(request):
 app.add_routes([
     web.get('/', web_index), 
     web.post('/api/data', api_get_data), 
-    web.post('/api/profile', api_get_profile), # Новый роут
+    web.post('/api/profile', api_get_profile),
     web.post('/api/open', api_open_case), 
     web.post('/api/sell_batch', api_sell_batch), 
+    web.post('/api/sell_all', api_sell_all), # Новый роут
     web.post('/api/upgrade', api_upgrade), 
     web.static('/static', STATIC_DIR)
 ])
