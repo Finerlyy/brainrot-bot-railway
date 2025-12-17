@@ -65,7 +65,7 @@
         /* Grid & Cards */
         .cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
         
-        /* КВАДРАТНЫЕ КАРТОЧКИ (FIX) */
+        /* КВАДРАТНЫЕ КАРТОЧКИ */
         .case-card, .item-card { 
             background: var(--card); 
             padding: 10px; 
@@ -75,26 +75,26 @@
             transition: 0.2s; 
             position: relative; 
             overflow: hidden; 
-            /* Делаем квадратными */
             aspect-ratio: 1 / 1;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer;
         }
         .case-card:active, .item-card:active { transform: scale(0.96); background: #252529; }
         
-        /* ЗАКРУГЛЕННЫЕ ФОТО (FIX) */
+        /* ЗАКРУГЛЕННЫЕ ФОТО */
         .case-img, .item-img { 
             width: 70%; 
             height: 70%; 
             object-fit: cover; 
             margin-bottom: 8px; 
-            border-radius: 16px; /* Закругление углов */
+            border-radius: 16px; 
             filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
         }
         
-        /* НЕОНОВЫЙ КЛАСС (FIX) */
+        /* НЕОНОВЫЙ КЛАСС */
         .mutated {
             animation: neonPulse 2s infinite ease-in-out;
-            border: 1px solid var(--glow-color); /* Толщина рамки */
+            border: 1px solid var(--glow-color);
         }
 
         .case-name { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
@@ -123,7 +123,8 @@
         .main-action-btn:active, .upgrade-btn:active { transform: scale(0.98); opacity: 0.9; }
         .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.6; filter: grayscale(1); cursor: not-allowed; transform: none; }
 
-        .sell-btn { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #fff; border: none; font-size: 0.7rem; padding: 6px; cursor: pointer; font-weight: 600; opacity: 0; transition: 0.2s; }
+        /* Кнопка продажи (z-index выше, чтобы кликалась отдельно от карточки) */
+        .sell-btn { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #fff; border: none; font-size: 0.7rem; padding: 6px; cursor: pointer; font-weight: 600; opacity: 0; transition: 0.2s; z-index: 20; }
         .item-card:hover .sell-btn { opacity: 1; }
 
         /* Modals */
@@ -141,7 +142,13 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.15)); }
         .close-btn { width: 100%; background: transparent; border: none; color: #666; padding: 15px; cursor: pointer; margin-top: 5px; font-weight: 600; }
 
-        /* UPGRADE TAB (SVG CIRCLE FIX) */
+        /* Info Modal Rows */
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .info-label { color: #888; font-size: 0.9rem; }
+        .info-value { color: #fff; font-weight: bold; }
+        .mut-row { color: var(--accent); font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+        /* UPGRADE TAB */
         .upgrade-container { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 10px; }
         .upgrade-slots { display: flex; align-items: center; gap: 15px; width: 100%; justify-content: center; }
         .u-slot { 
@@ -163,7 +170,7 @@
         .chance-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); color: #888; padding: 10px 0; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.85rem; }
         .chance-btn:active { background: rgba(255,255,255,0.1); color: #fff; }
 
-        /* ЧИСТЫЙ SVG КРУГ */
+        /* SVG CIRCLE */
         .roulette-wrapper { position: relative; width: 240px; height: 240px; margin: 10px auto; display: flex; align-items: center; justify-content: center; }
         .progress-ring { transform: rotate(-90deg); transform-origin: 50% 50%; }
         .progress-ring-circle-bg { stroke: #1e1e22; stroke-width: 20; fill: transparent; }
@@ -171,10 +178,10 @@
             stroke: #FFD700; 
             stroke-width: 20; 
             fill: transparent; 
-            stroke-dasharray: 628; /* 2 * PI * 100 */
+            stroke-dasharray: 628; 
             stroke-dashoffset: 628; 
             transition: stroke-dashoffset 0.5s;
-            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); /* Мягкое свечение без бликов */
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); 
         }
         
         .static-center { position: absolute; width: 180px; height: 180px; background: #151517; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 2; overflow: hidden; }
@@ -241,7 +248,7 @@
         .stat-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.02); }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
 
-        /* LEADERBOARD (NET WORTH) */
+        /* LEADERBOARD */
         .leaderboard-item { display: flex; justify-content: space-between; padding: 18px; background: var(--card); margin-bottom: 8px; border-radius: 16px; align-items: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.03); }
         .lb-rank { font-weight: 900; color: #666; width: 30px; text-align: center;}
         .lb-rank-1 { color: #FFD700; } .lb-rank-2 { color: #C0C0C0; } .lb-rank-3 { color: #CD7F32; }
@@ -249,6 +256,8 @@
         
         .sell-all-container { margin: 15px 0; display: flex; justify-content: center; }
         .btn-secondary-danger { background: transparent; border: 1px solid rgba(255, 51, 51, 0.4); color: #ff5555; font-size: 0.8rem; padding: 8px 16px; border-radius: 12px; cursor: pointer; margin: 10px auto; width: auto; min-width: 150px; display: flex; justify-content: center; align-items: center; transition: 0.2s; font-weight: 600; }
+        
+        .star-icon { color: #FFD700; }
     </style>
 </head>
 <body>
@@ -426,6 +435,28 @@
         </div>
     </div>
 
+    <div id="details-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="det-item-name" style="color:var(--accent); text-transform:uppercase; margin-bottom:10px;">NAME</h3>
+            <img id="det-item-img" src="" style="width:120px;height:120px;object-fit:cover;border-radius:20px;margin-bottom:20px;box-shadow:0 0 20px rgba(0,0,0,0.5);">
+            
+            <div class="info-row">
+                <span class="info-label">Базовая цена:</span>
+                <span class="info-value"><span class="star-icon">⭐️</span> <span id="det-base-price">0</span></span>
+            </div>
+            
+            <div id="det-mutations-block" style="margin-bottom:10px;">
+                </div>
+
+            <div class="info-row" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; margin-top:10px;">
+                <span class="info-label">Итоговая цена:</span>
+                <span class="info-value" style="color:#33ff33; font-size:1.1rem;"><span class="star-icon">⭐️</span> <span id="det-final-price">0</span></span>
+            </div>
+
+            <button class="close-btn" onclick="closeModal('details-modal')">Закрыть</button>
+        </div>
+    </div>
+
     <div id="drop-popup" class="popup hidden">
         <div class="popup-content">
             <div class="glow-bg"></div>
@@ -444,7 +475,7 @@
             return num.toLocaleString();
         }
 
-        // ЦВЕТА МУТАЦИЙ
+        // ЦВЕТА И МНОЖИТЕЛИ МУТАЦИЙ
         const MUTATION_COLORS = {
             'Gold': '#FFD700',
             'Diamond': '#b9f2ff',
@@ -452,6 +483,15 @@
             'Candy': '#ff69b4',
             'Rainbow': '#cc33ff', 
             'Galaxy': '#9933ff'
+        };
+
+        const MUTATION_MULTIPLIERS = {
+            'Gold': 1.1,
+            'Diamond': 1.2,
+            'Bloodrot': 1.5,
+            'Candy': 1.5,
+            'Rainbow': 2.0,
+            'Galaxy': 3.0
         };
 
         const RARITY_ORDER = {'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7};
@@ -507,7 +547,14 @@
                 wagerItemBlock: document.getElementById('wager-item-block'),
                 selWagerItemDiv: document.getElementById('selected-wager-item'),
                 btnWagerMoney: document.getElementById('btn-wager-money'),
-                btnWagerItem: document.getElementById('btn-wager-item')
+                btnWagerItem: document.getElementById('btn-wager-item'),
+                // Details Modal
+                detModal: document.getElementById('details-modal'),
+                detName: document.getElementById('det-item-name'),
+                detImg: document.getElementById('det-item-img'),
+                detBase: document.getElementById('det-base-price'),
+                detMuts: document.getElementById('det-mutations-block'),
+                detFinal: document.getElementById('det-final-price')
             };
 
             function upBal(n){ if(n!==undefined){ currentBal=n; el.bal.innerText = formatBalance(n); } }
@@ -539,7 +586,6 @@
                         const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`;
                         
                         let mutsHtml = '';
-                        // --- ЛОГИКА НЕОНА ---
                         if(i.muts_list && i.muts_list.length > 0) {
                             div.classList.add('mutated');
                             const mainMut = i.muts_list[0];
@@ -550,7 +596,13 @@
                             i.muts_list.forEach(m => { mutsHtml += `<span class="mut-badge">${MUT_EMOJIS[m] || m}</span>`; });
                             mutsHtml += '</div>';
                         }
-                        // ---------------------
+                        
+                        // КЛИК НА КАРТОЧКУ - ОТКРЫВАЕТ ДЕТАЛИ
+                        div.onclick = (e) => {
+                            // Если кликнули на кнопку продажи - не открываем детали
+                            if(e.target.closest('.sell-btn')) return;
+                            viewItemDetails(i);
+                        };
 
                         div.innerHTML=`${mutsHtml}<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id}, '${i.mutations || ''}')">Продать: <span>⭐️ ${formatBalance(i.sell_price)}</span></button>`;
                         el.inv.appendChild(div);
@@ -561,10 +613,47 @@
                     d.leaderboard.forEach((u, idx) => {
                         const rankClass = idx < 3 ? `lb-rank-${idx+1}` : '';
                         const avatarHtml = u.photo_url ? `<img src="${u.photo_url}" class="lb-avatar">` : '<span class="lb-avatar" style="background:#444;display:inline-block;text-align:center;line-height:35px;font-size:18px;">👤</span>';
-                        // Используем net_worth
-                        el.lbList.innerHTML += `<div class="leaderboard-item" onclick="viewProfile(${u.tg_id})"><div><span class="lb-rank ${rankClass}">#${idx+1}</span>${avatarHtml}<span>${u.username}</span></div><span style="color:#FFD700;font-weight:bold">${formatBalance(u.net_worth)} 💎</span></div>`;
+                        // ЗАМЕНА 💎 на ⭐️ (star-icon)
+                        el.lbList.innerHTML += `<div class="leaderboard-item" onclick="viewProfile(${u.tg_id})"><div><span class="lb-rank ${rankClass}">#${idx+1}</span>${avatarHtml}<span>${u.username}</span></div><span style="color:#FFD700;font-weight:bold">${formatBalance(u.net_worth)} <span class="star-icon">⭐️</span></span></div>`;
                     });
                 }
+            }
+            
+            // --- НОВАЯ ФУНКЦИЯ ДЕТАЛЕЙ ПРЕДМЕТА ---
+            window.viewItemDetails = (item) => {
+                el.detName.innerText = item.name;
+                el.detImg.src = item.image_url;
+                el.detBase.innerText = formatBalance(item.price);
+                el.detFinal.innerText = formatBalance(item.sell_price / (item.rarity === 'Secret' ? 0.9 : 0.6)); // Показываем чистую стоимость без налога на продажу
+
+                el.detMuts.innerHTML = '';
+                
+                if (item.muts_list && item.muts_list.length > 0) {
+                    item.muts_list.forEach(m => {
+                        const mult = MUTATION_MULTIPLIERS[m] || 1.0;
+                        const emoji = MUT_EMOJIS[m] || '';
+                        const color = MUTATION_COLORS[m] || '#fff';
+                        
+                        const row = document.createElement('div');
+                        row.className = 'info-row';
+                        row.innerHTML = `
+                            <span class="mut-row" style="color:${color}">${emoji} ${m}</span>
+                            <span class="info-value" style="color:${color}">x${mult.toFixed(1)}</span>
+                        `;
+                        el.detMuts.appendChild(row);
+                    });
+                } else {
+                     el.detMuts.innerHTML = '<div class="info-row"><span class="info-label">Мутации:</span><span class="info-value" style="color:#666">Нет</span></div>';
+                }
+
+                // Пересчитываем визуальную полную цену (цена * множители)
+                let finalVal = item.price;
+                if(item.muts_list) {
+                    item.muts_list.forEach(m => { finalVal *= (MUTATION_MULTIPLIERS[m] || 1); });
+                }
+                el.detFinal.innerText = formatBalance(Math.floor(finalVal));
+
+                el.detModal.classList.remove('hidden');
             }
 
             async function load(){
@@ -922,7 +1011,6 @@
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
                     let mutsHtml = '';
                     if(item.mutations && item.mutations.length > 0) {
-                        // Неон в дропе
                         const mainMut = item.mutations[0];
                         const color = MUTATION_COLORS[mainMut] || '#FFD700';
                         div.style.border = `2px solid ${color}`;
@@ -990,7 +1078,6 @@
             el.uBtn.onclick=async()=>{
                 if(!upgMy || !upgTarget) return;
                 el.uBtn.disabled=true; el.resultLayer.classList.remove('show'); 
-                // SVG Reset
                 document.querySelector('.progress-ring').style.transition = 'none';
                 document.querySelector('.progress-ring').style.transform = 'rotate(-90deg)';
                 
@@ -1004,21 +1091,12 @@
                     if(isWin) { stopAngle = Math.random() * winChanceVal; } 
                     else { stopAngle = winChanceVal + (Math.random() * (100 - winChanceVal)); }
                     
-                    // Крутим весь SVG контейнер
-                    // 360 градусов - это полный круг.
-                    // У нас 0 градусов (верх) - это начало желтой линии.
-                    // Желтая линия идет по часовой стрелке.
-                    // Чтобы стрелка (сверху, неподвижная) попала в зону, круг должен повернуться так, чтобы зона оказалась под стрелкой.
-                    // Но проще крутить визуально "много оборотов".
-                    
                     const spins = 5 * 360; 
-                    // Если stopAngle (например 10%) внутри зоны успеха (0..20%), то стрелка должна указывать на 10%.
-                    // Значит, круг должен повернуться на -10%.
                     const finalRotate = spins - (stopAngle/100 * 360);
 
                     const ringEl = document.querySelector('.progress-ring');
                     ringEl.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.2, 1)'; 
-                    ringEl.style.transform = `rotate(${finalRotate - 90}deg)`; // -90 исходный поворот
+                    ringEl.style.transform = `rotate(${finalRotate - 90}deg)`; 
 
                     setTimeout(()=>{
                         el.resultLayer.classList.add('show');
