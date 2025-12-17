@@ -18,6 +18,7 @@ from database import (
 )
 
 # --- КОНФИГУРАЦИЯ ---
+# Вставь свой токен
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -29,22 +30,34 @@ app = web.Application()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (FIX TUPLE ERROR) ---
-# Эти ключи нужны, если база вернет кортежи вместо словарей
-USER_KEYS = ['id', 'tg_id', 'username', 'balance']
-CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
+# --- ФУНКЦИЯ СПАСЕНИЯ ОТ ОШИБОК TUPLE ---
+def force_dict(item, key_map):
+    """
+    Принудительно превращает результат БД в словарь.
+    Работает и с sqlite3.Row, и с dict, и с tuple.
+    """
+    if item is None:
+        return None
+    
+    # Если это уже словарь или похоже на него (Row)
+    if hasattr(item, 'keys') or isinstance(item, dict):
+        return dict(item)
+    
+    # Если это кортеж (tuple) или список -> мапим вручную по ключам
+    if isinstance(item, (tuple, list)):
+        # Создаем словарь, сопоставляя ключи по порядку
+        # Мы используем min, чтобы не упасть, если длина не совпадает
+        return {key_map[i]: item[i] for i in range(min(len(item), len(key_map)))}
+    
+    return item
 
-def to_dict(obj, keys):
-    """Превращает объект (Row или Tuple) в словарь."""
-    if not obj: return None
-    if isinstance(obj, dict): return obj
-    try:
-        # Попытка 1: Если это sqlite3.Row, оно само умеет в dict
-        return dict(obj)
-    except:
-        # Попытка 2: Если это tuple, мапим вручную по ключам
-        return dict(zip(keys, obj))
+# Ключи таблиц (порядок важен! он должен совпадать с порядком колонок в БД)
+# Таблица items: id, name, rarity, price, image_url, sound_url, case_id
+ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
+# Таблица cases: id, name, price, icon_url
+CASE_KEYS = ['id', 'name', 'price', 'icon_url']
+# Таблица users: id, tg_id, username, balance
+USER_KEYS = ['id', 'tg_id', 'username', 'balance']
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -62,40 +75,42 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # Получаем данные и конвертируем
+        # 1. User
         raw_user = await get_user(user_id, data.get('username'))
-        user_data = to_dict(raw_user, USER_KEYS)
+        user_data = force_dict(raw_user, USER_KEYS)
         
-        # Инвентарь (тут сложный запрос, ключи свои)
+        # 2. Inventory (Grouped)
+        # Порядок в get_inventory_grouped: item_id, name, rarity, image_url, price, quantity
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
         raw_inv = await get_inventory_grouped(user_id)
         
         inventory = []
         for item in raw_inv:
-            i_dict = to_dict(item, INV_KEYS)
-            p, r = i_dict['price'], i_dict['rarity']
-            # Логика цен
+            i_dict = force_dict(item, INV_KEYS)
+            p, r = i_dict.get('price', 0), i_dict.get('rarity', 'Common')
+            
+            # Логика цен продажи
             sell = int(p*0.15) if r=='Common' else int(p*0.4) if r=='Uncommon' else int(p*1.1) if r=='Rare' else int(p*3.5)
             i_dict['sell_price'] = max(1, sell)
             inventory.append(i_dict)
 
-        # Кейсы и Лидерборд
+        # 3. Cases
         raw_cases = await get_all_cases()
-        cases = [to_dict(c, CASE_KEYS) for c in raw_cases]
+        cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         
-        # Items sorted
+        # 4. Items
         raw_all_items = await get_all_items_sorted()
-        all_items = [to_dict(i, ITEM_KEYS) for i in raw_all_items]
+        all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
 
         return web.json_response({
             "user": user_data, 
             "inventory": inventory, 
             "cases": cases, 
-            "leaderboard": await get_leaderboard(), # Тут простой dict
+            "leaderboard": await get_leaderboard(),
             "all_items": all_items
         })
     except Exception as e: 
-        logging.error(f"Error api_get_data: {e}")
+        logging.error(f"Error api_get_data: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
 async def api_open_case(request):
@@ -105,39 +120,43 @@ async def api_open_case(request):
         case_id = int(data.get('case_id'))
         count = int(data.get('count', 1))
         
-        # 1. Получаем кейс (Защита от tuple)
+        # 1. Получаем Кейс
         raw_case = await get_case_data(case_id)
-        case_data = to_dict(raw_case, CASE_KEYS)
+        case_data = force_dict(raw_case, CASE_KEYS)
         
         if not case_data:
              return web.json_response({"error": "Кейс не найден"}, status=404)
 
         total_price = case_data['price'] * count
         
-        # 2. Получаем юзера (Защита от tuple)
+        # 2. Получаем Юзера
         raw_user = await get_user(user_id, 'temp')
-        user = to_dict(raw_user, USER_KEYS)
+        user = force_dict(raw_user, USER_KEYS)
 
         if user['balance'] < total_price: 
             return web.json_response({"error": "Мало денег!"}, status=400)
 
-        # 3. Получаем предметы (Защита от tuple)
+        # 3. Получаем Предметы (ИСПРАВЛЕНИЕ ОШИБКИ)
         raw_items = await get_case_items(case_id)
-        items = [to_dict(i, ITEM_KEYS) for i in raw_items]
+        
+        # Принудительная конвертация каждого предмета
+        items = [force_dict(i, ITEM_KEYS) for i in raw_items]
 
         if not items:
             return web.json_response({"error": "Кейс пуст"}, status=400)
 
-        # 4. Рандом
-        weights = [10000 / (item['price'] + 1) for item in items]
+        # 4. Выбор дропа
+        # Теперь items точно список словарей, и item['price'] сработает
+        weights = [10000 / (item.get('price', 1) + 1) for item in items]
         dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
         await update_user_balance(user_id, -total_price) 
         await add_items_to_inventory_batch(user_id, dropped)
         
         return web.json_response({"dropped": dropped})
+
     except Exception as e: 
-        logging.error(f"Error api_open_case: {e}")
+        logging.error(f"Error api_open_case: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
 async def api_sell_batch(request):
@@ -156,7 +175,7 @@ async def api_sell_batch(request):
         else:
             return web.json_response({"error": "Ошибка продажи"}, status=400)
     except Exception as e: 
-        logging.error(f"Error api_sell_batch: {e}")
+        logging.error(f"Error api_sell_batch: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
 async def api_upgrade(request):
@@ -166,21 +185,21 @@ async def api_upgrade(request):
         item_id = int(data.get('item_id'))
         target_id = int(data.get('target_id'))
         
-        # 1. Ищем мой предмет (INV_KEYS)
+        # 1. Получаем инвентарь (безопасно)
         raw_inv = await get_inventory_grouped(user_id)
-        # Преобразуем весь инвентарь в dict, чтобы найти нужное
-        inventory = [to_dict(i, ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']) for i in raw_inv]
+        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
+        
+        inventory = [force_dict(i, INV_KEYS) for i in raw_inv]
         
         my_item = next((i for i in inventory if i['item_id'] == item_id and i['quantity'] > 0), None)
-        
         if not my_item: 
             return web.json_response({"error": "Предмет не найден"}, status=400)
         
-        # 2. Ищем цель (ITEM_KEYS)
+        # 2. Получаем все предметы (безопасно)
         raw_all_items = await get_all_items_sorted()
-        all_items = [to_dict(i, ITEM_KEYS) for i in raw_all_items]
-        target_item = next((i for i in all_items if i['id'] == target_id), None)
+        all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
         
+        target_item = next((i for i in all_items if i['id'] == target_id), None)
         if not target_item:
             return web.json_response({"error": "Цель не найдена"}, status=400)
 
@@ -189,10 +208,9 @@ async def api_upgrade(request):
         if chance > 80: chance = 80
         if chance < 1: chance = 1
 
-        # 4. Удаляем
+        # 4. Сжигаем и крутим
         await delete_one_item_by_id(user_id, item_id)
         
-        # 5. Крутим
         roll = random.uniform(0, 100)
         is_win = roll <= chance
         
@@ -208,7 +226,7 @@ async def api_upgrade(request):
             "chance": chance
         })
     except Exception as e: 
-        logging.error(f"Upgrade Error: {e}")
+        logging.error(f"Upgrade Error: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
 app.add_routes([
