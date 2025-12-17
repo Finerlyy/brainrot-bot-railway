@@ -36,12 +36,31 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # Миграции
-        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT"); except: pass
-        try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''"); except: pass
+        # --- МИГРАЦИИ (ИСПРАВЛЕНО: РАЗБИТО НА СТРОКИ) ---
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
+        except:
+            pass
 
         default_weights = [('Common', 10000), ('Uncommon', 5000), ('Rare', 2500), ('Mythical', 500), ('Legendary', 100), ('Immortal', 20), ('Secret', 1)]
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
@@ -134,14 +153,14 @@ async def sell_specific_item_stack(tg_user_id, item_id, mutations_str, count, to
         await db.commit()
         return True
 
-# --- ИГРОВЫЕ ФУНКЦИИ (ПОЛНОСТЬЮ ПЕРЕПИСАНЫ НА ИМЕНА) ---
+# --- ИГРОВЫЕ ФУНКЦИИ ---
 
 async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_id=None):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT id, balance FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             user = await cursor.fetchone()
-            if not user: return "user_not_found"
+            if not user: return None
             uid = user['id']
             balance = user['balance']
 
@@ -392,28 +411,24 @@ async def update_user_balance(tg_id, amount):
 async def get_all_cases():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM cases") as cursor: 
-            return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute("SELECT * FROM cases") as cursor: return await cursor.fetchall()
 
 async def get_case_data(case_id):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM cases WHERE id = ?", (case_id,)) as cursor:
-            return dict(await cursor.fetchone())
+        async with db.execute("SELECT * FROM cases WHERE id = ?", (case_id,)) as cursor: return await cursor.fetchone()
 
 async def get_case_items(case_id=None):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         sql = "SELECT * FROM items" if case_id is None else "SELECT * FROM items WHERE case_id = ?"
         params = () if case_id is None else (case_id,)
-        async with db.execute(sql, params) as cursor:
-            return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute(sql, params) as cursor: return await cursor.fetchall()
 
 async def get_all_items_sorted():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT * FROM items ORDER BY price ASC") as cursor:
-            return [dict(row) for row in await cursor.fetchall()]
+        async with db.execute("SELECT * FROM items ORDER BY price ASC") as cursor: return await cursor.fetchall()
 
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
