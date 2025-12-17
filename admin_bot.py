@@ -14,7 +14,8 @@ from database import (
     update_user_brc, admin_get_user_inventory_detailed, admin_update_inventory_mutation
 )
 
-TOKEN = "8547237995:AAHrUOQInO5b9HVLGbb_2eIlWKIdhzVo86Y"
+# --- НОВЫЙ ТОКЕН АДМИН БОТА ---
+TOKEN = "8547237995:AAEj8wYaQUXCWpBpjBC5CQI_pzGgYF4Fpog"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
