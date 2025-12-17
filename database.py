@@ -38,7 +38,7 @@ async def init_db():
         # --- МИГРАЦИИ ---
         cols = ["ip", "cases_opened", "reg_date", "photo_url"]
         for col in cols:
-            try: await db.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT") # Упростил тип для надежности
+            try: await db.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT") 
             except: pass
         
         try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
@@ -49,7 +49,7 @@ async def init_db():
 
         await db.commit()
         
-        # Наполнение
+        # Наполнение дефолтным кейсом, если нет
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg'
@@ -129,7 +129,8 @@ async def sell_specific_item_stack(tg_user_id, item_id, mutations_str, count, to
             )
         """
         await db.execute(sql, (user_pk, item_id, mutations_str, count))
-        await db.execute("UPDATE users SET balance = balance + ? WHERE tg_id = ?", (total_price, tg_user_id))
+        if total_price > 0:
+            await db.execute("UPDATE users SET balance = balance + ? WHERE tg_id = ?", (total_price, tg_user_id))
         await db.commit()
         return True
 
@@ -148,11 +149,13 @@ async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_i
             if balance < wager_val: return "no_balance"
             await db.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (wager_val, uid))
         elif wager_type == 'item':
+            # Ищем ОДИН предмет такого типа в инвентаре
             sql_check = "SELECT rowid FROM inventory WHERE user_id = ? AND item_id = ? LIMIT 1"
             async with db.execute(sql_check, (uid, wager_item_id)) as cur:
                 row = await cur.fetchone()
                 if not row: return "no_item"
                 inv_rowid = row['rowid']
+            # Удаляем его (кладем в банк игры)
             await db.execute("DELETE FROM inventory WHERE rowid = ?", (inv_rowid,))
 
         await db.execute("""
@@ -173,16 +176,15 @@ async def cancel_game_db(game_id, tg_user_id):
             game = await cur.fetchone()
             if not game: return "not_found"
         
-        # Если игра уже завершена, просто удаляем запись из БД (чтобы не висела в активных)
         if game['status'] == 'finished':
              await db.execute("DELETE FROM games WHERE id = ?", (game_id,))
              await db.commit()
              return "ok"
 
-        # Если игра активна, проверяем хоста
         if game['host_id'] != user_pk: return "not_host"
         if game['status'] != 'open': return "started"
 
+        # Возврат средств/предметов
         if game['wager_type'] == 'balance':
             await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], user_pk))
         elif game['wager_type'] == 'item':
@@ -226,6 +228,7 @@ async def join_game(game_id, tg_guest_id):
             if guest_bal < game['wager_amount']: return "no_balance"
             await db.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (game['wager_amount'], guest_pk))
         elif game['wager_type'] == 'item':
+            # Гость должен иметь такой же предмет
             sql_check = "SELECT rowid FROM inventory WHERE user_id = ? AND item_id = ? LIMIT 1"
             async with db.execute(sql_check, (guest_pk, game['wager_item_id'])) as cur:
                 row = await cur.fetchone()
@@ -293,6 +296,7 @@ async def check_game_result(game_id):
                 winner_id = host_id
 
         if winner_id == 0: 
+            # Ничья - возврат
             if game['wager_type'] == 'balance':
                 await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], host_id))
                 await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], guest_id))
@@ -300,10 +304,12 @@ async def check_game_result(game_id):
                 await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (host_id, game['wager_item_id']))
                 await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (guest_id, game['wager_item_id']))
         else:
+            # Победитель забирает всё
             if game['wager_type'] == 'balance':
                 win_amt = game['wager_amount'] * 2
                 await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (win_amt, winner_id))
             else:
+                # 2 предмета
                 await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (winner_id, game['wager_item_id']))
                 await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (winner_id, game['wager_item_id']))
 
@@ -473,10 +479,23 @@ async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
         await db.commit()
         return True
 
+# --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ЛИДЕРБОРДА (NET WORTH) ---
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT username, balance, tg_id, photo_url FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10") as cursor:
+        # Считаем Состояние = Баланс + Сумма цен всех предметов в инвентаре
+        sql = """
+        SELECT u.username, u.photo_url, u.tg_id, u.balance,
+               (u.balance + COALESCE((SELECT SUM(i.price) 
+                                      FROM inventory inv 
+                                      JOIN items i ON inv.item_id = i.id 
+                                      WHERE inv.user_id = u.id), 0)) as net_worth
+        FROM users u
+        WHERE u.tg_id != 0
+        ORDER BY net_worth DESC
+        LIMIT 10
+        """
+        async with db.execute(sql) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
 async def admin_get_all_users():
