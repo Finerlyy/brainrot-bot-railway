@@ -51,29 +51,28 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        /* РУЛЕТКА В КЕЙСЕ */
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
         .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
-        .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: 0.3s; }
-        .popup.active { pointer-events: all; opacity: 1; }
-        .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; display:flex; flex-direction:column; max-height:80vh; }
+        .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: none; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; }
+        .popup.active { display: flex; opacity: 1; }
+        .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; display:flex; flex-direction:column; max-height:80vh; position: relative;}
+        .popup.active .popup-content { transform: scale(1); }
         .glow-bg { position: absolute; top:50%; left:50%; width: 250px; height: 250px; background: var(--accent); opacity: 0.15; filter: blur(60px); z-index: -1; transform: translate(-50%, -50%); }
 
-        .drop-grid { display: grid; gap: 10px; margin-bottom: 15px; overflow-y: auto; padding: 5px; width: 100%; }
+        .drop-grid { display: grid; gap: 10px; margin-bottom: 15px; overflow-y: auto; padding: 5px; width: 100%; z-index: 10; }
         .drop-grid.single { grid-template-columns: 1fr; }
         .drop-grid.multi { grid-template-columns: repeat(3, 1fr); } 
         
-        /* Анимация выпадения (Pop-in) */
         .drop-item { 
             background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; 
             transform: scale(0.5);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* Эффект пружины */
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
         }
         .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
         .drop-item .case-name { font-size: 0.7rem; }
@@ -95,7 +94,6 @@
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         
-        /* ИСПРАВЛЕНО: Картинка заполняет круг полностью */
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
         
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
@@ -219,7 +217,6 @@
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name">...</h3>
-            
             <p class="modal-price">Цена: <span class="star-icon">⭐️</span> <span id="modal-case-price">0</span></p>
             
             <div class="slider-container">
@@ -264,7 +261,6 @@
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // --- ФУНКЦИЯ ФОРМАТИРОВАНИЯ БАЛАНСА (1k, 1M) ---
         function formatBalance(num) {
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
@@ -272,7 +268,7 @@
         }
 
         window.switchTab=function(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${t}`).classList.add('active');if(t!=='market')document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`).classList.add('active');}
-        window.closeModal=function(id){document.getElementById(id).classList.add('hidden');}
+        window.closeModal=function(id){document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('hidden');}
 
         document.addEventListener('DOMContentLoaded', () => {
             const tg = window.Telegram.WebApp; tg.expand();
@@ -308,7 +304,6 @@
             function upBal(n){
                 if(n===undefined)return; 
                 currentBal=n; 
-                // Применяем форматирование при обновлении
                 el.bal.innerText = formatBalance(n);
             }
 
@@ -345,7 +340,6 @@
                 } catch(e){}
             }
 
-            // --- ПРОДАЖА (ОБНОВЛЕННАЯ ЛОГИКА) ---
             window.openSellModal=(itemId)=>{
                 sellingItem = inventory.find(i => i.item_id === itemId);
                 if(!sellingItem) return;
@@ -353,7 +347,6 @@
                 el.sellImg.src = sellingItem.image_url;
                 el.sellOwned.innerText = sellingItem.quantity;
                 
-                // Если предмет один - скрываем слайдер
                 if(sellingItem.quantity === 1) {
                     el.sellSliderContainer.style.display = 'none';
                     sellCount = 1;
@@ -377,9 +370,7 @@
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
                 
-                // Проверка на редкость (Rare, Mythical, Legendary и т.д.)
                 if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
-                    // Используем confirm()
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
@@ -394,7 +385,6 @@
                 } catch(e) { load(); }
             }
 
-            // --- ОТКРЫТИЕ КЕЙСА ---
             window.showOpenModal=()=>{
                 el.rouletteBox.style.display = 'none'; 
                 el.openBtn.disabled = false;
@@ -427,11 +417,9 @@
                     upBal(currentBal - price);
 
                     if (openCount > 1) {
-                        // --- МУЛЬТИ ОТКРЫТИЕ (БЕЗ РУЛЕТКИ, С АНИМАЦИЕЙ ВЫПАДЕНИЯ) ---
                         el.openModal.classList.add('hidden');
                         showResults(d.dropped);
                     } else {
-                        // --- ОДИНОЧНОЕ ОТКРЫТИЕ (С РУЛЕТКОЙ) ---
                         el.rouletteBox.style.display = 'block';
                         el.rouletteTrack.innerHTML = '';
                         el.rouletteTrack.style.transition = 'none';
@@ -475,9 +463,9 @@
             };
 
             function showResults(items){
+                el.popup.classList.remove('hidden');
                 el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; 
-                // Если предметов много - делаем сетку
                 el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
                 
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
@@ -485,12 +473,10 @@
                 items.forEach((item, index)=>{
                     const div=document.createElement('div'); 
                     div.className=`drop-item rarity-${item.rarity}`; 
-                    // Добавляем задержку анимации для каждого следующего предмета
                     div.style.animationDelay = `${index * 0.1}s`; 
                     div.innerHTML=`<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
                     
-                    // Звук только для первого или для всех? Сделаем для первого
                     if(index === 0 && item.sound_url && item.sound_url!=='-') { 
                         el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); 
                     }
@@ -600,7 +586,10 @@
                 }
             }
             
-            document.getElementById('claim-btn').onclick=()=>{el.popup.classList.remove('active');};
+            document.getElementById('claim-btn').onclick=()=>{
+                el.popup.classList.remove('active');
+                el.popup.classList.add('hidden');
+            };
             load();
         });
     </script>
