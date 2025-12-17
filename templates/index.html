@@ -41,22 +41,65 @@
             justify-content: center; align-items: center; gap: 5px; width: 100%;
         }
         .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
+        
         .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
         .sell-btn:active { box-shadow: 0 0 0 #111; }
         .sell-btn span { color: var(--accent); }
         .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; transform: none; box-shadow: none; }
 
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.3s; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto;}
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
-        .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
-        .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
+        /* --- НОВЫЙ БЛОК: МУЛЬТИ-РУЛЕТКА --- */
+        #multi-roulette-container {
+            width: 100%;
+            max-height: 300px; /* Ограничение высоты, если много кейсов */
+            overflow-y: auto;  /* Скролл */
+            display: none;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background: #111;
+            border: 2px solid #333;
+        }
+
+        .case-roulette-row { 
+            width: 100%; height: 100px; 
+            position: relative; overflow: hidden; 
+            border-bottom: 1px solid #333;
+            background: #151515;
+        }
         
+        .roulette-center-line { 
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; 
+            background: #fff; z-index: 10; transform: translateX(-50%); 
+            box-shadow: 0 0 10px #fff; 
+        }
+        
+        .roulette-track { 
+            display: flex; height: 100%; align-items: center; 
+            will-change: transform; 
+        }
+        
+        .roulette-card { 
+            min-width: 90px; height: 80px; 
+            background: #222; border: 1px solid #444; margin: 0 4px; 
+            border-radius: 8px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+        }
+        .roulette-card img { width: 50px; height: 50px; object-fit: contain; }
+
+        /* Кнопки действий */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-fast { background: #444; color: #fff; box-shadow: 0 4px 0 #222; }
+        .btn-spin { background: var(--star-gradient); color: #000; box-shadow: 0 4px 0 var(--accent-dark); }
+
         .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: none; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; }
         .popup.active { display: flex; opacity: 1; }
         .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; display:flex; flex-direction:column; max-height:80vh; position: relative;}
@@ -93,7 +136,6 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
         
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
@@ -148,7 +190,6 @@
 
         <section id="tab-upgrade" class="tab-content">
             <h2 style="text-align:center;margin-bottom:15px;color:var(--accent); font-size: 2rem;">📈</h2>
-            
             <div class="upgrade-container">
                 <div class="upgrade-slots">
                     <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
@@ -159,14 +200,12 @@
                         <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
                     </div>
                 </div>
-                
                 <div class="quick-chance-grid">
                     <button class="chance-btn" onclick="autoSelectTarget(50)">50%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(30)">30%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(20)">20%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(10)">10%</button>
                 </div>
-
                 <div class="roulette-wrapper">
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
@@ -181,7 +220,6 @@
                         </div>
                     </div>
                 </div>
-
                 <button id="upgrade-btn" class="upgrade-btn" disabled>ПРОКАЧАТЬ</button>
             </div>
         </section>
@@ -224,12 +262,14 @@
                 <input type="range" min="1" max="10" value="1" id="case-slider" oninput="updateSlider(this.value)">
             </div>
             
-            <div id="case-roulette" class="case-roulette-container">
-                <div class="roulette-center-line"></div>
-                <div id="roulette-track" class="roulette-track"></div>
-            </div>
+            <div id="multi-roulette-container">
+                </div>
 
-            <button id="start-open-btn" class="main-action-btn">ОТКРЫТЬ</button>
+            <div class="actions-grid">
+                <button id="btn-fast" class="main-action-btn btn-fast">⏩ БЫСТРО</button>
+                <button id="btn-spin" class="main-action-btn btn-spin">🎰 КРУТИТЬ</button>
+            </div>
+            
             <button class="close-btn" onclick="closeModal('open-modal')">Отмена</button>
         </div>
     </div>
@@ -283,7 +323,7 @@
             const el={
                 bal:document.getElementById('balance'), cases:document.getElementById('cases-grid'), inv:document.getElementById('inventory-grid'), 
                 loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), 
-                mPrice:document.getElementById('modal-case-price'), 
+                mImg:document.getElementById('modal-case-img'), mPrice:document.getElementById('modal-case-price'), 
                 slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'),
                 popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'),
                 selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'),
@@ -296,9 +336,10 @@
                 sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'),
                 sellSliderContainer:document.getElementById('sell-slider-container'),
                 
-                rouletteBox: document.getElementById('case-roulette'),
-                rouletteTrack: document.getElementById('roulette-track'),
-                openBtn: document.getElementById('start-open-btn')
+                // Мульти-рулетка
+                multiBox: document.getElementById('multi-roulette-container'),
+                btnFast: document.getElementById('btn-fast'),
+                btnSpin: document.getElementById('btn-spin')
             };
 
             function upBal(n){
@@ -369,12 +410,10 @@
             
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
-                
                 if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
-
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -385,82 +424,110 @@
                 } catch(e) { load(); }
             }
 
+            // --- ОТКРЫТИЕ КЕЙСА (НОВАЯ ЛОГИКА) ---
             window.showOpenModal=()=>{
-                el.rouletteBox.style.display = 'none'; 
-                el.openBtn.disabled = false;
-                el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${selectedCase.price})`;
-                el.slider.value=1; el.slider.disabled=false; 
+                el.multiBox.style.display = 'none'; // Скрываем рулетки при открытии
+                el.multiBox.innerHTML = '';
+                
+                el.btnFast.disabled = false;
+                el.btnSpin.disabled = false;
+                el.slider.disabled = false;
+                
+                el.slider.value = 1; 
                 updateSlider(1); 
                 el.openModal.classList.remove('hidden');
             }
             
             window.updateSlider=(v)=>{
                 openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${formatBalance(selectedCase.price*openCount)})`;
+                // Обновляем текст на кнопках, если нужно, или просто цену
+                el.mPrice.innerText = formatBalance(selectedCase.price*openCount);
             }
 
-            el.openBtn.onclick=async()=>{
+            // Функция запуска (fast или spin)
+            async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount;
                 if(currentBal < price) return tg.showAlert("Мало звезд!");
                 
-                el.openBtn.disabled = true;
+                el.btnFast.disabled = true;
+                el.btnSpin.disabled = true;
+                el.slider.disabled = true;
 
                 try {
                     const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
                     const d = await res.json();
                     
                     if(d.error){ 
-                        el.openBtn.disabled = false;
+                        el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false;
                         return tg.showAlert(d.error); 
                     }
                     
                     upBal(currentBal - price);
 
-                    if (openCount > 1) {
+                    if (mode === 'fast') {
+                        // БЫСТРО: Сразу попап
                         el.openModal.classList.add('hidden');
                         showResults(d.dropped);
                     } else {
-                        el.rouletteBox.style.display = 'block';
-                        el.rouletteTrack.innerHTML = '';
-                        el.rouletteTrack.style.transition = 'none';
-                        el.rouletteTrack.style.transform = 'translateX(0px)';
+                        // КРУТИТЬ: Создаем N рулеток
+                        el.multiBox.style.display = 'block';
+                        el.multiBox.innerHTML = '';
                         
-                        const winItem = d.dropped[0];
-                        const WIN_INDEX = 35; 
-                        let tapeItems = [];
-                        
-                        for(let i=0; i<45; i++) {
-                            if(i === WIN_INDEX) tapeItems.push(winItem);
-                            else tapeItems.push(allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)]);
-                        }
-
-                        tapeItems.forEach(item => {
-                            const card = document.createElement('div');
-                            card.className = `roulette-card rarity-${item.rarity}`;
-                            card.innerHTML = `<img src="${item.image_url}">`;
-                            el.rouletteTrack.appendChild(card);
+                        // Генерируем строки
+                        d.dropped.forEach((winItem, idx) => {
+                            createRouletteRow(winItem, idx);
                         });
-
-                        const CARD_WIDTH = 110;
-                        const offset = Math.floor(Math.random() * 80) - 40;
-                        const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (el.rouletteBox.clientWidth / 2) + (CARD_WIDTH / 2) + offset;
-
-                        setTimeout(() => {
-                            el.rouletteTrack.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
-                            el.rouletteTrack.style.transform = `translateX(-${scrollAmount}px)`;
-                        }, 50);
-
+                        
+                        // Задержка перед показом результата (5.5 сек)
                         setTimeout(() => {
                              el.openModal.classList.add('hidden');
-                             showResults([winItem]);
+                             showResults(d.dropped);
                         }, 5500); 
                     }
 
-                } catch(e) { 
-                    console.error(e);
-                    load(); 
+                } catch(e) { console.error(e); load(); }
+            }
+
+            el.btnFast.onclick = () => runOpenCase('fast');
+            el.btnSpin.onclick = () => runOpenCase('spin');
+
+            function createRouletteRow(winItem, index) {
+                // Создаем контейнер строки
+                const row = document.createElement('div');
+                row.className = 'case-roulette-row';
+                
+                const line = document.createElement('div');
+                line.className = 'roulette-center-line';
+                
+                const track = document.createElement('div');
+                track.className = 'roulette-track';
+                
+                // Наполняем ленту
+                const WIN_INDEX = 35;
+                for(let i=0; i<45; i++) {
+                    let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
+                    const card = document.createElement('div');
+                    card.className = `roulette-card rarity-${item.rarity}`;
+                    card.innerHTML = `<img src="${item.image_url}">`;
+                    track.appendChild(card);
                 }
-            };
+                
+                row.appendChild(line);
+                row.appendChild(track);
+                el.multiBox.appendChild(row);
+                
+                // Анимация
+                const CARD_WIDTH = 98; // 90px width + 8px margin
+                const offset = Math.floor(Math.random() * 60) - 30; // Рандом для живости
+                const containerWidth = el.multiBox.clientWidth || 350; // Fallback width
+                const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (containerWidth / 2) + (CARD_WIDTH / 2) + offset;
+
+                // Задержка старта для красоты (каскад)
+                setTimeout(() => {
+                    track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
+                    track.style.transform = `translateX(-${scrollAmount}px)`;
+                }, 50 + (index * 100));
+            }
 
             function showResults(items){
                 el.popup.classList.remove('hidden');
