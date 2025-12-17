@@ -290,10 +290,20 @@
             return num.toLocaleString();
         }
 
-        // --- RARITY ORDER FOR FILTERING ---
         const RARITY_ORDER = {
             'Common': 1, 'Uncommon': 2, 'Rare': 3, 
             'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7
+        };
+
+        // --- VISUAL WEIGHTS FOR ROULETTE SCROLL ---
+        const VISUAL_WEIGHTS = {
+            'Common': 1000,
+            'Uncommon': 500,
+            'Rare': 200,
+            'Mythical': 50,
+            'Legendary': 10,
+            'Immortal': 3,
+            'Secret': 1
         };
 
         window.switchTab=function(t){
@@ -522,13 +532,42 @@
             el.btnFast.onclick = () => runOpenCase('fast');
             el.btnSpin.onclick = () => runOpenCase('spin');
 
+            // --- WEIGHTED RANDOM ITEM GENERATOR ---
+            function getWeightedRandomItem(itemsInCase) {
+                // Если нет предметов в кейсе, берем любой глобальный (fallback)
+                const pool = (itemsInCase && itemsInCase.length > 0) ? itemsInCase : allItemsSorted;
+                
+                let totalWeight = 0;
+                const weightedList = [];
+                
+                pool.forEach(item => {
+                    const w = VISUAL_WEIGHTS[item.rarity] || 100;
+                    totalWeight += w;
+                    weightedList.push({item, weight: w});
+                });
+                
+                let random = Math.random() * totalWeight;
+                for(const entry of weightedList) {
+                    if(random < entry.weight) return entry.item;
+                    random -= entry.weight;
+                }
+                return pool[0];
+            }
+
             function createRouletteRow(winItem, index) {
                 const row = document.createElement('div'); row.className = 'case-roulette-row';
                 const line = document.createElement('div'); line.className = 'roulette-center-line';
                 const track = document.createElement('div'); track.className = 'roulette-track';
+                
                 const WIN_INDEX = 29; 
+                
+                // Фильтруем предметы ТОЛЬКО текущего кейса
+                const itemsInCase = allItemsSorted.filter(i => i.case_id === selectedCase.id);
+
                 for(let i=0; i<45; i++) {
-                    let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
+                    // Генерируем с учетом веса
+                    let item = (i === WIN_INDEX) ? winItem : getWeightedRandomItem(itemsInCase);
+                    
                     const card = document.createElement('div'); card.className = `roulette-card rarity-${item.rarity}`;
                     let imgUrl = item.image_url; if(item.rarity === 'Secret') imgUrl = 'https://cdn-icons-png.flaticon.com/512/5726/5726678.png'; 
                     card.innerHTML = `<img src="${imgUrl}">`; track.appendChild(card);
@@ -560,23 +599,18 @@
                 load();
             }
 
-            // --- ОБНОВЛЕННАЯ ФУНКЦИЯ UPGRADE (ФИЛЬТР) ---
+            // --- АПГРЕЙД ---
             window.openItemSelect=(side)=>{
                 el.selGrid.innerHTML=''; el.selModal.classList.remove('hidden');
                 
-                // Фильтруем инвентарь (слева) или все предметы (справа)
                 let list = side==='left' ? inventory.filter(i=>i.quantity>0) : allItemsSorted;
                 
-                // Если выбираем ЦЕЛЬ (справа) и уже выбран ПРЕДМЕТ (слева), фильтруем по редкости
                 if (side === 'right' && upgMy) {
                     const myRank = RARITY_ORDER[upgMy.rarity] || 0;
                     list = list.filter(item => (RARITY_ORDER[item.rarity] || 0) > myRank);
                 }
 
-                if(list.length === 0) {
-                    el.selGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:#666'>Нет доступных предметов</p>";
-                    return;
-                }
+                if(list.length === 0) { el.selGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:#666'>Нет доступных предметов</p>"; return; }
 
                 list.forEach(i=>{
                     const div=document.createElement('div'); div.className='select-card';
@@ -591,28 +625,17 @@
                     upgMy=item; 
                     el.uLeft.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; 
                     el.uLeft.classList.add('selected'); 
-                    // Сбрасываем правую часть при смене левой, чтобы не было конфликтов
-                    upgTarget = null;
-                    el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>";
-                    el.uRight.classList.remove('selected');
+                    upgTarget = null; el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected');
                 } 
-                else { 
-                    upgTarget=item; 
-                    el.uRight.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; 
-                    el.uRight.classList.add('selected'); 
-                }
+                else { upgTarget=item; el.uRight.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; el.uRight.classList.add('selected'); }
                 calcChance();
             }
             window.autoSelectTarget=(desiredChance)=>{
                 if(!upgMy) return tg.showAlert("Сначала выбери свой предмет слева!");
                 let targetPrice = (upgMy.price * 95) / desiredChance;
-                
-                // Фильтруем список для авто-выбора (только более редкие)
                 const myRank = RARITY_ORDER[upgMy.rarity] || 0;
                 const validItems = allItemsSorted.filter(item => (RARITY_ORDER[item.rarity] || 0) > myRank);
-                
                 if (validItems.length === 0) return tg.showAlert("Нет подходящих предметов для улучшения!");
-
                 let closestItem = validItems.reduce((prev, curr) => (Math.abs(curr.price - targetPrice) < Math.abs(prev.price - targetPrice) ? curr : prev));
                 selectUpgradeItem('right', closestItem);
             }
@@ -629,13 +652,7 @@
                 try{
                     const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:upgMy.item_id, target_id:upgTarget.id})});
                     const d=await res.json();
-                    
-                    if(d.error) {
-                        tg.showAlert(d.error);
-                        el.uBtn.disabled=false;
-                        return;
-                    }
-
+                    if(d.error) { tg.showAlert(d.error); el.uBtn.disabled=false; return; }
                     const winChanceVal = parseFloat(el.uChance.innerText); const isWin = (d.status === 'win');
                     let stopAngle; if(isWin) { stopAngle = Math.random() * winChanceVal; } else { stopAngle = winChanceVal + (Math.random() * (100 - winChanceVal)); }
                     const angleDeg = (stopAngle / 100) * 360; const spins = 5 * 360; const finalRotate = spins + (360 - angleDeg);
@@ -644,12 +661,7 @@
                         el.resultLayer.classList.add('show');
                         if(isWin){ el.resultText.innerText = "УСПЕХ"; el.resultText.className = "text-win"; el.ring.classList.add('win-glow'); showResults([d.item]); } 
                         else { el.resultText.innerText = "НЕУДАЧА"; el.resultText.className = "text-lose"; el.ring.classList.add('lose-glow'); load(); }
-                        
-                        // Сброс
-                        upgMy=null; upgTarget=null; 
-                        el.uLeft.innerHTML="<p>ВЫБЕРИ<br>ПРЕДМЕТ</p>"; el.uLeft.classList.remove('selected'); 
-                        el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); 
-                        el.uChance.innerText="0%"; el.uBtn.disabled=false;
+                        upgMy=null; upgTarget=null; el.uLeft.innerHTML="<p>ВЫБЕРИ<br>ПРЕДМЕТ</p>"; el.uLeft.classList.remove('selected'); el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); el.uChance.innerText="0%"; el.uBtn.disabled=false;
                     }, 4050);
                 } catch(e){ console.error(e); tg.showAlert("Ошибка связи!"); el.uBtn.disabled=false; load(); }
             }
