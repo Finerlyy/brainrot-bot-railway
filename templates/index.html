@@ -45,12 +45,8 @@
             box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; 
             justify-content: center; align-items: center; gap: 5px; width: 100%;
         }
-        .main-action-btn:active, .sell-btn:active, .upgrade-btn:active {
-            transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark);
-        }
-        .sell-btn { 
-            background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px;
-        }
+        .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
+        .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
         .sell-btn:active { box-shadow: 0 0 0 #111; }
         .sell-btn span { color: var(--accent); }
         .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; transform: none; box-shadow: none; }
@@ -62,50 +58,42 @@
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
         /* --- АНИМАЦИЯ ОТКРЫТИЯ КЕЙСА (РУЛЕТКА CS:GO) --- */
-        .case-roulette-container {
-            width: 100%; height: 120px; background: #111; 
-            border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent);
-            position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px;
-            display: none; /* Скрыто по умолчанию */
-        }
-        .roulette-center-line {
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; 
-            background: #fff; z-index: 10; transform: translateX(-50%);
-            box-shadow: 0 0 10px #fff;
-        }
-        .roulette-track {
-            display: flex; height: 100%; align-items: center;
-            will-change: transform; /* Оптимизация анимации */
-        }
-        .roulette-card {
-            min-width: 100px; height: 90px; background: #222; border: 1px solid #444; 
-            margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
-        }
+        .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
+        .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
+        .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
+        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
         /* Попап с результатом */
         .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: 0.3s; }
         .popup.active { pointer-events: all; opacity: 1; }
-        .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; }
-        .popup.active .popup-content { transform: scale(1); }
+        .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; display:flex; flex-direction:column; max-height:80vh; }
         .glow-bg { position: absolute; top:50%; left:50%; width: 250px; height: 250px; background: var(--accent); opacity: 0.15; filter: blur(60px); z-index: -1; transform: translate(-50%, -50%); }
+
+        .drop-grid { display: grid; gap: 10px; margin-bottom: 15px; overflow-y: auto; padding: 5px; width: 100%; }
+        .drop-grid.single { grid-template-columns: 1fr; }
+        .drop-grid.multi { grid-template-columns: repeat(3, 1fr); } 
+        
+        .drop-item { 
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; /* Для анимации */
+            transform: scale(0.5);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+        .drop-item .case-name { font-size: 0.7rem; }
 
         /* --- АПГРЕЙД --- */
         .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
         .upgrade-slots { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 400px; align-items: center; }
-        .u-slot { 
-            width: 45%; background: rgba(0,0,0,0.3); border: 2px dashed #444; border-radius: 15px; 
-            min-height: 160px; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; cursor: pointer; transition: 0.3s; position: relative; padding: 10px; 
-        }
+        .u-slot { width: 45%; background: rgba(0,0,0,0.3); border: 2px dashed #444; border-radius: 15px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; position: relative; padding: 10px; }
         .u-slot.selected { border-style: solid; border-color: var(--accent); background: rgba(255, 215, 0, 0.05); }
         .u-slot img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 5px; }
         .u-slot p { font-size: 0.8rem; color: #888; text-align: center; }
         .u-item-name { font-size: 0.7rem; font-weight: bold; color: #fff; margin-bottom: 5px; text-align: center; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
         .u-arrow { font-size: 2rem; color: var(--accent); font-weight: bold; }
 
-        /* Рулетка апгрейда */
         .roulette-wrapper { position: relative; width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
         .roulette-marker { position: absolute; top: -12px; z-index: 10; font-size: 24px; color: white; filter: drop-shadow(0 2px 2px #000); transform: scaleY(0.8); }
         .spinning-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#444 0% 100%); box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 1; transition: transform 4s cubic-bezier(0.15, 0, 0.2, 1); }
@@ -113,12 +101,8 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        
-        /* ЛОГОТИП ЦЕНТРАЛЬНЫЙ (НОВАЯ ССЫЛКА) */
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.8; position: absolute; z-index: 1; }
-        
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
-        
         .chance-text { font-size: 28px; font-weight: 900; color: #fff; }
         .chance-sub { font-size: 10px; text-transform: uppercase; color: #ccc; }
         .result-layer { position: absolute; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20; }
@@ -138,7 +122,6 @@
         .select-card img { width: 50px; height: 50px; object-fit: contain; }
         .select-card span { font-size: 0.7rem; display: block; color: var(--accent); }
         
-        /* Слайдеры */
         input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; margin: 15px 0; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px var(--accent); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
@@ -147,8 +130,12 @@
         .rarity-Uncommon { border-color: #5e98d9; color: #5e98d9; } 
         .rarity-Rare { border-color: #4b69ff; color: #4b69ff; } 
         .rarity-Mythical { border-color: #d32ce6; color: #d32ce6; }
+        @keyframes popIn { 
+            0% { opacity:0; transform: scale(0.5); } 
+            70% { transform: scale(1.1); }
+            100% { opacity:1; transform: scale(1); } 
+        }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -190,7 +177,7 @@
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
                     <div class="static-center">
-                        <img src="https://cdn-icons-png.flaticon.com/512/2881/2881142.png" class="center-logo">
+                        <img src="https://i.ibb.co/zTfV9zff/1000002137.jpg" class="center-logo">
                         <div class="center-content">
                             <div class="chance-text" id="u-chance">0%</div>
                             <div class="chance-sub">шанс</div>
@@ -236,7 +223,7 @@
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name">...</h3>
-            <img id="modal-case-img" src="https://cdn-icons-png.flaticon.com/512/9338/9338047.png" alt="" class="modal-main-img">
+            <img id="modal-case-img" src="https://i.ibb.co/mCZ9d327/1000002237.jpg" alt="" class="modal-main-img">
             <p class="modal-price">Цена: <span class="star-icon">⭐️</span> <span id="modal-case-price">0</span></p>
             
             <div class="slider-container">
@@ -260,7 +247,7 @@
             <img id="sell-item-img" src="" alt="" class="modal-main-img" style="width: 100px; height: 100px;">
             <p style="color:#aaa; margin-bottom: 10px;">В наличии: <span id="sell-owned-count" style="color:#fff; font-weight:bold;">0</span></p>
             
-            <div class="slider-container">
+            <div class="slider-container" id="sell-slider-container">
                 <span class="slider-val">Продать: <span id="sell-slider-count">1</span></span>
                 <input type="range" min="1" max="1" value="1" id="sell-slider" oninput="updateSellSlider(this.value)">
             </div>
@@ -281,6 +268,13 @@
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        // --- ФУНКЦИЯ ФОРМАТИРОВАНИЯ БАЛАНСА (1k, 1M) ---
+        function formatBalance(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toLocaleString();
+        }
+
         window.switchTab=function(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${t}`).classList.add('active');if(t!=='market')document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`).classList.add('active');}
         window.closeModal=function(id){document.getElementById(id).classList.add('hidden');}
 
@@ -308,14 +302,19 @@
                 sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'),
                 sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'),
                 sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'),
+                sellSliderContainer:document.getElementById('sell-slider-container'),
                 
-                // Элементы рулетки кейса
                 rouletteBox: document.getElementById('case-roulette'),
                 rouletteTrack: document.getElementById('roulette-track'),
                 openBtn: document.getElementById('start-open-btn')
             };
 
-            function upBal(n){if(n===undefined)return; if(currentBal!==n){el.bal.style.color='#fff'; setTimeout(()=>el.bal.style.color='',300);} currentBal=n; el.bal.innerText=n;}
+            function upBal(n){
+                if(n===undefined)return; 
+                currentBal=n; 
+                // Применяем форматирование при обновлении
+                el.bal.innerText = formatBalance(n);
+            }
 
             async function load(){
                 try {
@@ -326,14 +325,14 @@
 
                     el.cases.innerHTML=''; d.cases.forEach(c=>{
                         const div=document.createElement('div'); div.className='case-card';
-                        div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${c.price}</div>`;
+                        div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
 
                     el.inv.innerHTML=''; if(!inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
                     inventory.reverse().forEach(i=>{
                         const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; 
-                        div.innerHTML=`<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id})">Продать: <span>⭐️ ${i.sell_price}</span></button>`;
+                        div.innerHTML=`<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id})">Продать: <span>⭐️ ${formatBalance(i.sell_price)}</span></button>`;
                         el.inv.appendChild(div);
                     });
                     
@@ -342,7 +341,7 @@
                         if(lbDiv) {
                             lbDiv.innerHTML = '<h2>🏆 ТОП ИГРОКОВ</h2>';
                             d.leaderboard.forEach((u, idx) => {
-                                lbDiv.innerHTML += `<div style="background:#222;padding:10px;margin:5px 0;border-radius:10px;display:flex;justify-content:space-between"><span>${idx+1}. ${u.username}</span><span style="color:#FFD700">${u.balance} ⭐️</span></div>`;
+                                lbDiv.innerHTML += `<div style="background:#222;padding:10px;margin:5px 0;border-radius:10px;display:flex;justify-content:space-between"><span>${idx+1}. ${u.username}</span><span style="color:#FFD700">${formatBalance(u.balance)} ⭐️</span></div>`;
                             });
                         }
                     }
@@ -350,25 +349,45 @@
                 } catch(e){}
             }
 
-            // --- ПРОДАЖА ---
+            // --- ПРОДАЖА (ОБНОВЛЕННАЯ ЛОГИКА) ---
             window.openSellModal=(itemId)=>{
                 sellingItem = inventory.find(i => i.item_id === itemId);
                 if(!sellingItem) return;
                 el.sellName.innerText = sellingItem.name;
                 el.sellImg.src = sellingItem.image_url;
                 el.sellOwned.innerText = sellingItem.quantity;
-                el.sellSlider.max = sellingItem.quantity;
-                el.sellSlider.value = 1;
-                updateSellSlider(1);
+                
+                // Если предмет один - скрываем слайдер
+                if(sellingItem.quantity === 1) {
+                    el.sellSliderContainer.style.display = 'none';
+                    sellCount = 1;
+                } else {
+                    el.sellSliderContainer.style.display = 'block';
+                    el.sellSlider.max = sellingItem.quantity;
+                    el.sellSlider.value = 1;
+                    sellCount = 1;
+                }
+                
+                updateSellSlider(sellCount);
                 el.sellModal.classList.remove('hidden');
             }
+            
             window.updateSellSlider=(v)=>{
                 sellCount = parseInt(v);
                 el.sellSliderVal.innerText = sellCount;
-                el.sellTotalBtn.innerText = sellingItem.sell_price * sellCount;
+                el.sellTotalBtn.innerText = formatBalance(sellingItem.sell_price * sellCount);
             }
+            
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
+                
+                // Проверка на редкость (Rare, Mythical, Legendary и т.д.)
+                if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
+                    // Используем confirm() или tg.showConfirm
+                    const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
+                    if(!confirmed) return;
+                }
+
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -379,20 +398,20 @@
                 } catch(e) { load(); }
             }
 
-            // --- ОТКРЫТИЕ КЕЙСА (С АНИМАЦИЕЙ) ---
+            // --- ОТКРЫТИЕ КЕЙСА ---
             window.showOpenModal=()=>{
-                el.mImg.style.display = 'block'; // Показываем главную картинку
-                el.rouletteBox.style.display = 'none'; // Скрываем рулетку
+                el.mImg.style.display = 'block'; 
+                el.rouletteBox.style.display = 'none'; 
                 el.openBtn.disabled = false;
                 el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${selectedCase.price})`;
-                
-                el.slider.value=1; el.slider.disabled=false; // РАЗБЛОКИРОВАЛ СЛАЙДЕР
+                el.slider.value=1; el.slider.disabled=false; 
                 updateSlider(1); 
                 el.openModal.classList.remove('hidden');
             }
+            
             window.updateSlider=(v)=>{
                 openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${selectedCase.price*openCount})`;
+                el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${formatBalance(selectedCase.price*openCount)})`;
             }
 
             el.openBtn.onclick=async()=>{
@@ -401,10 +420,6 @@
                 
                 el.openBtn.disabled = true;
 
-                // ЛОГИКА АНИМАЦИИ: 
-                // Если 1 кейс -> Анимация
-                // Если >1 кейс -> Сразу результат
-                
                 try {
                     const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
                     const d = await res.json();
@@ -417,11 +432,11 @@
                     upBal(currentBal - price);
 
                     if (openCount > 1) {
-                        // БЫСТРОЕ ОТКРЫТИЕ
+                        // --- МУЛЬТИ ОТКРЫТИЕ (БЕЗ РУЛЕТКИ, С АНИМАЦИЕЙ ВЫПАДЕНИЯ) ---
                         el.openModal.classList.add('hidden');
                         showResults(d.dropped);
                     } else {
-                        // АНИМАЦИЯ (ТОЛЬКО ДЛЯ 1 КЕЙСА)
+                        // --- ОДИНОЧНОЕ ОТКРЫТИЕ (С РУЛЕТКОЙ) ---
                         el.mImg.style.display = 'none';
                         el.rouletteBox.style.display = 'block';
                         el.rouletteTrack.innerHTML = '';
@@ -468,16 +483,23 @@
             function showResults(items){
                 el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; 
+                // Если предметов много - делаем сетку
                 el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
                 
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
-                items.forEach((item)=>{
+                items.forEach((item, index)=>{
                     const div=document.createElement('div'); 
                     div.className=`drop-item rarity-${item.rarity}`; 
+                    // Добавляем задержку анимации для каждого следующего предмета
+                    div.style.animationDelay = `${index * 0.1}s`; 
                     div.innerHTML=`<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
-                    if(item.sound_url && item.sound_url!=='-') { el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); }
+                    
+                    // Звук только для первого или для всех? Сделаем для первого
+                    if(index === 0 && item.sound_url && item.sound_url!=='-') { 
+                        el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); 
+                    }
                 });
                 load();
             }
@@ -489,7 +511,7 @@
                 list.forEach(i=>{
                     const div=document.createElement('div'); div.className='select-card';
                     const countBadge = (side==='left') ? `<span class="item-quantity">x${i.quantity}</span>` : '';
-                    div.innerHTML=`${countBadge}<img src="${i.image_url}"><span>${i.price} ⭐️</span>`;
+                    div.innerHTML=`${countBadge}<img src="${i.image_url}"><span>${formatBalance(i.price)} ⭐️</span>`;
                     div.onclick=()=>{ selectUpgradeItem(side, i); el.selModal.classList.add('hidden'); };
                     el.selGrid.appendChild(div);
                 });
@@ -498,11 +520,11 @@
             function selectUpgradeItem(side, item){
                 if(side==='left'){
                     upgMy=item; 
-                    el.uLeft.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${item.price} ⭐️</p>`; 
+                    el.uLeft.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; 
                     el.uLeft.classList.add('selected');
                 } else {
                     upgTarget=item; 
-                    el.uRight.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${item.price} ⭐️</p>`; 
+                    el.uRight.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; 
                     el.uRight.classList.add('selected');
                 }
                 calcChance();
