@@ -21,9 +21,10 @@
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; padding: 10px 0; border-top: 1px solid #333; z-index: 50; }
-        .nav-btn { background: none; border: none; color: #666; font-weight: bold; flex: 1; padding: 10px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; gap: 4px;}
-        .nav-btn span { font-size: 1.2rem; }
+        /* Навигация с 5 кнопками */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; padding: 5px 0; border-top: 1px solid #333; z-index: 50; justify-content: space-around; }
+        .nav-btn { background: none; border: none; color: #666; font-weight: bold; padding: 8px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; gap: 3px; min-width: 50px;}
+        .nav-btn span { font-size: 1.1rem; }
         .nav-btn.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
         .nav-btn.active span { color: var(--accent); }
         
@@ -34,15 +35,9 @@
         .case-name { font-weight: bold; margin-bottom: 4px; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .case-price { color: #aaa; font-size: 0.85rem; display: flex; justify-content: center; align-items: center; gap: 4px; }
         
-        /* БЕЙДЖ КЛЮЧЕЙ */
         .keys-badge { position: absolute; top: 5px; right: 5px; background: #33ff33; color: #000; font-weight: 900; font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
 
-        .main-action-btn, .sell-btn, .upgrade-btn { 
-            background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; 
-            font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; 
-            box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; 
-            justify-content: center; align-items: center; gap: 5px; width: 100%;
-        }
+        .main-action-btn, .sell-btn, .upgrade-btn { background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; justify-content: center; align-items: center; gap: 5px; width: 100%; }
         .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
         .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
         .sell-btn:active { box-shadow: 0 0 0 #111; }
@@ -57,7 +52,7 @@
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+        .roulette-card { width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
         #multi-roulette-container { width: 100%; max-height: 300px; overflow-y: auto; display: none; margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333; }
@@ -127,6 +122,19 @@
         .rarity-Mythical { border-color: #d32ce6; color: #d32ce6; }
         .rarity-Secret { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 10px #ff0000; background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5)); }
 
+        /* ПРОФИЛЬ */
+        .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: var(--card); padding: 20px; border-radius: 15px; }
+        .profile-avatar { width: 60px; height: 60px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
+        .stat-label { font-size: 0.8rem; color: #888; }
+
+        /* ЛИДЕРБОРД */
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; }
+        .lb-rank { font-weight: 900; color: #666; width: 30px; }
+        .lb-rank-1 { color: #FFD700; } .lb-rank-2 { color: #C0C0C0; } .lb-rank-3 { color: #CD7F32; }
+
         @keyframes popIn { 0% { opacity:0; transform: scale(0.5); } 70% { transform: scale(1.1); } 100% { opacity:1; transform: scale(1); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     </style>
@@ -181,24 +189,56 @@
             </div>
         </section>
         
-        <section id="tab-market" class="tab-content">
-            <h2 style="text-align:center;color:#666;margin-top:50px">СКОРО... 🚧</h2>
+        <section id="tab-profile" class="tab-content">
+            <div class="profile-header">
+                <div class="profile-avatar">👤</div>
+                <div>
+                    <h2 id="profile-username">User</h2>
+                    <span style="color:#666;font-size:0.8rem">Игрок</span>
+                </div>
+            </div>
+            
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span class="stat-val" id="prof-balance">0</span>
+                    <span class="stat-label">Баланс</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val" id="prof-networth">0</span>
+                    <span class="stat-label">Состояние</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val" id="prof-cases">0</span>
+                    <span class="stat-label">Кейсов открыто</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val" id="prof-days">0</span>
+                    <span class="stat-label">Дней в игре</span>
+                </div>
+            </div>
+
+            <h3 style="margin:20px 0 10px;">🏆 Лучший дроп</h3>
+            <div id="prof-best-drop">
+                <div style="text-align:center; color:#666; padding:20px;">Нет предметов</div>
+            </div>
+        </section>
+
+        <section id="tab-leaderboard" class="tab-content">
+            <h2 style="text-align:center;margin-bottom:20px">🏆 Богачи</h2>
+            <div id="leaderboard-list"></div>
         </section>
 
         <section id="tab-inventory" class="tab-content">
             <div id="inventory-grid" class="inventory-grid"></div>
-        </section>
-
-        <section id="tab-leaderboard" class="tab-content">
-            <div id="leaderboard-list" class="leaderboard-list"></div>
         </section>
     </main>
 
     <nav class="bottom-nav">
         <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span>Кейсы</button>
         <button class="nav-btn" onclick="switchTab('upgrade')"><span>📈</span>Апгрейд</button>
-        <button class="nav-btn" onclick="switchTab('market')"><span>⚖️</span>Маркет</button>
         <button class="nav-btn" onclick="switchTab('inventory')"><span>🎒</span>Инвент</button>
+        <button class="nav-btn" onclick="switchTab('leaderboard')"><span>🏆</span>Топ</button>
+        <button class="nav-btn" onclick="switchTab('profile')"><span>👤</span>Профиль</button>
     </nav>
 
     <div id="select-modal" class="item-select-modal hidden">
@@ -292,7 +332,15 @@
                 sellSliderContainer:document.getElementById('sell-slider-container'),
                 multiBox: document.getElementById('multi-roulette-container'),
                 btnFast: document.getElementById('btn-fast'),
-                btnSpin: document.getElementById('btn-spin')
+                btnSpin: document.getElementById('btn-spin'),
+                // Profile Elements
+                profUser: document.getElementById('profile-username'),
+                profBal: document.getElementById('prof-balance'),
+                profNet: document.getElementById('prof-networth'),
+                profCases: document.getElementById('prof-cases'),
+                profDays: document.getElementById('prof-days'),
+                profBest: document.getElementById('prof-best-drop'),
+                lbList: document.getElementById('leaderboard-list')
             };
 
             function upBal(n){
@@ -306,17 +354,36 @@
                     const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
                     const d=await res.json();
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
-                    if(d.user) upBal(d.user.balance);
+                    if(d.user) {
+                        upBal(d.user.balance);
+                        el.profUser.innerText = d.user.username;
+                        el.profBal.innerText = formatBalance(d.user.balance);
+                        el.profNet.innerText = formatBalance(d.user.net_worth);
+                        el.profCases.innerText = d.user.cases_opened;
+                        
+                        // Days calc
+                        const regDate = new Date(d.user.reg_date);
+                        const diffTime = Math.abs(new Date() - regDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        el.profDays.innerText = diffDays;
+
+                        // Best drop
+                        if(d.user.best_item) {
+                            const bi = d.user.best_item;
+                            el.profBest.innerHTML = `
+                                <div class="item-card rarity-${bi.rarity}" style="width:120px;margin:0 auto">
+                                    <img src="${bi.image_url}" class="item-img">
+                                    <div class="case-name">${bi.name}</div>
+                                    <div class="case-price">⭐️ ${formatBalance(bi.price)}</div>
+                                </div>
+                            `;
+                        }
+                    }
 
                     el.cases.innerHTML=''; d.cases.forEach(c=>{
                         const div=document.createElement('div'); div.className='case-card';
-                        
-                        // Показываем бейдж ключей, если есть
                         let keyBadge = '';
-                        if(c.keys && c.keys > 0) {
-                            keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`;
-                        }
-                        
+                        if(c.keys && c.keys > 0) { keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`; }
                         div.innerHTML=`${keyBadge}<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
@@ -329,13 +396,16 @@
                     });
                     
                     if(d.leaderboard) {
-                        const lbDiv = document.getElementById('leaderboard-list');
-                        if(lbDiv) {
-                            lbDiv.innerHTML = '<h2>🏆 ТОП ИГРОКОВ</h2>';
-                            d.leaderboard.forEach((u, idx) => {
-                                lbDiv.innerHTML += `<div style="background:#222;padding:10px;margin:5px 0;border-radius:10px;display:flex;justify-content:space-between"><span>${idx+1}. ${u.username}</span><span style="color:#FFD700">${formatBalance(u.balance)} ⭐️</span></div>`;
-                            });
-                        }
+                        el.lbList.innerHTML = '';
+                        d.leaderboard.forEach((u, idx) => {
+                            const rankClass = idx < 3 ? `lb-rank-${idx+1}` : '';
+                            el.lbList.innerHTML += `
+                                <div class="leaderboard-item">
+                                    <span class="lb-rank ${rankClass}">#${idx+1}</span>
+                                    <span>${u.username}</span>
+                                    <span style="color:#FFD700;font-weight:bold">${formatBalance(u.balance)} ⭐️</span>
+                                </div>`;
+                        });
                     }
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){}
@@ -388,8 +458,6 @@
             
             window.updateSlider=(v)=>{
                 openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                
-                // Проверяем ключи
                 if(selectedCase.keys >= openCount) {
                     el.mPrice.innerHTML = `<span style="color:#33ff33">БЕСПЛАТНО (Ключи: ${selectedCase.keys})</span>`;
                 } else {
@@ -399,7 +467,6 @@
 
             async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount;
-                // Баланс проверяем только если нет ключей
                 if(selectedCase.keys < openCount && currentBal < price) return tg.showAlert("Мало звезд!");
                 
                 el.btnFast.disabled = true;
@@ -409,19 +476,13 @@
                 try {
                     const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
                     const d = await res.json();
-                    
                     if(d.error){ 
                         el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false;
                         return tg.showAlert(d.error); 
                     }
                     
-                    // Если ключи использовались - баланс не трогаем, иначе списываем
-                    if(!d.used_keys) {
-                        upBal(currentBal - price);
-                    } else {
-                        // Обновляем локально кол-во ключей
-                        selectedCase.keys -= openCount;
-                    }
+                    if(!d.used_keys) { upBal(currentBal - price); } 
+                    else { selectedCase.keys -= openCount; }
 
                     if (mode === 'fast') {
                         el.openModal.classList.add('hidden');
@@ -432,7 +493,6 @@
                         d.dropped.forEach((winItem, idx) => { createRouletteRow(winItem, idx); });
                         setTimeout(() => { el.openModal.classList.add('hidden'); showResults(d.dropped); }, 5500); 
                     }
-
                 } catch(e) { console.error(e); load(); }
             }
 
@@ -451,7 +511,12 @@
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
                     const card = document.createElement('div');
                     card.className = `roulette-card rarity-${item.rarity}`;
-                    card.innerHTML = `<img src="${item.image_url}">`;
+                    
+                    // --- SECRET LOGIC ---
+                    let imgUrl = item.image_url;
+                    if(item.rarity === 'Secret') imgUrl = 'https://cdn-icons-png.flaticon.com/512/5726/5726678.png'; // ЗНАК ВОПРОСА
+                    
+                    card.innerHTML = `<img src="${imgUrl}">`;
                     track.appendChild(card);
                 }
                 row.appendChild(line);

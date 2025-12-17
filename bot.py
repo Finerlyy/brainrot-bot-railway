@@ -1,6 +1,7 @@
 import logging
 import random
 import os
+from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo
@@ -14,7 +15,7 @@ from database import (
     get_case_items, add_items_to_inventory_batch, update_user_balance, 
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
-    get_user_keys, use_keys
+    get_user_keys, use_keys, get_profile_stats, increment_cases_opened
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
@@ -37,7 +38,7 @@ def force_dict(item, key_map):
 
 ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip']
+USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date']
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -60,6 +61,11 @@ async def api_get_data(request):
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
+        # Статистика профиля
+        stats = await get_profile_stats(user_id)
+        user_data['best_item'] = stats.get('best_item')
+        user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
+        
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
         raw_inv = await get_inventory_grouped(user_id)
         
@@ -68,18 +74,18 @@ async def api_get_data(request):
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
             r = i_dict.get('rarity', 'Common')
+            
             if r == 'Secret':
                 i_dict['sell_price'] = max(1, int(p * 0.90))
             else:
                 i_dict['sell_price'] = max(1, int(p * 0.60)) 
+            
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         
-        # ДОБАВЛЯЕМ КЛЮЧИ В ОТВЕТ
-        user_keys = await get_user_keys(user_id) # вернет {case_id: amount}
-        # Встраиваем ключи в список кейсов
+        user_keys = await get_user_keys(user_id)
         for c in cases:
             c['keys'] = user_keys.get(c['id'], 0)
 
@@ -111,19 +117,15 @@ async def api_open_case(request):
         case_data = force_dict(raw_case, CASE_KEYS)
         if not case_data: return web.json_response({"error": "Кейс не найден"}, status=404)
 
-        # ПРОВЕРКА КЛЮЧЕЙ
         user_keys = await get_user_keys(user_id)
         available_keys = user_keys.get(case_id, 0)
         
-        # Если ключей достаточно для ВСЕГО открытия
         using_keys = False
         if available_keys >= count:
             using_keys = True
-            # Списываем ключи
             if not await use_keys(user_id, case_id, count):
                 return web.json_response({"error": "Ошибка списания ключей"}, status=400)
         else:
-            # Иначе списываем деньги
             total_price = case_data['price'] * count
             raw_user = await get_user(user_id, 'temp')
             user = force_dict(raw_user, USER_KEYS)
@@ -138,6 +140,7 @@ async def api_open_case(request):
         dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
         await add_items_to_inventory_batch(user_id, dropped)
+        await increment_cases_opened(user_id, count)
         
         return web.json_response({"dropped": dropped, "used_keys": using_keys})
     except Exception as e: 
