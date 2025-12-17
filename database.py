@@ -16,15 +16,18 @@ async def init_db():
         # --- НАПОЛНЕНИЕ БАЗЫ ---
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
-        # ИСПРАВЛЕННАЯ ССЫЛКА НА ИКОНКУ КЕЙСА
-        case_icon = 'https://cdn-icons-png.flaticon.com/512/9338/9338047.png'
+        # НОВАЯ КАРТИНКА КЕЙСА (Твоя ссылка)
+        case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg' 
 
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
+        
+        # Обновляем иконку, если кейс уже был в базе (чтобы старая "коляска" пропала)
+        await db.execute("UPDATE cases SET icon_url = ? WHERE name = ?", (case_icon, case_name))
+        
         await db.commit()
 
         async with db.execute("SELECT id FROM cases WHERE name = ?", (case_name,)) as cur:
             row = await cur.fetchone()
-            # ФИКС ОШИБКИ TUPLE
             case_id = row[0] if row else None
 
         if case_id:
@@ -92,7 +95,6 @@ async def get_all_items_sorted():
 
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
-        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             user_row = await cursor.fetchone()
             if not user_row: return 
@@ -112,7 +114,6 @@ async def add_item_to_inventory(tg_user_id, item):
 async def get_inventory_grouped(user_id_tg):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (user_id_tg,)) as cursor:
             u = await cursor.fetchone()
             if not u: return []
@@ -130,7 +131,6 @@ async def get_inventory_grouped(user_id_tg):
 
 async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
     async with aiosqlite.connect(DB_NAME) as db:
-        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             u = await cursor.fetchone()
             if not u: return False
