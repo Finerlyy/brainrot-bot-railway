@@ -15,7 +15,8 @@ from database import (
     get_case_items, add_items_to_inventory_batch, update_user_balance, 
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
-    get_user_keys, use_keys, get_profile_stats, increment_cases_opened
+    get_user_keys, use_keys, get_profile_stats, increment_cases_opened,
+    update_user_photo, get_public_profile
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
@@ -38,7 +39,7 @@ def force_dict(item, key_map):
 
 ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date']
+USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date', 'photo_url']
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -54,14 +55,18 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
+        # IP
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
 
+        # PHOTO URL (если пришла с фронта)
+        photo_url = data.get('photo_url')
+        if photo_url: await update_user_photo(user_id, photo_url)
+
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
-        # Статистика профиля
         stats = await get_profile_stats(user_id)
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
@@ -74,20 +79,15 @@ async def api_get_data(request):
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
             r = i_dict.get('rarity', 'Common')
-            
-            if r == 'Secret':
-                i_dict['sell_price'] = max(1, int(p * 0.90))
-            else:
-                i_dict['sell_price'] = max(1, int(p * 0.60)) 
-            
+            if r == 'Secret': i_dict['sell_price'] = max(1, int(p * 0.90))
+            else: i_dict['sell_price'] = max(1, int(p * 0.60)) 
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         
         user_keys = await get_user_keys(user_id)
-        for c in cases:
-            c['keys'] = user_keys.get(c['id'], 0)
+        for c in cases: c['keys'] = user_keys.get(c['id'], 0)
 
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
@@ -101,6 +101,18 @@ async def api_get_data(request):
         })
     except Exception as e: 
         logging.error(f"Error api_get_data: {e}", exc_info=True)
+        return web.json_response({"error": str(e)}, status=500)
+
+# --- НОВЫЙ РОУТ ДЛЯ ПРОСМОТРА ЧУЖОГО ПРОФИЛЯ ---
+async def api_get_profile(request):
+    try:
+        data = await request.json()
+        target_id = int(data.get('target_id'))
+        profile = await get_public_profile(target_id)
+        
+        if profile: return web.json_response({"profile": profile})
+        else: return web.json_response({"error": "User not found"}, status=404)
+    except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
 async def api_open_case(request):
@@ -204,6 +216,7 @@ async def api_upgrade(request):
 app.add_routes([
     web.get('/', web_index), 
     web.post('/api/data', api_get_data), 
+    web.post('/api/profile', api_get_profile), # Новый роут
     web.post('/api/open', api_open_case), 
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/upgrade', api_upgrade), 

@@ -9,19 +9,20 @@ async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row 
         
-        # Создаем таблицы
-        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT)")
+        await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS keys (user_id INTEGER, case_id INTEGER, quantity INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (case_id) REFERENCES cases(id), UNIQUE(user_id, case_id))")
 
-        # --- МИГРАЦИИ (Обновляем старую базу) ---
+        # --- МИГРАЦИИ ---
         try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
         except: pass
         try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
         except: pass
         try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
+        except: pass
+        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT") # Новая колонка
         except: pass
 
         await db.commit()
@@ -77,13 +78,11 @@ async def get_profile_stats(tg_id):
     """Считает стоимость инвентаря и находит лучший предмет"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        # Получаем внутренний ID
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
             user = await cursor.fetchone()
             if not user: return {}
             user_pk = user[0]
 
-        # Лучший предмет
         sql_best = """
             SELECT i.name, i.price, i.image_url, i.rarity 
             FROM inventory inv
@@ -97,7 +96,6 @@ async def get_profile_stats(tg_id):
             row = await cur.fetchone()
             if row: best_item = dict(row)
 
-        # Стоимость инвентаря
         sql_sum = """
             SELECT SUM(i.price) 
             FROM inventory inv
@@ -110,6 +108,35 @@ async def get_profile_stats(tg_id):
             if row and row[0]: inv_value = row[0]
 
         return {"best_item": best_item, "inv_value": inv_value}
+
+# --- НОВЫЕ ФУНКЦИИ ДЛЯ ПРОФИЛЯ ---
+async def update_user_photo(tg_id, photo_url):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("UPDATE users SET photo_url = ? WHERE tg_id = ?", (photo_url, tg_id))
+        await db.commit()
+
+async def get_public_profile(target_tg_id):
+    """Получает данные любого пользователя для просмотра"""
+    user = await get_user(target_tg_id, "Unknown")
+    stats = await get_profile_stats(target_tg_id)
+    
+    if not user: return None
+    
+    user_dict = dict(user)
+    user_dict['best_item'] = stats.get('best_item')
+    user_dict['net_worth'] = user_dict['balance'] + (stats.get('inv_value') or 0)
+    
+    # Убираем приватные данные
+    safe_data = {
+        'username': user_dict['username'],
+        'photo_url': user_dict['photo_url'],
+        'balance': user_dict['balance'],
+        'net_worth': user_dict['net_worth'],
+        'cases_opened': user_dict['cases_opened'],
+        'reg_date': user_dict['reg_date'],
+        'best_item': user_dict['best_item']
+    }
+    return safe_data
 
 async def increment_cases_opened(tg_id, count):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -234,7 +261,7 @@ async def delete_one_item_by_id(tg_user_id, item_id):
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        async with db.execute("SELECT username, balance FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10") as cursor:
+        async with db.execute("SELECT username, balance, tg_id, photo_url FROM users WHERE tg_id != 0 ORDER BY balance DESC LIMIT 10") as cursor:
             return [dict(row) if hasattr(row, 'keys') else {'username': row[0], 'balance': row[1]} for row in await cursor.fetchall()]
 
 async def admin_get_all_users():

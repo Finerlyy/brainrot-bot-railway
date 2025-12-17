@@ -21,7 +21,6 @@
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         
-        /* Навигация с 5 кнопками */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; padding: 5px 0; border-top: 1px solid #333; z-index: 50; justify-content: space-around; }
         .nav-btn { background: none; border: none; color: #666; font-weight: bold; padding: 8px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; gap: 3px; min-width: 50px;}
         .nav-btn span { font-size: 1.1rem; }
@@ -52,7 +51,7 @@
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
         #multi-roulette-container { width: 100%; max-height: 300px; overflow-y: auto; display: none; margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333; }
@@ -124,16 +123,19 @@
 
         /* ПРОФИЛЬ */
         .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: var(--card); padding: 20px; border-radius: 15px; }
-        .profile-avatar { width: 60px; height: 60px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+        .profile-avatar { width: 60px; height: 60px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         .stat-label { font-size: 0.8rem; color: #888; }
 
         /* ЛИДЕРБОРД */
-        .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; cursor: pointer; transition: 0.2s; }
+        .leaderboard-item:active { transform: scale(0.98); background: #333; }
         .lb-rank { font-weight: 900; color: #666; width: 30px; }
         .lb-rank-1 { color: #FFD700; } .lb-rank-2 { color: #C0C0C0; } .lb-rank-3 { color: #CD7F32; }
+        .lb-avatar { width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; vertical-align: middle; }
 
         @keyframes popIn { 0% { opacity:0; transform: scale(0.5); } 70% { transform: scale(1.1); } 100% { opacity:1; transform: scale(1); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -190,8 +192,10 @@
         </section>
         
         <section id="tab-profile" class="tab-content">
+            <button id="back-to-my-profile" class="close-btn" style="display:none; text-align:left; color: var(--accent);" onclick="load()">⬅ Вернуться к моему профилю</button>
+            
             <div class="profile-header">
-                <div class="profile-avatar">👤</div>
+                <div class="profile-avatar" id="prof-avatar">👤</div>
                 <div>
                     <h2 id="profile-username">User</h2>
                     <span style="color:#666;font-size:0.8rem">Игрок</span>
@@ -303,7 +307,18 @@
             return num.toLocaleString();
         }
 
-        window.switchTab=function(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${t}`).classList.add('active');if(t!=='market')document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`).classList.add('active');}
+        window.switchTab=function(t){
+            document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+            document.getElementById(`tab-${t}`).classList.add('active');
+            
+            // Если вкладка не профиль, убираем кнопку "назад"
+            if(t !== 'profile') document.getElementById('back-to-my-profile').style.display = 'none';
+            
+            const navBtn = document.querySelector(`.nav-btn[onclick="switchTab('${t}')"]`);
+            if(navBtn) navBtn.classList.add('active');
+        }
+        
         window.closeModal=function(id){document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('hidden');}
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -311,6 +326,9 @@
             const API = window.location.origin + '/api';
             let userId = tg.initDataUnsafe?.user?.id || 0;
             let username = tg.initDataUnsafe?.user?.username || 'Guest';
+            // Отправляем фото
+            let photoUrl = tg.initDataUnsafe?.user?.photo_url || '';
+            
             let allItems=[], inventory=[], allItemsSorted=[], currentBal=0;
             let selectedCase={id:0, price:0, keys: 0}, openCount=1;
             let upgMy=null, upgTarget=null;
@@ -333,14 +351,15 @@
                 multiBox: document.getElementById('multi-roulette-container'),
                 btnFast: document.getElementById('btn-fast'),
                 btnSpin: document.getElementById('btn-spin'),
-                // Profile Elements
                 profUser: document.getElementById('profile-username'),
                 profBal: document.getElementById('prof-balance'),
                 profNet: document.getElementById('prof-networth'),
                 profCases: document.getElementById('prof-cases'),
                 profDays: document.getElementById('prof-days'),
                 profBest: document.getElementById('prof-best-drop'),
-                lbList: document.getElementById('leaderboard-list')
+                profAvatar: document.getElementById('prof-avatar'),
+                lbList: document.getElementById('leaderboard-list'),
+                backBtn: document.getElementById('back-to-my-profile')
             };
 
             function upBal(n){
@@ -349,35 +368,55 @@
                 el.bal.innerText = formatBalance(n);
             }
 
-            async function load(){
+            // Функция отрисовки профиля (универсальная)
+            function renderProfile(user, best_item, isMe) {
+                el.profUser.innerText = user.username;
+                el.profBal.innerText = formatBalance(user.balance);
+                el.profNet.innerText = formatBalance(user.net_worth);
+                el.profCases.innerText = user.cases_opened;
+                
+                const regDate = new Date(user.reg_date);
+                const diffTime = Math.abs(new Date() - regDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                el.profDays.innerText = diffDays;
+
+                if(user.photo_url) {
+                    el.profAvatar.innerHTML = `<img src="${user.photo_url}">`;
+                } else {
+                    el.profAvatar.innerHTML = '👤';
+                }
+
+                if(best_item) {
+                    el.profBest.innerHTML = `
+                        <div class="item-card rarity-${best_item.rarity}" style="width:120px;margin:0 auto">
+                            <img src="${best_item.image_url}" class="item-img">
+                            <div class="case-name">${best_item.name}</div>
+                            <div class="case-price">⭐️ ${formatBalance(best_item.price)}</div>
+                        </div>
+                    `;
+                } else {
+                    el.profBest.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Нет предметов</div>';
+                }
+                
+                // Кнопка назад
+                if(isMe) el.backBtn.style.display = 'none';
+                else el.backBtn.style.display = 'block';
+            }
+
+            // --- ЗАГРУЗКА ДАННЫХ ---
+            window.load = async function() {
                 try {
-                    const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
-                    const d=await res.json();
+                    const res = await fetch(`${API}/data`, {
+                        method: 'POST', 
+                        body: JSON.stringify({user_id:userId, username, photo_url: photoUrl})
+                    });
+                    const d = await res.json();
+                    
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
+                    
                     if(d.user) {
                         upBal(d.user.balance);
-                        el.profUser.innerText = d.user.username;
-                        el.profBal.innerText = formatBalance(d.user.balance);
-                        el.profNet.innerText = formatBalance(d.user.net_worth);
-                        el.profCases.innerText = d.user.cases_opened;
-                        
-                        // Days calc
-                        const regDate = new Date(d.user.reg_date);
-                        const diffTime = Math.abs(new Date() - regDate);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                        el.profDays.innerText = diffDays;
-
-                        // Best drop
-                        if(d.user.best_item) {
-                            const bi = d.user.best_item;
-                            el.profBest.innerHTML = `
-                                <div class="item-card rarity-${bi.rarity}" style="width:120px;margin:0 auto">
-                                    <img src="${bi.image_url}" class="item-img">
-                                    <div class="case-name">${bi.name}</div>
-                                    <div class="case-price">⭐️ ${formatBalance(bi.price)}</div>
-                                </div>
-                            `;
-                        }
+                        renderProfile(d.user, d.user.best_item, true); // True = это я
                     }
 
                     el.cases.innerHTML=''; d.cases.forEach(c=>{
@@ -399,16 +438,46 @@
                         el.lbList.innerHTML = '';
                         d.leaderboard.forEach((u, idx) => {
                             const rankClass = idx < 3 ? `lb-rank-${idx+1}` : '';
+                            const avatarHtml = u.photo_url ? `<img src="${u.photo_url}" class="lb-avatar">` : '<span class="lb-avatar" style="background:#444;display:inline-block;text-align:center;line-height:30px">👤</span>';
+                            
+                            // Добавили onclick для просмотра профиля
                             el.lbList.innerHTML += `
-                                <div class="leaderboard-item">
-                                    <span class="lb-rank ${rankClass}">#${idx+1}</span>
-                                    <span>${u.username}</span>
+                                <div class="leaderboard-item" onclick="viewProfile(${u.tg_id})">
+                                    <div>
+                                        <span class="lb-rank ${rankClass}">#${idx+1}</span>
+                                        ${avatarHtml}
+                                        <span>${u.username}</span>
+                                    </div>
                                     <span style="color:#FFD700;font-weight:bold">${formatBalance(u.balance)} ⭐️</span>
                                 </div>`;
                         });
                     }
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){}
+            }
+
+            // --- ПРОСМОТР ЧУЖОГО ПРОФИЛЯ ---
+            window.viewProfile = async (targetId) => {
+                // Если кликнул на себя
+                if(targetId == userId) {
+                    switchTab('profile');
+                    return;
+                }
+                
+                el.loader.style.display = 'flex';
+                try {
+                    const res = await fetch(`${API}/profile`, {
+                        method: 'POST', 
+                        body: JSON.stringify({target_id: targetId})
+                    });
+                    const d = await res.json();
+                    
+                    if(d.profile) {
+                        renderProfile(d.profile, d.profile.best_item, false); // False = это не я
+                        switchTab('profile');
+                    }
+                } catch(e) { console.error(e); }
+                el.loader.style.display = 'none';
             }
 
             window.openSellModal=(itemId)=>{
@@ -511,11 +580,8 @@
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
                     const card = document.createElement('div');
                     card.className = `roulette-card rarity-${item.rarity}`;
-                    
-                    // --- SECRET LOGIC ---
                     let imgUrl = item.image_url;
-                    if(item.rarity === 'Secret') imgUrl = 'https://cdn-icons-png.flaticon.com/512/5726/5726678.png'; // ЗНАК ВОПРОСА
-                    
+                    if(item.rarity === 'Secret') imgUrl = 'https://cdn-icons-png.flaticon.com/512/5726/5726678.png'; 
                     card.innerHTML = `<img src="${imgUrl}">`;
                     track.appendChild(card);
                 }
