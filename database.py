@@ -11,8 +11,6 @@ async def init_db():
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
-        
-        # Таблица ключей
         await db.execute("CREATE TABLE IF NOT EXISTS keys (user_id INTEGER, case_id INTEGER, quantity INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (case_id) REFERENCES cases(id), UNIQUE(user_id, case_id))")
 
         try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
@@ -20,48 +18,48 @@ async def init_db():
 
         await db.commit()
         
-        # НАПОЛНЕНИЕ
+        # НАПОЛНЕНИЕ (Если база пустая)
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg'
 
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
-        await db.execute("UPDATE cases SET icon_url = ? WHERE name = ?", (case_icon, case_name))
-        await db.commit()
-
+        
         async with db.execute("SELECT id FROM cases WHERE name = ?", (case_name,)) as cur:
             row = await cur.fetchone()
             case_id = row[0] if row else None
 
         if case_id:
-            items_data = [
-                ('Lirili Bat Guy', 'Common', 100, 'https://i.imgur.com/vZkT4cu.jpeg', '-', case_id),
-                ('Tung Tung Elephant', 'Common', 150, 'https://i.imgur.com/4RtWcWY.jpeg', '-', case_id),
-                ('Tatata Teapot', 'Uncommon', 400, 'https://i.imgur.com/DZDL8RI.jpeg', '-', case_id),
-                ('Tralala Shark', 'Rare', 1200, 'https://i.imgur.com/iDcJaMp.jpeg', '-', case_id),
-                ('Orcalero Orca', 'Mythical', 3500, 'https://i.imgur.com/EsqyjjW.jpeg', '-', case_id),
-                ('Chimpanzini Bananini', 'Mythical', 10000, 'https://i.imgur.com/0QTbLT8.jpeg', '-', case_id),
-                ('SECRET ITEM', 'Secret', 50000, 'https://cdn-icons-png.flaticon.com/512/5726/5726775.png', '-', case_id),
-            ]
-            for i in items_data:
-                async with db.execute("SELECT id FROM items WHERE name = ?", (i[0],)) as cur:
-                    if not await cur.fetchone():
-                        await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
-        await db.commit()
+            # Проверка, есть ли предметы, если нет - добавим базовые
+            async with db.execute("SELECT count(*) FROM items WHERE case_id = ?", (case_id,)) as cur:
+                count = (await cur.fetchone())[0]
+            
+            if count == 0:
+                items_data = [
+                    ('Lirili Bat Guy', 'Common', 100, 'https://i.imgur.com/vZkT4cu.jpeg', '-', case_id),
+                    ('Tung Tung Elephant', 'Common', 150, 'https://i.imgur.com/4RtWcWY.jpeg', '-', case_id),
+                    ('Tatata Teapot', 'Uncommon', 400, 'https://i.imgur.com/DZDL8RI.jpeg', '-', case_id),
+                    ('Tralala Shark', 'Rare', 1200, 'https://i.imgur.com/iDcJaMp.jpeg', '-', case_id),
+                    ('Orcalero Orca', 'Mythical', 3500, 'https://i.imgur.com/EsqyjjW.jpeg', '-', case_id),
+                    ('Chimpanzini Bananini', 'Mythical', 10000, 'https://i.imgur.com/0QTbLT8.jpeg', '-', case_id),
+                    ('SECRET ITEM', 'Secret', 50000, 'https://cdn-icons-png.flaticon.com/512/5726/5726775.png', '-', case_id),
+                ]
+                for i in items_data:
+                    await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
+                await db.commit()
 
-# --- ФУНКЦИИ ---
+# --- ФУНКЦИИ ПОЛЬЗОВАТЕЛЯ ---
 
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
             user = await cursor.fetchone()
-        
         if user is None:
             try:
                 await db.execute("INSERT INTO users (tg_id, username) VALUES (?, ?)", (tg_id, username))
                 await db.commit()
-            except sqlite3.IntegrityError: pass
+            except: pass
             async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
                 user = await cursor.fetchone()
         return user
@@ -109,6 +107,8 @@ async def get_all_items_sorted():
         async with db.execute("SELECT * FROM items ORDER BY price ASC") as cursor:
             return await cursor.fetchall()
 
+# --- ИНВЕНТАРЬ ---
+
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
@@ -127,11 +127,11 @@ async def add_items_to_inventory_batch(tg_user_id, items_list):
 async def add_specific_item_by_id(tg_user_id, item_id, quantity=1):
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
-            user_row = await cursor.fetchone()
-            if not user_row: return False
-            user_pk_id = user_row[0]
+            u = await cursor.fetchone()
+            if not u: return False
+            user_pk = u[0]
         
-        insert_data = [(user_pk_id, item_id) for _ in range(quantity)]
+        insert_data = [(user_pk, item_id) for _ in range(quantity)]
         await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
         await db.commit()
         return True
@@ -238,7 +238,31 @@ async def use_keys(tg_user_id, case_id, quantity):
         await db.commit()
         return True
 
-# --- АДМИН (ADD/DEL) ---
+# --- НОВЫЕ УНИВЕРСАЛЬНЫЕ ФУНКЦИИ РЕДАКТИРОВАНИЯ ---
+
+async def get_item_by_id(item_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT * FROM items WHERE id = ?", (item_id,)) as cursor:
+            return await cursor.fetchone()
+
+async def get_case_by_id(case_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT * FROM cases WHERE id = ?", (case_id,)) as cursor:
+            return await cursor.fetchone()
+
+async def admin_update_field(table, record_id, field, value):
+    # Защита от SQL инъекций: разрешаем только конкретные поля
+    allowed_fields = ['name', 'price', 'icon_url', 'image_url', 'rarity', 'case_id', 'sound_url']
+    if field not in allowed_fields: return False
+    
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(f"UPDATE {table} SET {field} = ? WHERE id = ?", (value, record_id))
+        await db.commit()
+        return True
+
+# --- Старые админ функции для совместимости ---
 async def admin_add_case(name, price, url):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("INSERT INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (name, price, url))
@@ -259,16 +283,3 @@ async def admin_del_item(item_id):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("DELETE FROM items WHERE id = ?", (item_id,))
         await db.commit()
-
-# --- АДМИН (EDIT) - НОВЫЕ ФУНКЦИИ ---
-async def admin_update_case(case_id, name, price, url):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE cases SET name=?, price=?, icon_url=? WHERE id=?", (name, price, url, case_id))
-        await db.commit()
-        return True
-
-async def admin_update_item(item_id, case_id, name, rarity, price, url):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE items SET case_id=?, name=?, rarity=?, price=?, image_url=? WHERE id=?", (case_id, name, rarity, price, url, item_id))
-        await db.commit()
-        return True

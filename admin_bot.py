@@ -1,13 +1,15 @@
 import logging
-import random
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database import (
     update_user_balance, admin_get_all_users, get_user_ip, 
-    get_all_cases, get_case_items, get_case_data,
+    get_all_cases, get_case_items, 
     admin_add_case, admin_del_case, admin_add_item, admin_del_item,
-    admin_update_case, admin_update_item,
-    add_items_to_inventory_batch, add_keys_to_user, add_specific_item_by_id
+    add_keys_to_user, add_specific_item_by_id,
+    get_item_by_id, get_case_by_id, admin_update_field
 )
 
 TOKEN = "8547237995:AAHrUOQInO5b9HVLGbb_2eIlWKIdhzVo86Y"
@@ -16,188 +18,210 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-def force_dict(item, key_map):
-    if item is None: return None
-    if hasattr(item, 'keys') or isinstance(item, dict): return dict(item)
-    if isinstance(item, (tuple, list)):
-        return {key_map[i]: item[i] for i in range(min(len(item), len(key_map)))}
+# --- МАШИНА СОСТОЯНИЙ (FSM) ---
+class EditState(StatesGroup):
+    waiting_for_value = State()
+
+# --- HELPER ---
+def force_dict(item):
+    if hasattr(item, 'keys'): return dict(item)
     return item
 
-USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip']
-CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
-
+# --- START ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     txt = (
-        "👨‍💻 <b>ADMIN PANEL v3.0</b>\n\n"
-        "<b>Игроки:</b>\n"
-        "/users - Список\n"
-        "/ip [id] - IP\n"
-        "/give [id] [сумма] - Баланс\n"
-        "/givecase [user_id] [case_id] [кол-во] - Ключи\n"
-        "/giveitem [user_id] [item_id] - Предмет\n\n"
-        "<b>Кейсы:</b>\n"
-        "/cases - Список\n"
+        "👨‍💻 <b>ADMIN PANEL v4.0 (Interactive)</b>\n\n"
+        "<b>Управление игроками:</b>\n"
+        "/users, /ip [id], /give [id] [sum]\n"
+        "/givecase [user] [case] [num] - Ключи\n"
+        "/giveitem [user] [item] - Предмет\n\n"
+        "<b>Редактор (КНОПКИ):</b>\n"
+        "/editcase [id] - Изменить кейс\n"
+        "/edititem [id] - Изменить предмет\n\n"
+        "<b>Списки:</b>\n"
+        "/cases - Все кейсы\n"
+        "/items [case_id] - Предметы в кейсе\n\n"
+        "<b>Добавить/Удалить (Быстро):</b>\n"
         "/addcase [name] [price] [url]\n"
-        "/editcase [id] [name] [price] [url]\n"
-        "/delcase [id]\n\n"
-        "<b>Предметы:</b>\n"
-        "/items [case_id] - Список\n"
+        "/delcase [id]\n"
         "/additem [case_id] [name] [rarity] [price] [url]\n"
-        "/edititem [id] [new_case_id] [name] [rarity] [price] [url]\n"
         "/delitem [id]"
     )
     await message.answer(txt, parse_mode="HTML")
 
-@dp.message(Command("users"))
-async def cmd_users(message: types.Message):
-    raw_users = await admin_get_all_users()
-    users = [force_dict(u, USER_KEYS) for u in raw_users]
-    text = "👥 <b>Игроки:</b>\n"
-    for u in users:
-        text += f"ID: {u['tg_id']} | @{u['username']} | 💰 {u['balance']}\n"
-    await message.answer(text[:4000], parse_mode="HTML")
-
-@dp.message(Command("ip"))
-async def cmd_ip(message: types.Message):
-    try:
-        tg_id = int(message.text.split()[1])
-        ip = await get_user_ip(tg_id)
-        await message.answer(f"🌐 IP игрока {tg_id}: <code>{ip}</code>", parse_mode="HTML")
-    except:
-        await message.answer("Ошибка. Пиши: /ip 123456")
-
-@dp.message(Command("give"))
-async def cmd_give(message: types.Message):
-    try:
-        _, uid, amt = message.text.split()
-        await update_user_balance(int(uid), int(amt))
-        await message.answer(f"✅ Выдано {amt} монет игроку {uid}")
-    except:
-        await message.answer("Ошибка. Пиши: /give 123456 1000")
-
+# --- ПРОСМОТР СПИСКОВ ---
 @dp.message(Command("cases"))
-async def cmd_list_cases(message: types.Message):
-    raw_cases = await get_all_cases()
-    cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
-    text = "📦 <b>Кейсы:</b>\n"
+async def cmd_cases(message: types.Message):
+    cases = await get_all_cases()
+    text = "📦 <b>Кейсы:</b>\n\n"
     for c in cases:
-        text += f"ID: {c['id']} | {c['name']} | {c['price']}р.\n"
+        text += f"🆔 <code>{c['id']}</code> | <b>{c['name']}</b> | {c['price']}⭐️\n"
     await message.answer(text, parse_mode="HTML")
 
 @dp.message(Command("items"))
-async def cmd_list_items(message: types.Message):
+async def cmd_items(message: types.Message):
     try:
         case_id = int(message.text.split()[1])
-        raw_items = await get_case_items(case_id)
-        items = [force_dict(i, ITEM_KEYS) for i in raw_items]
-        text = f"🔫 <b>Предметы в кейсе {case_id}:</b>\n"
+        items = await get_case_items(case_id)
+        text = f"🔫 <b>Предметы кейса {case_id}:</b>\n\n"
         for i in items:
-            text += f"ID: {i['id']} | {i['name']} | {i['rarity']} | {i['price']}\n"
+            text += f"🆔 <code>{i['id']}</code> | <b>{i['name']}</b> | {i['rarity']} | {i['price']}⭐️\n"
         await message.answer(text[:4000], parse_mode="HTML")
     except:
-        await message.answer("Ошибка. Пиши: /items [case_id]")
+        await message.answer("⚠️ Используй: /items [case_id]")
 
-@dp.message(Command("addcase"))
-async def cmd_add_case(message: types.Message):
-    try:
-        args = message.text.split(maxsplit=3)
-        await admin_add_case(args[1], int(args[2]), args[3])
-        await message.answer("✅ Кейс добавлен!")
-    except:
-        await message.answer("Ошибка. Пиши: /addcase [Name] [Price] [Url]")
-
-@dp.message(Command("editcase"))
-async def cmd_edit_case(message: types.Message):
-    try:
-        # /editcase id name price url
-        args = message.text.split(maxsplit=4)
-        case_id = int(args[1])
-        name = args[2]
-        price = int(args[3])
-        url = args[4]
-        
-        await admin_update_case(case_id, name, price, url)
-        await message.answer(f"✏️ Кейс {case_id} обновлен!")
-    except:
-        await message.answer("Ошибка. Пиши: /editcase [id] [NewName] [NewPrice] [NewUrl]")
-
-@dp.message(Command("delcase"))
-async def cmd_del_case(message: types.Message):
-    try:
-        case_id = int(message.text.split()[1])
-        await admin_del_case(case_id)
-        await message.answer("🗑 Кейс удален!")
-    except:
-        await message.answer("Ошибка. Пиши: /delcase [id]")
-
-@dp.message(Command("additem"))
-async def cmd_add_item(message: types.Message):
-    try:
-        args = message.text.split(maxsplit=5)
-        case_id = int(args[1])
-        name = args[2]
-        rarity = args[3]
-        price = int(args[4])
-        url = args[5]
-        
-        await admin_add_item(case_id, name, rarity, price, url)
-        await message.answer("✅ Предмет добавлен!")
-    except:
-        await message.answer("Ошибка. Пиши: /additem [case_id] [name] [rarity] [price] [url]")
-
+# --- ИНТЕРАКТИВНОЕ РЕДАКТИРОВАНИЕ ПРЕДМЕТА ---
 @dp.message(Command("edititem"))
-async def cmd_edit_item(message: types.Message):
-    try:
-        # /edititem id new_case_id name rarity price url
-        args = message.text.split(maxsplit=6)
-        item_id = int(args[1])
-        case_id = int(args[2])
-        name = args[3]
-        rarity = args[4]
-        price = int(args[5])
-        url = args[6]
-        
-        await admin_update_item(item_id, case_id, name, rarity, price, url)
-        await message.answer(f"✏️ Предмет {item_id} обновлен!")
-    except:
-        await message.answer("Ошибка. Пиши: /edititem [id] [case_id] [name] [rarity] [price] [url]")
-
-@dp.message(Command("delitem"))
-async def cmd_del_item(message: types.Message):
+async def cmd_edit_item_menu(message: types.Message):
     try:
         item_id = int(message.text.split()[1])
-        await admin_del_item(item_id)
-        await message.answer("🗑 Предмет удален!")
+        item = await get_item_by_id(item_id)
+        if not item: return await message.answer("❌ Предмет не найден")
+        
+        item = force_dict(item)
+        text = (
+            f"🛠 <b>Редактор предмета #{item_id}</b>\n"
+            f"Название: {item['name']}\n"
+            f"Редкость: {item['rarity']}\n"
+            f"Цена: {item['price']}\n"
+            f"ID Кейса: {item['case_id']}\n"
+            f"Картинка: <a href='{item['image_url']}'>Ссылка</a>"
+        )
+        
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✏️ Название", callback_data=f"edit_item:name:{item_id}"),
+             InlineKeyboardButton(text="💰 Цена", callback_data=f"edit_item:price:{item_id}")],
+            [InlineKeyboardButton(text="💎 Редкость", callback_data=f"edit_item:rarity:{item_id}"),
+             InlineKeyboardButton(text="🖼 Картинка", callback_data=f"edit_item:image_url:{item_id}")],
+            [InlineKeyboardButton(text="📦 ID Кейса", callback_data=f"edit_item:case_id:{item_id}")]
+        ])
+        
+        await message.answer(text, parse_mode="HTML", reply_markup=kb)
     except:
-        await message.answer("Ошибка. Пиши: /delitem [id]")
+        await message.answer("⚠️ Используй: /edititem [id]")
+
+# --- ИНТЕРАКТИВНОЕ РЕДАКТИРОВАНИЕ КЕЙСА ---
+@dp.message(Command("editcase"))
+async def cmd_edit_case_menu(message: types.Message):
+    try:
+        case_id = int(message.text.split()[1])
+        case = await get_case_by_id(case_id)
+        if not case: return await message.answer("❌ Кейс не найден")
+        
+        case = force_dict(case)
+        text = (
+            f"🛠 <b>Редактор кейса #{case_id}</b>\n"
+            f"Название: {case['name']}\n"
+            f"Цена: {case['price']}\n"
+            f"Картинка: <a href='{case['icon_url']}'>Ссылка</a>"
+        )
+        
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✏️ Название", callback_data=f"edit_case:name:{case_id}"),
+             InlineKeyboardButton(text="💰 Цена", callback_data=f"edit_case:price:{case_id}")],
+            [InlineKeyboardButton(text="🖼 Картинка", callback_data=f"edit_case:icon_url:{case_id}")]
+        ])
+        
+        await message.answer(text, parse_mode="HTML", reply_markup=kb)
+    except:
+        await message.answer("⚠️ Используй: /editcase [id]")
+
+# --- ОБРАБОТКА НАЖАТИЯ КНОПОК ---
+@dp.callback_query(F.data.startswith("edit_"))
+async def callback_edit(callback: types.CallbackQuery, state: FSMContext):
+    # data format: edit_type:field:id (e.g. edit_item:price:5)
+    parts = callback.data.split(":")
+    edit_type = parts[0] # edit_item or edit_case
+    field = parts[1]
+    target_id = parts[2]
+    
+    table = "items" if edit_type == "edit_item" else "cases"
+    
+    # Сохраняем во временное хранилище, что мы редактируем
+    await state.update_data(table=table, field=field, id=target_id)
+    await state.set_state(EditState.waiting_for_value)
+    
+    await callback.message.answer(f"✍️ Введите новое значение для <b>{field}</b>:", parse_mode="HTML")
+    await callback.answer()
+
+# --- ПОЛУЧЕНИЕ НОВОГО ЗНАЧЕНИЯ ---
+@dp.message(StateFilter(EditState.waiting_for_value))
+async def process_new_value(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    new_value = message.text
+    
+    # Обновляем в БД
+    success = await admin_update_field(data['table'], data['id'], data['field'], new_value)
+    
+    if success:
+        await message.answer(f"✅ Успешно! Поле <b>{data['field']}</b> обновлено на: {new_value}", parse_mode="HTML")
+    else:
+        await message.answer("❌ Ошибка обновления БД.")
+        
+    await state.clear()
+
+# --- ОСТАЛЬНЫЕ КОМАНДЫ (ADD/DEL/GIVE) ---
+@dp.message(Command("addcase"))
+async def cmd_add(m: types.Message):
+    try:
+        args = m.text.split(maxsplit=3)
+        await admin_add_case(args[1], int(args[2]), args[3])
+        await m.answer("✅ Добавлено!")
+    except: await m.answer("Err: /addcase [name] [price] [url]")
+
+@dp.message(Command("delcase"))
+async def cmd_del(m: types.Message):
+    try: await admin_del_case(int(m.text.split()[1])); await m.answer("🗑 Удалено!")
+    except: await m.answer("Err: /delcase [id]")
+
+@dp.message(Command("additem"))
+async def cmd_addi(m: types.Message):
+    try:
+        args = m.text.split(maxsplit=5)
+        await admin_add_item(int(args[1]), args[2], args[3], int(args[4]), args[5])
+        await m.answer("✅ Предмет добавлен!")
+    except: await m.answer("Err: /additem [case_id] [name] [rarity] [price] [url]")
+
+@dp.message(Command("delitem"))
+async def cmd_deli(m: types.Message):
+    try: await admin_del_item(int(m.text.split()[1])); await m.answer("🗑 Удалено!")
+    except: await m.answer("Err: /delitem [id]")
 
 @dp.message(Command("givecase"))
-async def cmd_give_case(message: types.Message):
+async def cmd_gk(m: types.Message):
     try:
-        args = message.text.split()
-        user_id = int(args[1])
-        case_id = int(args[2])
-        count = int(args[3])
-        
-        if await add_keys_to_user(user_id, case_id, count):
-            await message.answer(f"🗝 Выдано {count} ключей от кейса {case_id} игроку {user_id}")
-        else:
-            await message.answer("❌ Ошибка: Игрок или кейс не найдены.")
-    except Exception as e:
-        await message.answer(f"Ошибка: {e}\nПиши: /givecase [user_id] [case_id] [count]")
+        args = m.text.split()
+        await add_keys_to_user(int(args[1]), int(args[2]), int(args[3]))
+        await m.answer("🗝 Ключи выданы!")
+    except: await m.answer("Err: /givecase [user] [case] [count]")
 
 @dp.message(Command("giveitem"))
-async def cmd_give_item(message: types.Message):
+async def cmd_gi(m: types.Message):
     try:
-        args = message.text.split()
-        user_id = int(args[1])
-        item_id = int(args[2])
-        
-        if await add_specific_item_by_id(user_id, item_id):
-            await message.answer(f"🎁 Предмет {item_id} выдан игроку {user_id}")
-        else:
-            await message.answer("❌ Ошибка: Игрок не найден.")
-    except Exception as e:
-        await message.answer(f"Ошибка: {e}\nПиши: /giveitem [user_id] [item_id]")
+        args = m.text.split()
+        await add_specific_item_by_id(int(args[1]), int(args[2]))
+        await m.answer("🎁 Предмет выдан!")
+    except: await m.answer("Err: /giveitem [user] [item]")
+
+@dp.message(Command("users"))
+async def cmd_u(m: types.Message):
+    users = await admin_get_all_users()
+    t = "👥 <b>Users:</b>\n"
+    for u in users: t+=f"ID: {u['tg_id']} | {u['username']} | {u['balance']}\n"
+    await m.answer(t[:4000], parse_mode="HTML")
+
+@dp.message(Command("ip"))
+async def cmd_ip(m: types.Message):
+    try:
+        ip = await get_user_ip(int(m.text.split()[1]))
+        await m.answer(f"IP: {ip}")
+    except: await m.answer("Err: /ip [id]")
+
+@dp.message(Command("give"))
+async def cmd_g(m: types.Message):
+    try:
+        args = m.text.split()
+        await update_user_balance(int(args[1]), int(args[2]))
+        await m.answer("✅ Баланс выдан")
+    except: await m.answer("Err")
