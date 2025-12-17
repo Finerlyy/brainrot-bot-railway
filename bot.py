@@ -10,7 +10,7 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 
-# ИСПРАВЛЕННЫЕ ИМПОРТЫ (Убрал sell_items_batch_db)
+# ПОЛНЫЙ НАБОР ИМПОРТОВ
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, update_user_balance, 
@@ -73,6 +73,7 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
+        # 1. Логирование и обновление фото
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
@@ -80,6 +81,7 @@ async def api_get_data(request):
         photo_url = data.get('photo_url')
         if photo_url: await update_user_photo(user_id, photo_url)
 
+        # 2. Данные пользователя
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
@@ -87,6 +89,7 @@ async def api_get_data(request):
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
         
+        # 3. Инвентарь
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity', 'sample_id']
         raw_inv = await get_inventory_grouped(user_id)
         
@@ -109,29 +112,30 @@ async def api_get_data(request):
             
             inventory.append(i_dict)
 
+        # 4. Кейсы и Ключи
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         user_keys = await get_user_keys(user_id)
         for c in cases: c['keys'] = user_keys.get(c['id'], 0)
 
+        # 5. Все предметы (для рулетки и апгрейда)
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
 
-        # Incubator Status
+        # 6. Инкубатор
         incubator = await get_incubator_status(user_id)
-        
-        # Auto-claim if incubator exists
         if incubator:
              added = await claim_incubator(user_id)
              if added > 0:
-                 incubator = await get_incubator_status(user_id) # reload state
+                 incubator = await get_incubator_status(user_id) 
                  user_data['brainrot_coins'] += added
 
+        # 7. Возврат ВСЕХ данных
         return web.json_response({
             "user": user_data, 
             "inventory": inventory, 
             "cases": cases, 
-            "leaderboard": await get_leaderboard(),
+            "leaderboard": await get_leaderboard(), # Возвращаем лидерборд
             "all_items": all_items,
             "incubator": incubator
         })
@@ -309,7 +313,7 @@ async def api_incubator_put(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         item_id = int(data.get('item_id'))
-        mutations = data.get('mutations', []) # List of strings
+        mutations = data.get('mutations', []) 
         muts_str = ",".join(mutations) if mutations else ""
         
         res = await put_in_incubator(user_id, item_id, muts_str)
@@ -405,11 +409,9 @@ app.add_routes([
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/sell_all', api_sell_all),
     web.post('/api/upgrade', api_upgrade),
-    # Incubator
     web.post('/api/incubator/put', api_incubator_put),
     web.post('/api/incubator/claim', api_incubator_claim),
     web.post('/api/incubator/take', api_incubator_take),
-    # Games
     web.post('/api/games/list', api_games_list),
     web.post('/api/games/create', api_game_create),
     web.post('/api/games/join', api_game_join),
