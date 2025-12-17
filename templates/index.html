@@ -10,24 +10,35 @@
         :root { 
             --bg: #121214; 
             --card: #1e1e22; 
-            --card-hover: #26262b;
             --accent: #FFD700; 
             --accent-glow: rgba(255, 215, 0, 0.3);
             --star-gradient: linear-gradient(135deg, #FFD700, #FDB931); 
-            --nav-bg: rgba(32, 32, 35, 0.85); 
+            --nav-bg: rgba(30, 30, 35, 0.8); 
             --text-muted: #8a8a93;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: #fff; font-family: 'Montserrat', sans-serif; padding-bottom: 90px; overflow-x: hidden; }
         
-        /* Utility */
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
         
         /* Animations */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--accent-glow); } 70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+        
+        /* Эффект выпрыгивания (Пружина) */
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Эффект появления предметов */
+        @keyframes popItem {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
 
         /* Loader */
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
@@ -93,14 +104,14 @@
             border: 1px solid rgba(255,255,255,0.08); 
             width: 90%; max-width: 380px; 
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
-            animation: fadeIn 0.3s ease-out;
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .modal h3 { font-size: 1.3rem; margin-bottom: 5px; }
         .modal-price { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
         .close-btn { width: 100%; background: transparent; border: none; color: #666; padding: 15px; cursor: pointer; margin-top: 5px; font-weight: 600; transition: 0.2s; }
         .close-btn:active { color: #fff; }
 
-        /* UPGRADE TAB (REMASTERED) */
+        /* UPGRADE TAB */
         .upgrade-container { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 10px; }
         
         .upgrade-slots { display: flex; align-items: center; gap: 15px; width: 100%; justify-content: center; }
@@ -130,7 +141,6 @@
         .chance-btn:active { background: rgba(255,255,255,0.1); color: #fff; transform: scale(0.95); }
 
         .roulette-wrapper { position: relative; width: 240px; height: 240px; margin: 10px auto; display: flex; align-items: center; justify-content: center; }
-        /* Кольцо */
         .spinning-ring { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; 
             background: conic-gradient(#1e1e22 0% 100%); 
@@ -139,7 +149,6 @@
             border: 1px solid rgba(255,255,255,0.05);
             z-index: 1;
         }
-        /* Центр */
         .static-center { 
             position: absolute; 
             width: 200px; height: 200px; 
@@ -147,17 +156,16 @@
             border-radius: 50%; 
             display: flex; align-items: center; justify-content: center; flex-direction: column; 
             z-index: 2; 
-            border: 4px solid var(--card); /* Рамка вокруг фото */
-            overflow: hidden; /* Обрезает фото по кругу */
+            border: 4px solid var(--card); 
+            overflow: hidden; 
             box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
-        
-        /* КАРТИНКА ПО СЕРЕДИНЕ */
+        /* Исправленная картинка в центре */
         .center-logo { 
             width: 100%; height: 100%; 
-            object-fit: cover; /* Заполняет весь круг */
+            object-fit: cover; 
             position: absolute; top: 0; left: 0;
-            opacity: 0.3; /* Чуть затемняем, чтобы текст был виден */
+            opacity: 0.3; 
             z-index: 1;
             transition: 0.3s;
         }
@@ -192,17 +200,44 @@
         .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .btn-fast { background: #2a2a2a; color: #fff; box-shadow: none; border: 1px solid #333; }
         .btn-spin { background: var(--star-gradient); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
+        
+        /* POPUP STYLE (DROPS) */
         .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: none; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
         .popup.active { display: flex; opacity: 1; }
-        .popup-content { background: #1e1e22; padding: 30px; border-radius: 30px; text-align: center; border: 1px solid var(--accent); width: 90%; max-width: 450px; transform: scale(0.9); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display:flex; flex-direction:column; max-height:85vh; position: relative; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); }
-        .popup.active .popup-content { transform: scale(1); }
+        .popup-content { 
+            background: #1e1e22; 
+            padding: 30px; 
+            border-radius: 30px; 
+            text-align: center; 
+            border: 1px solid var(--accent); 
+            width: 90%; max-width: 450px; 
+            transform: scale(0.9); 
+            display:flex; flex-direction:column; 
+            max-height:85vh; position: relative; 
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); 
+            /* Добавлена анимация выпрыгивания */
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
         .glow-bg { position: absolute; top:50%; left:50%; width: 300px; height: 300px; background: var(--accent); opacity: 0.15; filter: blur(80px); z-index: -1; transform: translate(-50%, -50%); }
-        .drop-grid { display: grid; gap: 10px; margin-bottom: 20px; overflow-y: auto; padding: 5px; width: 100%; z-index: 10; }
+        .drop-grid { display: grid; gap: 10px; margin-bottom: 20px; overflow-y: auto; padding: 5px; width: 100%; z-index: 10; min-height: 100px; }
         .drop-grid.single { grid-template-columns: 1fr; }
         .drop-grid.multi { grid-template-columns: repeat(3, 1fr); } 
-        .drop-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.5); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; }
+        
+        /* Исправленная анимация дропа */
+        .drop-item { 
+            background: rgba(255,255,255,0.05); 
+            padding: 15px; 
+            border-radius: 16px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            opacity: 0; 
+            animation: popItem 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            position: relative; 
+        }
         .drop-item img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
-        .drop-quantity { position: absolute; top: 10px; right: 10px; background: var(--accent); color: #000; font-weight: 800; font-size: 0.8rem; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 15; animation: popIn 0.3s forwards; }
+        .drop-quantity { position: absolute; top: 10px; right: 10px; background: var(--accent); color: #000; font-weight: 800; font-size: 0.8rem; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 15; }
+        
         .games-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .game-card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
         .game-card:active { transform: scale(0.98); background: #26262b; }
@@ -213,7 +248,7 @@
         .move-btn:active { background: #333; transform: scale(0.95); }
         .game-loader-spinner { width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.1); border-top: 5px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         
-        /* Rarities Colors (Glowing) */
+        /* Rarities */
         .rarity-Common { border-color: #666; box-shadow: 0 0 10px rgba(100,100,100,0.1); } 
         .rarity-Uncommon { border-color: #5e98d9; box-shadow: 0 0 10px rgba(94,152,217,0.15); } 
         .rarity-Rare { border-color: #4b69ff; box-shadow: 0 0 10px rgba(75,105,255,0.2); } 
@@ -300,7 +335,7 @@
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
                     <div class="static-center">
-                        <img src="https://i.ibb.co/BG4yq5B/image.png" class="center-logo" onerror="this.style.opacity=0; document.querySelector('.center-content').style.opacity=1;">
+                        <img src="https://i.ibb.co/CtdhB09/image.png" class="center-logo" onerror="this.style.opacity=0; document.querySelector('.center-content').style.opacity=1;">
                         <div class="center-content">
                             <div class="chance-text" id="u-chance">0%</div>
                             <div class="chance-sub">шанс</div>
@@ -851,7 +886,9 @@
                 });
                 const uniqueItems = Object.values(grouped);
                 uniqueItems.forEach((item, index)=>{
-                    const div=document.createElement('div'); div.className=`drop-item rarity-${item.rarity}`; div.style.animationDelay = `${index * 0.1}s`; 
+                    const div=document.createElement('div'); div.className=`drop-item rarity-${item.rarity}`; 
+                    /* Убрал задержку анимации, чтобы сразу видно было, если 1 предмет */
+                    div.style.animationDelay = `${index * 0.1}s`; 
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
                     let mutsHtml = '';
                     if(item.mutations && item.mutations.length > 0) {
