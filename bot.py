@@ -10,10 +10,11 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 
+# ИСПРАВЛЕННЫЕ ИМПОРТЫ (Убрал sell_items_batch_db)
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, update_user_balance, 
-    get_case_data, sell_items_batch_db, get_all_items_sorted, 
+    get_case_data, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
     get_user_keys, use_keys, get_profile_stats, increment_cases_opened,
     update_user_photo, get_public_profile, get_rarity_weights,
