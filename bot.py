@@ -1,6 +1,7 @@
 import logging
 import random
 import os
+import time
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -9,7 +10,6 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 
-# Исправленные импорты из базы данных (удален несуществующий add_items_to_inventory_batch)
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, update_user_balance, 
@@ -19,11 +19,10 @@ from database import (
     update_user_photo, get_public_profile, get_rarity_weights,
     add_items_with_mutations,
     create_game, get_open_games, join_game, make_move, get_my_active_game,
-    cancel_game_db, sell_specific_item_stack
+    cancel_game_db, sell_specific_item_stack,
+    get_incubator_status, put_in_incubator, claim_incubator, take_from_incubator
 )
 
-# --- КОНФИГУРАЦИЯ ---
-# Рекомендуется выносить токены в .env, но оставляю как у вас для простоты
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -33,10 +32,8 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 app = web.Application()
 
-# Настройка шаблонов
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# --- КОНФИГУРАЦИЯ МУТАЦИЙ И РЕДКОСТЕЙ ---
 MUTATIONS = {
     'Gold': 1.1,
     'Diamond': 1.2,
@@ -49,7 +46,6 @@ MUTATION_KEYS = list(MUTATIONS.keys())
 
 RARITY_RANKS = {'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7}
 
-# Вспомогательная функция для преобразования SQLite Row в словарь
 def force_dict(item, key_map):
     if item is None: return None
     if hasattr(item, 'keys') or isinstance(item, dict): return dict(item)
@@ -59,9 +55,8 @@ def force_dict(item, key_map):
 
 ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date', 'photo_url']
+USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'brainrot_coins', 'ip', 'cases_opened', 'reg_date', 'photo_url']
 
-# --- ХЕНДЛЕРЫ БОТА ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await get_user(message.from_user.id, message.from_user.username or "Anon")
@@ -77,26 +72,21 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # IP Logging
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
 
-        # Photo Update
         photo_url = data.get('photo_url')
         if photo_url: await update_user_photo(user_id, photo_url)
 
-        # Get User Data
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
-        # Get Stats
         stats = await get_profile_stats(user_id)
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
         
-        # Get Inventory
-        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity']
+        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity', 'sample_id']
         raw_inv = await get_inventory_grouped(user_id)
         
         inventory = []
@@ -118,22 +108,31 @@ async def api_get_data(request):
             
             inventory.append(i_dict)
 
-        # Get Cases & Keys
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         user_keys = await get_user_keys(user_id)
         for c in cases: c['keys'] = user_keys.get(c['id'], 0)
 
-        # Get All Items (for roulette display/upgrades)
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
+
+        # Incubator Status
+        incubator = await get_incubator_status(user_id)
+        
+        # Auto-claim if incubator exists
+        if incubator:
+             added = await claim_incubator(user_id)
+             if added > 0:
+                 incubator = await get_incubator_status(user_id) # reload state
+                 user_data['brainrot_coins'] += added
 
         return web.json_response({
             "user": user_data, 
             "inventory": inventory, 
             "cases": cases, 
             "leaderboard": await get_leaderboard(),
-            "all_items": all_items
+            "all_items": all_items,
+            "incubator": incubator
         })
     except Exception as e: 
         logging.error(f"Error api_get_data: {e}", exc_info=True)
@@ -303,6 +302,39 @@ async def api_upgrade(request):
         logging.error(f"Upgrade Error: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
+# --- INCUBATOR API ---
+async def api_incubator_put(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        item_id = int(data.get('item_id'))
+        mutations = data.get('mutations', []) # List of strings
+        muts_str = ",".join(mutations) if mutations else ""
+        
+        res = await put_in_incubator(user_id, item_id, muts_str)
+        if res == 'ok': return web.json_response({"status": "ok"})
+        elif res == 'busy': return web.json_response({"error": "Инкубатор занят!"}, status=400)
+        elif res == 'no_item': return web.json_response({"error": "Предмет не найден"}, status=400)
+        else: return web.json_response({"error": "Ошибка"}, status=400)
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_incubator_claim(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        added = await claim_incubator(user_id)
+        return web.json_response({"status": "ok", "added": added})
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_incubator_take(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        res = await take_from_incubator(user_id)
+        if res == 'ok': return web.json_response({"status": "ok"})
+        else: return web.json_response({"error": "Инкубатор пуст"}, status=400)
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
 # --- GAMES API ---
 async def api_games_list(request):
     games = await get_open_games()
@@ -312,8 +344,8 @@ async def api_game_create(request):
     try:
         data = await request.json()
         user_id = int(data.get('user_id'))
-        game_type = data.get('game_type') # 'rps' or 'even_odd'
-        wager_type = data.get('wager_type') # 'balance' or 'item'
+        game_type = data.get('game_type') 
+        wager_type = data.get('wager_type') 
         wager_val = int(data.get('wager_amount', 0))
         wager_item = int(data.get('wager_item_id', 0))
         
@@ -372,6 +404,11 @@ app.add_routes([
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/sell_all', api_sell_all),
     web.post('/api/upgrade', api_upgrade),
+    # Incubator
+    web.post('/api/incubator/put', api_incubator_put),
+    web.post('/api/incubator/claim', api_incubator_claim),
+    web.post('/api/incubator/take', api_incubator_take),
+    # Games
     web.post('/api/games/list', api_games_list),
     web.post('/api/games/create', api_game_create),
     web.post('/api/games/join', api_game_join),

@@ -10,7 +10,8 @@ from database import (
     admin_add_case, admin_del_case, admin_add_item, admin_del_item,
     add_keys_to_user, add_specific_item_by_id,
     get_item_by_id, get_case_by_id, admin_update_field,
-    get_rarity_weights, set_rarity_weight
+    get_rarity_weights, set_rarity_weight,
+    update_user_brc, admin_get_user_inventory_detailed, admin_update_inventory_mutation
 )
 
 TOKEN = "8547237995:AAHrUOQInO5b9HVLGbb_2eIlWKIdhzVo86Y"
@@ -29,21 +30,63 @@ def force_dict(item):
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     txt = (
-        "👨‍💻 <b>ADMIN PANEL v5.0 (Rarities)</b>\n\n"
-        "<b>Шансы:</b>\n"
-        "/chances - Показать веса\n"
-        "/setchance [rarity] [weight] - Изменить\n\n"
+        "👨‍💻 <b>ADMIN PANEL v6.0 (Incubator + Edit)</b>\n\n"
         "<b>Игроки:</b>\n"
         "/users, /ip [id], /give [id] [sum]\n"
+        "/setcoins [id] [amount] - 🧠 Brainrot Coins\n"
+        "/checkinv [id] - Инвентарь с ID предметов\n"
+        "/setmut [inv_id] [mut1,mut2] - Изменить мутации\n\n"
+        "<b>Дроп:</b>\n"
         "/givecase [user] [case] [num]\n"
-        "/giveitem [user] [item]\n\n"
+        "/giveitem [user] [item]\n"
+        "/chances - Шансы\n\n"
         "<b>Редактор (КНОПКИ):</b>\n"
         "/editcase [id] | /edititem [id]\n"
         "/cases | /items [case_id]\n\n"
-        "<b>Быстрое удаление:</b>\n"
+        "<b>Удаление:</b>\n"
         "/delcase [id] | /delitem [id]"
     )
     await message.answer(txt, parse_mode="HTML")
+
+# --- УПРАВЛЕНИЕ КОИНАМИ И МУТАЦИЯМИ ---
+@dp.message(Command("setcoins"))
+async def cmd_setcoins(message: types.Message):
+    try:
+        args = message.text.split()
+        user_id = int(args[1])
+        amount = int(args[2])
+        await update_user_brc(user_id, amount)
+        await message.answer(f"✅ Выдано {amount} Brainrot Coins игроку {user_id}")
+    except: await message.answer("Ошибка. /setcoins [id] [amount]")
+
+@dp.message(Command("checkinv"))
+async def cmd_checkinv(message: types.Message):
+    try:
+        target_id = int(message.text.split()[1])
+        items = await admin_get_user_inventory_detailed(target_id)
+        if not items: return await message.answer("Инвентарь пуст.")
+        
+        text = f"🎒 <b>Инвентарь {target_id}:</b>\n\n"
+        for i in items:
+            muts = i['mutations'] if i['mutations'] else "Нет"
+            text += f"🆔 <code>{i['unique_id']}</code> | <b>{i['name']}</b> ({i['rarity']}) | Мут: {muts}\n"
+            if len(text) > 3500:
+                await message.answer(text, parse_mode="HTML")
+                text = ""
+        if text: await message.answer(text, parse_mode="HTML")
+    except: await message.answer("Ошибка. /checkinv [user_id]")
+
+@dp.message(Command("setmut"))
+async def cmd_setmut(message: types.Message):
+    try:
+        # /setmut 123 Galaxy,Gold
+        args = message.text.split(maxsplit=2)
+        inv_id = int(args[1])
+        new_muts = args[2] if len(args) > 2 else ""
+        
+        await admin_update_inventory_mutation(inv_id, new_muts)
+        await message.answer(f"✅ Предмет #{inv_id} обновлен. Мутации: {new_muts}")
+    except: await message.answer("Ошибка. /setmut [inv_unique_id] [mut1,mut2] (или пусто для сброса)")
 
 # --- УПРАВЛЕНИЕ ШАНСАМИ ---
 @dp.message(Command("chances"))
@@ -58,15 +101,12 @@ async def cmd_chances(message: types.Message):
 @dp.message(Command("setchance"))
 async def cmd_setchance(message: types.Message):
     try:
-        # /setchance Common 1000
         args = message.text.split()
         rarity = args[1]
         weight = int(args[2])
-        
         await set_rarity_weight(rarity, weight)
         await message.answer(f"✅ Вес для <b>{rarity}</b> установлен на <b>{weight}</b>", parse_mode="HTML")
-    except:
-        await message.answer("Ошибка. Пример: `/setchance Secret 1` (целое число)")
+    except: await message.answer("Ошибка. /setchance [Rarity] [Weight]")
 
 # --- ОСТАЛЬНОЕ (БЕЗ ИЗМЕНЕНИЙ) ---
 @dp.message(Command("cases"))
@@ -168,7 +208,7 @@ async def cmd_gi(m: types.Message):
 async def cmd_u(m: types.Message):
     users = await admin_get_all_users()
     t = "👥 <b>Users:</b>\n"; 
-    for u in users: t+=f"ID: {u['tg_id']} | {u['username']} | {u['balance']}\n"
+    for u in users: t+=f"ID: {u['tg_id']} | {u['username']} | {u['balance']}⭐️ | {u.get('brainrot_coins',0)}🧠\n"
     await m.answer(t[:4000], parse_mode="HTML")
 
 @dp.message(Command("ip"))
