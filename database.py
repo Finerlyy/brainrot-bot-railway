@@ -18,14 +18,28 @@ async def init_db():
         # --- НОВАЯ ТАБЛИЦА ШАНСОВ ---
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # МИГРАЦИИ
-        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT"); except: pass
+        # --- МИГРАЦИИ (ИСПРАВЛЕНО) ---
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except:
+            pass
 
-        # Заполняем веса по умолчанию (если их нет)
-        # Чем выше число, тем чаще падает
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
+        except:
+            pass
+
+        # Заполняем веса по умолчанию
         default_weights = [
             ('Common', 10000),
             ('Uncommon', 5000),
@@ -39,7 +53,7 @@ async def init_db():
 
         await db.commit()
         
-        # НАПОЛНЕНИЕ КЕЙСА (Базовое)
+        # НАПОЛНЕНИЕ КЕЙСА
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg'
@@ -260,12 +274,11 @@ async def use_keys(tg_user_id, case_id, quantity):
         await db.commit()
         return True
 
-# --- НОВЫЕ ФУНКЦИИ ДЛЯ ШАНСОВ ---
+# --- ФУНКЦИИ ДЛЯ ШАНСОВ ---
 async def get_rarity_weights():
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT rarity, weight FROM rarity_weights") as cursor:
             rows = await cursor.fetchall()
-            # Возвращаем словарь {'Common': 1000, ...}
             return {row[0]: row[1] for row in rows}
 
 async def set_rarity_weight(rarity, weight):
