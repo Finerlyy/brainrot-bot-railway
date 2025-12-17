@@ -352,7 +352,9 @@
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        // БЕЗОПАСНАЯ ФУНКЦИЯ ФОРМАТИРОВАНИЯ
         function formatBalance(num) {
+            if (num === undefined || num === null) return "0"; // Защита от null
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
             return num.toLocaleString();
@@ -396,34 +398,43 @@
             async function load(){
                 try {
                     const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username, photo_url:photoUrl})});
+                    if(!res.ok) throw new Error("Server error");
                     const d=await res.json();
                     
-                    el('balance').innerText = formatBalance(d.user.balance);
-                    el('brc-balance').innerText = formatBalance(d.user.brainrot_coins);
+                    // БЕЗОПАСНОЕ ПРИСВОЕНИЕ ДАННЫХ
+                    const bal = d.user?.balance || 0;
+                    const brc = d.user?.brainrot_coins || 0;
                     
-                    inventory = d.inventory;
-                    allItems = d.all_items;
+                    el('balance').innerText = formatBalance(bal);
+                    el('brc-balance').innerText = formatBalance(brc);
+                    
+                    inventory = d.inventory || [];
+                    allItems = d.all_items || [];
                     
                     // Profile Data
-                    el('prof-balance').innerText = formatBalance(d.user.balance);
-                    el('prof-networth').innerText = formatBalance(d.user.net_worth);
-                    el('prof-cases').innerText = d.user.cases_opened;
-                    el('prof-brc').innerText = formatBalance(d.user.brainrot_coins);
-                    el('profile-username').innerText = d.user.username;
-                    if(d.user.photo_url) el('prof-avatar').innerHTML = `<img src="${d.user.photo_url}">`;
+                    el('prof-balance').innerText = formatBalance(bal);
+                    el('prof-networth').innerText = formatBalance(d.user?.net_worth || 0);
+                    el('prof-cases').innerText = d.user?.cases_opened || 0;
+                    el('prof-brc').innerText = formatBalance(brc);
+                    el('profile-username').innerText = d.user?.username || "Anon";
+                    if(d.user?.photo_url) el('prof-avatar').innerHTML = `<img src="${d.user.photo_url}">`;
                     
-                    if(d.user.best_item) {
+                    if(d.user?.best_item) {
                         el('prof-best-drop').innerHTML = `<div class="item-card"><img src="${d.user.best_item.image_url}" class="item-img"><div class="case-name">${d.user.best_item.name}</div><div class="case-price">⭐️ ${formatBalance(d.user.best_item.price)}</div></div>`;
                     }
 
-                    renderCases(d.cases);
-                    renderInventory(d.inventory);
-                    renderIncubator(d.incubator);
-                    renderLeaderboard(d.leaderboard);
+                    if(d.cases) renderCases(d.cases);
+                    if(d.inventory) renderInventory(d.inventory);
+                    renderIncubator(d.incubator); // Incubator might be null, function handles it
+                    if(d.leaderboard) renderLeaderboard(d.leaderboard);
                     updateGamesList(); // Инициализация игр
                     
                     el('loading-screen').style.display='none';
-                } catch(e){ console.error(e); }
+                } catch(e){ 
+                    console.error(e); 
+                    // Если ошибка, скрываем лоадер, чтобы юзер хоть что-то видел
+                    // el('loading-screen').style.display='none'; 
+                }
             }
 
             function renderCases(cases){
@@ -441,8 +452,8 @@
             function renderInventory(inv){
                 const grid = el('inventory-grid');
                 grid.innerHTML=''; 
-                if(!inv.length) grid.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center;'>Пусто</p>";
-                inv.forEach(i=>{
+                if(!inv || !inv.length) grid.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center;'>Пусто</p>";
+                else inv.forEach(i=>{
                     const div=document.createElement('div'); div.className='item-card';
                     let mutsHtml = '';
                     if(i.muts_list && i.muts_list.length > 0) {
@@ -515,8 +526,8 @@
                     const res = await fetch(`${API}/games/list`, {method:'POST'});
                     const d = await res.json();
                     el('games-list').innerHTML = '';
-                    if(!d.games.length) el('games-list').innerHTML = "<p style='color:#666;text-align:center;'>Нет активных игр</p>";
-                    d.games.forEach(g => {
+                    if(!d.games || !d.games.length) el('games-list').innerHTML = "<p style='color:#666;text-align:center;'>Нет активных игр</p>";
+                    else d.games.forEach(g => {
                         if(g.host_id === userId || g.guest_id === userId) { activeGameId = g.id; renderActiveGame(g); return; }
                         let icon = g.game_type === 'rps' ? '✂️' : '🎲';
                         let wager = g.wager_type === 'balance' ? `${g.wager_amount} ⭐️` : `📦 ${g.item_name}`;
@@ -526,9 +537,11 @@
             }
             window.joinGame = async (gid) => { await fetch(`${API}/games/join`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:gid})}); activeGameId = gid; pollGameStatus(); }
             async function pollGameStatus() {
-                const res = await fetch(`${API}/games/status`, {method:'POST', body:JSON.stringify({user_id:userId})});
-                const d = await res.json();
-                if(d.game) { activeGameId = d.game.id; renderActiveGame(d.game); } else if(activeGameId) { activeGameId = null; exitGame(); }
+                try {
+                    const res = await fetch(`${API}/games/status`, {method:'POST', body:JSON.stringify({user_id:userId})});
+                    const d = await res.json();
+                    if(d.game) { activeGameId = d.game.id; renderActiveGame(d.game); } else if(activeGameId) { activeGameId = null; exitGame(); }
+                } catch(e) {}
             }
             function renderActiveGame(game) {
                 el('games-lobby').style.display = 'none';
