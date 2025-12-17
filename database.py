@@ -9,6 +9,7 @@ DB_NAME = "brainrot.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
+        # Включаем доступ по названиям колонок глобально
         db.row_factory = sqlite3.Row 
         
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT)")
@@ -35,12 +36,31 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # Миграции
-        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT"); except: pass
-        try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''"); except: pass
+        # --- МИГРАЦИИ (ТЕПЕРЬ ТОЧНО ПРАВИЛЬНО) ---
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
+        except:
+            pass
 
         default_weights = [('Common', 10000), ('Uncommon', 5000), ('Rare', 2500), ('Mythical', 500), ('Legendary', 100), ('Immortal', 20), ('Secret', 1)]
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
@@ -108,7 +128,6 @@ async def get_inventory_grouped(user_id_tg):
             GROUP BY i.id, i.name, i.rarity, i.image_url, i.price, inv.mutations
         """
         async with db.execute(sql, (user_pk,)) as cursor:
-            # Превращаем строки базы в словари
             return [dict(row) for row in await cursor.fetchall()]
 
 async def sell_specific_item_stack(tg_user_id, item_id, mutations_str, count, total_price):
@@ -119,7 +138,6 @@ async def sell_specific_item_stack(tg_user_id, item_id, mutations_str, count, to
             if not u: return False
             user_pk = u['id']
 
-        # Удаляем конкретные предметы
         sql = """
             DELETE FROM inventory 
             WHERE rowid IN (
@@ -162,7 +180,6 @@ async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_i
         await db.commit()
         return "ok"
 
-# --- НОВАЯ ФУНКЦИЯ ОТМЕНЫ ---
 async def cancel_game_db(game_id, tg_user_id):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -176,7 +193,6 @@ async def cancel_game_db(game_id, tg_user_id):
             if game['host_id'] != user_pk: return "not_host"
             if game['status'] != 'open': return "started"
 
-        # Возврат средств
         if game['wager_type'] == 'balance':
             await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], user_pk))
         elif game['wager_type'] == 'item':
@@ -206,6 +222,7 @@ async def join_game(game_id, tg_guest_id):
         
         async with db.execute("SELECT id, balance FROM users WHERE tg_id = ?", (tg_guest_id,)) as cursor:
             guest = await cursor.fetchone()
+            if not guest: return "user_not_found"
             guest_pk = guest['id']
             guest_bal = guest['balance']
 
@@ -332,6 +349,7 @@ async def get_my_active_game(tg_user_id):
             return None
 
 # --- ОСТАЛЬНЫЕ ФУНКЦИИ ---
+
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
