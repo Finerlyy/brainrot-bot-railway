@@ -34,6 +34,9 @@
         .case-name { font-weight: bold; margin-bottom: 4px; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .case-price { color: #aaa; font-size: 0.85rem; display: flex; justify-content: center; align-items: center; gap: 4px; }
         
+        /* БЕЙДЖ КЛЮЧЕЙ */
+        .keys-badge { position: absolute; top: 5px; right: 5px; background: #33ff33; color: #000; font-weight: 900; font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
+
         .main-action-btn, .sell-btn, .upgrade-btn { 
             background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; 
             font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; 
@@ -54,20 +57,10 @@
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { 
-            width: 100px; height: 90px; 
-            background: #222; border: 1px solid #444; 
-            margin: 0 5px; border-radius: 8px; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            flex-shrink: 0; 
-        }
+        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
-        #multi-roulette-container {
-            width: 100%; max-height: 300px; overflow-y: auto; display: none;
-            margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333;
-        }
+        #multi-roulette-container { width: 100%; max-height: 300px; overflow-y: auto; display: none; margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333; }
         .case-roulette-row { width: 100%; height: 100px; position: relative; overflow: hidden; border-bottom: 1px solid #333; background: #151515; }
 
         .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -83,26 +76,10 @@
         .drop-grid { display: grid; gap: 10px; margin-bottom: 15px; overflow-y: auto; padding: 5px; width: 100%; z-index: 10; }
         .drop-grid.single { grid-template-columns: 1fr; }
         .drop-grid.multi { grid-template-columns: repeat(3, 1fr); } 
-        
-        .drop-item { 
-            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; transform: scale(0.5);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
-            position: relative;
-        }
+        .drop-item { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.5); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; }
         .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
         .drop-item .case-name { font-size: 0.7rem; }
-
-        .drop-quantity {
-            position: absolute; top: -5px; right: -5px;
-            background: var(--accent); color: #000;
-            font-weight: 900; font-size: 0.8rem;
-            width: 24px; height: 24px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            z-index: 15; animation: popIn 0.3s forwards;
-        }
+        .drop-quantity { position: absolute; top: -5px; right: -5px; background: var(--accent); color: #000; font-weight: 900; font-size: 0.8rem; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 15; animation: popIn 0.3s forwards; }
 
         .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
         .upgrade-slots { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 400px; align-items: center; }
@@ -120,7 +97,6 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
-        
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
         .chance-text { font-size: 28px; font-weight: 900; color: #fff; }
         .chance-sub { font-size: 10px; text-transform: uppercase; color: #ccc; }
@@ -149,20 +125,9 @@
         .rarity-Uncommon { border-color: #5e98d9; color: #5e98d9; } 
         .rarity-Rare { border-color: #4b69ff; color: #4b69ff; } 
         .rarity-Mythical { border-color: #d32ce6; color: #d32ce6; }
-        
-        /* НОВАЯ РЕДКОСТЬ: SECRET */
-        .rarity-Secret { 
-            border-color: #ff0000; 
-            color: #ff0000;
-            box-shadow: 0 0 10px #ff0000;
-            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5));
-        }
+        .rarity-Secret { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 10px #ff0000; background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5)); }
 
-        @keyframes popIn { 
-            0% { opacity:0; transform: scale(0.5); } 
-            70% { transform: scale(1.1); }
-            100% { opacity:1; transform: scale(1); } 
-        }
+        @keyframes popIn { 0% { opacity:0; transform: scale(0.5); } 70% { transform: scale(1.1); } 100% { opacity:1; transform: scale(1); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     </style>
 </head>
@@ -182,7 +147,6 @@
 
         <section id="tab-upgrade" class="tab-content">
             <h2 style="text-align:center;margin-bottom:15px;color:var(--accent); font-size: 2rem;">📈</h2>
-            
             <div class="upgrade-container">
                 <div class="upgrade-slots">
                     <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
@@ -193,14 +157,12 @@
                         <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
                     </div>
                 </div>
-                
                 <div class="quick-chance-grid">
                     <button class="chance-btn" onclick="autoSelectTarget(50)">50%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(30)">30%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(20)">20%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(10)">10%</button>
                 </div>
-
                 <div class="roulette-wrapper">
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
@@ -215,7 +177,6 @@
                         </div>
                     </div>
                 </div>
-
                 <button id="upgrade-btn" class="upgrade-btn" disabled>ПРОКАЧАТЬ</button>
             </div>
         </section>
@@ -311,7 +272,7 @@
             let userId = tg.initDataUnsafe?.user?.id || 0;
             let username = tg.initDataUnsafe?.user?.username || 'Guest';
             let allItems=[], inventory=[], allItemsSorted=[], currentBal=0;
-            let selectedCase={id:0, price:0}, openCount=1;
+            let selectedCase={id:0, price:0, keys: 0}, openCount=1;
             let upgMy=null, upgTarget=null;
             let sellingItem=null, sellCount=1;
 
@@ -325,12 +286,10 @@
                 uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'),
                 uBtn:document.getElementById('upgrade-btn'),
                 ring:document.getElementById('spinRing'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'),
-                
                 sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'),
                 sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'),
                 sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'),
                 sellSliderContainer:document.getElementById('sell-slider-container'),
-                
                 multiBox: document.getElementById('multi-roulette-container'),
                 btnFast: document.getElementById('btn-fast'),
                 btnSpin: document.getElementById('btn-spin')
@@ -351,7 +310,14 @@
 
                     el.cases.innerHTML=''; d.cases.forEach(c=>{
                         const div=document.createElement('div'); div.className='case-card';
-                        div.innerHTML=`<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
+                        
+                        // Показываем бейдж ключей, если есть
+                        let keyBadge = '';
+                        if(c.keys && c.keys > 0) {
+                            keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`;
+                        }
+                        
+                        div.innerHTML=`${keyBadge}<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
 
@@ -381,17 +347,8 @@
                 el.sellName.innerText = sellingItem.name;
                 el.sellImg.src = sellingItem.image_url;
                 el.sellOwned.innerText = sellingItem.quantity;
-                
-                if(sellingItem.quantity === 1) {
-                    el.sellSliderContainer.style.display = 'none';
-                    sellCount = 1;
-                } else {
-                    el.sellSliderContainer.style.display = 'block';
-                    el.sellSlider.max = sellingItem.quantity;
-                    el.sellSlider.value = 1;
-                    sellCount = 1;
-                }
-                
+                if(sellingItem.quantity === 1) { el.sellSliderContainer.style.display = 'none'; sellCount = 1; } 
+                else { el.sellSliderContainer.style.display = 'block'; el.sellSlider.max = sellingItem.quantity; el.sellSlider.value = 1; sellCount = 1; }
                 updateSellSlider(sellCount);
                 el.sellModal.classList.remove('hidden');
             }
@@ -404,13 +361,10 @@
             
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
-                
-                // Проверка на редкость: Rare, Mythical, Legendary, Immortal, Secret
                 if(['Rare', 'Mythical', 'Legendary', 'Immortal', 'Secret'].includes(sellingItem.rarity)) {
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
-
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -424,11 +378,9 @@
             window.showOpenModal=()=>{
                 el.multiBox.style.display = 'none'; 
                 el.multiBox.innerHTML = '';
-                
                 el.btnFast.disabled = false;
                 el.btnSpin.disabled = false;
                 el.slider.disabled = false;
-                
                 el.slider.value = 1; 
                 updateSlider(1); 
                 el.openModal.classList.remove('hidden');
@@ -436,12 +388,19 @@
             
             window.updateSlider=(v)=>{
                 openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                el.mPrice.innerText = formatBalance(selectedCase.price*openCount);
+                
+                // Проверяем ключи
+                if(selectedCase.keys >= openCount) {
+                    el.mPrice.innerHTML = `<span style="color:#33ff33">БЕСПЛАТНО (Ключи: ${selectedCase.keys})</span>`;
+                } else {
+                    el.mPrice.innerHTML = `Цена: <span class="star-icon">⭐️</span> ${formatBalance(selectedCase.price*openCount)}`;
+                }
             }
 
             async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount;
-                if(currentBal < price) return tg.showAlert("Мало звезд!");
+                // Баланс проверяем только если нет ключей
+                if(selectedCase.keys < openCount && currentBal < price) return tg.showAlert("Мало звезд!");
                 
                 el.btnFast.disabled = true;
                 el.btnSpin.disabled = true;
@@ -456,7 +415,13 @@
                         return tg.showAlert(d.error); 
                     }
                     
-                    upBal(currentBal - price);
+                    // Если ключи использовались - баланс не трогаем, иначе списываем
+                    if(!d.used_keys) {
+                        upBal(currentBal - price);
+                    } else {
+                        // Обновляем локально кол-во ключей
+                        selectedCase.keys -= openCount;
+                    }
 
                     if (mode === 'fast') {
                         el.openModal.classList.add('hidden');
@@ -464,15 +429,8 @@
                     } else {
                         el.multiBox.style.display = 'block';
                         el.multiBox.innerHTML = '';
-                        
-                        d.dropped.forEach((winItem, idx) => {
-                            createRouletteRow(winItem, idx);
-                        });
-                        
-                        setTimeout(() => {
-                             el.openModal.classList.add('hidden');
-                             showResults(d.dropped);
-                        }, 5500); 
+                        d.dropped.forEach((winItem, idx) => { createRouletteRow(winItem, idx); });
+                        setTimeout(() => { el.openModal.classList.add('hidden'); showResults(d.dropped); }, 5500); 
                     }
 
                 } catch(e) { console.error(e); load(); }
@@ -484,13 +442,10 @@
             function createRouletteRow(winItem, index) {
                 const row = document.createElement('div');
                 row.className = 'case-roulette-row';
-                
                 const line = document.createElement('div');
                 line.className = 'roulette-center-line';
-                
                 const track = document.createElement('div');
                 track.className = 'roulette-track';
-                
                 const WIN_INDEX = 29; 
                 for(let i=0; i<45; i++) {
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
@@ -499,7 +454,6 @@
                     card.innerHTML = `<img src="${item.image_url}">`;
                     track.appendChild(card);
                 }
-                
                 row.appendChild(line);
                 row.appendChild(track);
                 el.multiBox.appendChild(row);
@@ -524,33 +478,20 @@
                 el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; 
                 el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
-                
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
                 const grouped = {};
-                items.forEach(item => {
-                    if (grouped[item.id]) {
-                        grouped[item.id].count++;
-                    } else {
-                        grouped[item.id] = { ...item, count: 1 };
-                    }
-                });
-                
+                items.forEach(item => { if (grouped[item.id]) { grouped[item.id].count++; } else { grouped[item.id] = { ...item, count: 1 }; } });
                 const uniqueItems = Object.values(grouped);
 
                 uniqueItems.forEach((item, index)=>{
                     const div=document.createElement('div'); 
                     div.className=`drop-item rarity-${item.rarity}`; 
                     div.style.animationDelay = `${index * 0.1}s`; 
-                    
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
-                    
                     div.innerHTML=`${countBadge}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
-                    
-                    if(index === 0 && item.sound_url && item.sound_url!=='-') { 
-                        el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); 
-                    }
+                    if(index === 0 && item.sound_url && item.sound_url!=='-') { el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); }
                 });
                 load();
             }

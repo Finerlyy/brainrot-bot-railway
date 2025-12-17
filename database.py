@@ -12,7 +12,9 @@ async def init_db():
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
         
-        # Миграция IP (если нет)
+        # --- НОВАЯ ТАБЛИЦА КЛЮЧЕЙ ---
+        await db.execute("CREATE TABLE IF NOT EXISTS keys (user_id INTEGER, case_id INTEGER, quantity INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (case_id) REFERENCES cases(id), UNIQUE(user_id, case_id))")
+
         try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
         except: pass
 
@@ -32,7 +34,6 @@ async def init_db():
             case_id = row[0] if row else None
 
         if case_id:
-            # Добавлен пример SECRET предмета
             items_data = [
                 ('Lirili Bat Guy', 'Common', 100, 'https://i.imgur.com/vZkT4cu.jpeg', '-', case_id),
                 ('Tung Tung Elephant', 'Common', 150, 'https://i.imgur.com/4RtWcWY.jpeg', '-', case_id),
@@ -123,6 +124,19 @@ async def add_items_to_inventory_batch(tg_user_id, items_list):
         await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
         await db.commit()
 
+# Функция для прямой выдачи предмета по ID
+async def add_specific_item_by_id(tg_user_id, item_id, quantity=1):
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            user_row = await cursor.fetchone()
+            if not user_row: return False
+            user_pk_id = user_row[0]
+        
+        insert_data = [(user_pk_id, item_id) for _ in range(quantity)]
+        await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
+        await db.commit()
+        return True
+
 async def add_item_to_inventory(tg_user_id, item):
     await add_items_to_inventory_batch(tg_user_id, [item])
 
@@ -180,6 +194,53 @@ async def admin_get_all_users():
         async with db.execute("SELECT * FROM users WHERE tg_id != 0") as cursor:
             return await cursor.fetchall()
 
+# --- ФУНКЦИИ КЛЮЧЕЙ ---
+async def add_keys_to_user(tg_user_id, case_id, quantity):
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            u = await cursor.fetchone()
+            if not u: return False
+            user_pk = u[0]
+            
+        # Upsert логика (Вставить или Обновить)
+        await db.execute("""
+            INSERT INTO keys (user_id, case_id, quantity) 
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id, case_id) 
+            DO UPDATE SET quantity = quantity + ?
+        """, (user_pk, case_id, quantity, quantity))
+        await db.commit()
+        return True
+
+async def get_user_keys(tg_user_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            u = await cursor.fetchone()
+            if not u: return {}
+            user_pk = u[0]
+            
+        async with db.execute("SELECT case_id, quantity FROM keys WHERE user_id = ? AND quantity > 0", (user_pk,)) as cursor:
+            rows = await cursor.fetchall()
+            return {row[0]: row[1] for row in rows}
+
+async def use_keys(tg_user_id, case_id, quantity):
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            u = await cursor.fetchone()
+            if not u: return False
+            user_pk = u[0]
+            
+        # Проверяем кол-во
+        async with db.execute("SELECT quantity FROM keys WHERE user_id = ? AND case_id = ?", (user_pk, case_id)) as cursor:
+            row = await cursor.fetchone()
+            if not row or row[0] < quantity:
+                return False
+                
+        await db.execute("UPDATE keys SET quantity = quantity - ? WHERE user_id = ? AND case_id = ?", (quantity, user_pk, case_id))
+        await db.commit()
+        return True
+
 # --- АДМИН ФУНКЦИИ ---
 async def admin_add_case(name, price, url):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -188,7 +249,6 @@ async def admin_add_case(name, price, url):
 
 async def admin_del_case(case_id):
     async with aiosqlite.connect(DB_NAME) as db:
-        # Удаляем предметы в этом кейсе сначала
         await db.execute("DELETE FROM items WHERE case_id = ?", (case_id,))
         await db.execute("DELETE FROM cases WHERE id = ?", (case_id,))
         await db.commit()

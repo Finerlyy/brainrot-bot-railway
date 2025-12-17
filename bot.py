@@ -13,7 +13,8 @@ from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, add_items_to_inventory_batch, update_user_balance, 
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
-    delete_one_item_by_id, add_item_to_inventory, update_user_ip
+    delete_one_item_by_id, add_item_to_inventory, update_user_ip,
+    get_user_keys, use_keys
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
@@ -67,18 +68,21 @@ async def api_get_data(request):
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
             r = i_dict.get('rarity', 'Common')
-            
-            # --- ЛОГИКА ЦЕНЫ ПРОДАЖИ ---
             if r == 'Secret':
-                i_dict['sell_price'] = max(1, int(p * 0.90)) # Секретные продаются за 90%
+                i_dict['sell_price'] = max(1, int(p * 0.90))
             else:
                 i_dict['sell_price'] = max(1, int(p * 0.60)) 
-            
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         
+        # ДОБАВЛЯЕМ КЛЮЧИ В ОТВЕТ
+        user_keys = await get_user_keys(user_id) # вернет {case_id: amount}
+        # Встраиваем ключи в список кейсов
+        for c in cases:
+            c['keys'] = user_keys.get(c['id'], 0)
+
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
 
@@ -107,12 +111,24 @@ async def api_open_case(request):
         case_data = force_dict(raw_case, CASE_KEYS)
         if not case_data: return web.json_response({"error": "Кейс не найден"}, status=404)
 
-        total_price = case_data['price'] * count
+        # ПРОВЕРКА КЛЮЧЕЙ
+        user_keys = await get_user_keys(user_id)
+        available_keys = user_keys.get(case_id, 0)
         
-        raw_user = await get_user(user_id, 'temp')
-        user = force_dict(raw_user, USER_KEYS)
-
-        if user['balance'] < total_price: return web.json_response({"error": "Мало денег!"}, status=400)
+        # Если ключей достаточно для ВСЕГО открытия
+        using_keys = False
+        if available_keys >= count:
+            using_keys = True
+            # Списываем ключи
+            if not await use_keys(user_id, case_id, count):
+                return web.json_response({"error": "Ошибка списания ключей"}, status=400)
+        else:
+            # Иначе списываем деньги
+            total_price = case_data['price'] * count
+            raw_user = await get_user(user_id, 'temp')
+            user = force_dict(raw_user, USER_KEYS)
+            if user['balance'] < total_price: return web.json_response({"error": "Мало денег!"}, status=400)
+            await update_user_balance(user_id, -total_price) 
 
         raw_items = await get_case_items(case_id)
         items = [force_dict(i, ITEM_KEYS) for i in raw_items]
@@ -121,10 +137,9 @@ async def api_open_case(request):
         weights = [10000 / (item.get('price', 1) + 1) for item in items]
         dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
-        await update_user_balance(user_id, -total_price) 
         await add_items_to_inventory_batch(user_id, dropped)
         
-        return web.json_response({"dropped": dropped})
+        return web.json_response({"dropped": dropped, "used_keys": using_keys})
     except Exception as e: 
         logging.error(f"Error api_open_case: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
