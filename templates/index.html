@@ -91,6 +91,7 @@
         .game-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; }
         .move-btn { font-size: 2rem; padding: 20px; background: #333; border: 1px solid #555; border-radius: 10px; cursor: pointer; }
         .move-btn:active { background: #555; }
+        .game-loader-spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top: 5px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
         /* RARITIES */
         .rarity-Common { border-color: #aaa; color: #aaa; } 
@@ -110,7 +111,6 @@
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         .stat-label { font-size: 0.8rem; color: #888; }
 
-        /* ЛИДЕРБОРД */
         .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; cursor: pointer; transition: 0.2s; }
         .leaderboard-item:active { transform: scale(0.98); background: #333; }
         .lb-rank { font-weight: 900; color: #666; width: 30px; }
@@ -137,9 +137,11 @@
 
         <section id="tab-games" class="tab-content">
             <div id="active-game-ui" class="active-game-ui">
+                <div id="game-loading-spinner" class="game-loader-spinner" style="display:none"></div>
                 <h2 id="game-status-text">Ожидание...</h2>
                 <div id="game-controls" class="game-controls"></div>
-                <button class="close-btn" onclick="exitGame()">Выйти</button>
+                <button id="game-exit-btn" class="close-btn" onclick="exitGame()">Выйти</button>
+                <button id="game-cancel-btn" class="main-action-btn" style="background:#ff3333; margin-top:10px; display:none" onclick="cancelActiveGame()">⛔ ОТМЕНИТЬ ИГРУ</button>
             </div>
 
             <div id="games-lobby">
@@ -317,7 +319,7 @@
             let upgMy=null, upgTarget=null;
             let sellingItem=null, sellCount=1;
 
-            // DOM Elements Mapping (Shortened)
+            // DOM Elements
             const el = {
                 bal: document.getElementById('balance'),
                 cases: document.getElementById('cases-grid'),
@@ -327,7 +329,10 @@
                 gamesLobby: document.getElementById('games-lobby'),
                 gameControls: document.getElementById('game-controls'),
                 gameStatus: document.getElementById('game-status-text'),
-                // ... (previous ones)
+                gameSpinner: document.getElementById('game-loading-spinner'),
+                gameExitBtn: document.getElementById('game-exit-btn'),
+                gameCancelBtn: document.getElementById('game-cancel-btn'),
+                
                 loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), mPrice:document.getElementById('modal-case-price'), slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'), selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'), uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'), uBtn:document.getElementById('upgrade-btn'), ring:document.getElementById('spinRing'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'), sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'), sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'), sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'), sellSliderContainer:document.getElementById('sell-slider-container'), multiBox: document.getElementById('multi-roulette-container'), btnFast: document.getElementById('btn-fast'), btnSpin: document.getElementById('btn-spin'), profUser: document.getElementById('profile-username'), profBal: document.getElementById('prof-balance'), profNet: document.getElementById('prof-networth'), profCases: document.getElementById('prof-cases'), profDays: document.getElementById('prof-days'), profBest: document.getElementById('prof-best-drop'), profAvatar: document.getElementById('prof-avatar'), lbList: document.getElementById('leaderboard-list'), backBtn: document.getElementById('back-to-my-profile')
             };
 
@@ -360,7 +365,6 @@
                     [...d.inventory].reverse().forEach(i=>{
                         const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`;
                         
-                        // MUTATIONS RENDER
                         let mutsHtml = '';
                         if(i.muts_list && i.muts_list.length > 0) {
                             mutsHtml = '<div class="mutation-badges">';
@@ -389,7 +393,6 @@
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
                     renderAll(d, true);
                     updateGamesList();
-                    // Check if already in active game
                     pollGameStatus();
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){ console.error(e); }
@@ -429,8 +432,6 @@
                     const d = await res.json();
                     if(d.status === 'ok') {
                         closeModal('create-game-modal');
-                        tg.showAlert("Игра создана! Ждем соперника...");
-                        // We rely on autoUpdate/poll to switch to game view, or we can just fetch status
                         pollGameStatus(); 
                     } else tg.showAlert("Ошибка: " + d.error);
                 } catch(e) { console.error(e); }
@@ -501,37 +502,52 @@
                 let myMove = isHost ? game.host_move : game.guest_move;
                 let oppName = isHost ? (game.guest_name || "Ожидание...") : game.host_name;
                 
-                if (game.status === 'finished') {
+                // Сброс UI
+                el.gameSpinner.style.display = 'none';
+                el.gameControls.innerHTML = '';
+                el.gameCancelBtn.style.display = 'none';
+                el.gameExitBtn.style.display = 'block';
+
+                if (game.status === 'open') {
+                    // Ожидание соперника
+                    el.gameStatus.innerHTML = `Ожидание соперника...<br><small>Ставка: ${game.wager_amount}</small>`;
+                    el.gameSpinner.style.display = 'block';
+                    if(isHost) el.gameCancelBtn.style.display = 'block'; // Кнопка отмены
+                    el.gameExitBtn.style.display = 'none'; // Нельзя выйти, только отменить
+                }
+                else if (game.status === 'playing') {
+                    if (!myMove) {
+                        el.gameStatus.innerHTML = `Твой ход!<br><small>Против: ${oppName}</small>`;
+                        if(game.game_type === 'rps') {
+                            el.gameControls.innerHTML = `
+                                <button class="move-btn" onclick="sendMove('rock')">🪨</button>
+                                <button class="move-btn" onclick="sendMove('scissors')">✂️</button>
+                                <button class="move-btn" onclick="sendMove('paper')">📄</button>
+                            `;
+                        } else {
+                            if (isHost) { 
+                                 el.gameControls.innerHTML = `
+                                    <button class="move-btn" onclick="sendMove('1')">1</button>
+                                    <button class="move-btn" onclick="sendMove('2')">2</button>
+                                `;
+                            } else { 
+                                 el.gameControls.innerHTML = `
+                                    <button class="move-btn" onclick="sendMove('odd')">Нечет</button>
+                                    <button class="move-btn" onclick="sendMove('even')">Чет</button>
+                                `;
+                            }
+                        }
+                    } else {
+                        // Я походил, жду соперника
+                        el.gameStatus.innerHTML = `Ожидание хода соперника...<br><small>Против: ${oppName}</small>`;
+                        el.gameSpinner.style.display = 'block';
+                        el.gameExitBtn.style.display = 'none'; // Нельзя выйти во время игры
+                    }
+                } 
+                else if (game.status === 'finished') {
                     let winText = (game.winner_id === userId) ? "🏆 ТЫ ВЫИГРАЛ!" : (game.winner_id === 0 ? "🤝 НИЧЬЯ" : "💀 ТЫ ПРОИГРАЛ");
                     el.gameStatus.innerHTML = `${winText}<br><small>Против: ${oppName}</small>`;
-                    el.gameControls.innerHTML = '';
-                    return;
-                }
-
-                if (!myMove) {
-                    el.gameStatus.innerHTML = `Твой ход!<br><small>Против: ${oppName}</small>`;
-                    if(game.game_type === 'rps') {
-                        el.gameControls.innerHTML = `
-                            <button class="move-btn" onclick="sendMove('rock')">🪨</button>
-                            <button class="move-btn" onclick="sendMove('scissors')">✂️</button>
-                            <button class="move-btn" onclick="sendMove('paper')">📄</button>
-                        `;
-                    } else {
-                        if (isHost) { // Host guesses number 1 or 2
-                             el.gameControls.innerHTML = `
-                                <button class="move-btn" onclick="sendMove('1')">1</button>
-                                <button class="move-btn" onclick="sendMove('2')">2</button>
-                            `;
-                        } else { // Guest guesses Even/Odd
-                             el.gameControls.innerHTML = `
-                                <button class="move-btn" onclick="sendMove('odd')">Нечет</button>
-                                <button class="move-btn" onclick="sendMove('even')">Чет</button>
-                            `;
-                        }
-                    }
-                } else {
-                    el.gameStatus.innerHTML = `Ожидание соперника...<br><small>Против: ${oppName}</small>`;
-                    el.gameControls.innerHTML = '';
+                    el.gameExitBtn.style.display = 'block';
                 }
             }
 
@@ -547,7 +563,15 @@
                 updateGamesList();
             }
 
-            // --- PROFILE RENDER ---
+            window.cancelActiveGame = async () => {
+                if(!confirm("Отменить игру и вернуть ставку?")) return;
+                try {
+                    await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})});
+                    exitGame();
+                } catch(e) {}
+            }
+
+            // ... (Rest of code: Profile, Sell, Roulette...)
             function renderProfile(user, best_item, isMe) {
                 el.profUser.innerText = user.username;
                 el.profBal.innerText = formatBalance(user.balance);
@@ -582,9 +606,7 @@
                 el.loader.style.display = 'none';
             }
 
-            // --- INVENTORY SELL LOGIC UPDATE (Handle Mutations) ---
             window.openSellModal=(itemId, muts)=>{
-                // Find precise item stack
                 sellingItem = inventory.find(i => i.item_id === itemId && i.mutations === muts);
                 if(!sellingItem) return;
                 el.sellName.innerText = sellingItem.name;
@@ -605,7 +627,6 @@
                 el.sellModal.classList.add('hidden');
                 upBal(currentBal + totalPrice);
                 try { 
-                    // Pass mutations to backend to identify stack
                     await fetch(`${API}/sell_batch`,{method:'POST',body:JSON.stringify({
                         user_id:userId, 
                         item_id:sellingItem.item_id, 
@@ -630,7 +651,6 @@
                 el.loader.style.display = 'none';
             }
 
-            // --- ROULETTE LOGIC ---
             function getWeightedRandomItem(itemsInCase) {
                 const pool = (itemsInCase && itemsInCase.length > 0) ? itemsInCase : allItemsSorted;
                 let totalWeight = 0; const weightedList = [];
@@ -693,14 +713,12 @@
                 uniqueItems.forEach((item, index)=>{
                     const div=document.createElement('div'); div.className=`drop-item rarity-${item.rarity}`; div.style.animationDelay = `${index * 0.1}s`; 
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
-                    
                     let mutsHtml = '';
                     if(item.mutations && item.mutations.length > 0) {
                         mutsHtml = '<div class="mutation-badges" style="top:-10px;left:-5px">';
                         item.mutations.forEach(m => { mutsHtml += `<span class="mut-badge">${MUT_EMOJIS[m] || m}</span>`; });
                         mutsHtml += '</div>';
                     }
-
                     div.innerHTML=`${countBadge}${mutsHtml}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
                     if(index === 0 && item.sound_url && item.sound_url!=='-') { el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); }
@@ -708,7 +726,6 @@
                 load();
             }
 
-            // ... (Upgrade logic remains same as previous, just ensure load() is called correctly)
             window.openItemSelect=(side)=>{
                 el.selGrid.innerHTML=''; el.selModal.classList.remove('hidden');
                 let list = side==='left' ? inventory.filter(i=>i.quantity>0) : allItemsSorted;

@@ -9,7 +9,6 @@ DB_NAME = "brainrot.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
-        # Включаем доступ по названиям колонок глобально
         db.row_factory = sqlite3.Row 
         
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT)")
@@ -36,31 +35,12 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # --- МИГРАЦИИ (ИСПРАВЛЕНО: РАЗБИТО НА СТРОКИ) ---
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
-        except:
-            pass
+        # Миграции
+        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT"); except: pass
+        try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0"); except: pass
+        try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT"); except: pass
+        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT"); except: pass
+        try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''"); except: pass
 
         default_weights = [('Common', 10000), ('Uncommon', 5000), ('Rare', 2500), ('Mythical', 500), ('Legendary', 100), ('Immortal', 20), ('Secret', 1)]
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
@@ -168,7 +148,6 @@ async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_i
             if balance < wager_val: return "no_balance"
             await db.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (wager_val, uid))
         elif wager_type == 'item':
-            # Ищем предмет в инвентаре (любой с таким ID)
             sql_check = "SELECT rowid FROM inventory WHERE user_id = ? AND item_id = ? LIMIT 1"
             async with db.execute(sql_check, (uid, wager_item_id)) as cur:
                 row = await cur.fetchone()
@@ -180,6 +159,30 @@ async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_i
             INSERT INTO games (game_type, wager_type, wager_amount, wager_item_id, host_id, status)
             VALUES (?, ?, ?, ?, ?, 'open')
         """, (game_type, wager_type, wager_val, wager_item_id, uid))
+        await db.commit()
+        return "ok"
+
+# --- НОВАЯ ФУНКЦИЯ ОТМЕНЫ ---
+async def cancel_game_db(game_id, tg_user_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
+            u = await cursor.fetchone()
+            user_pk = u['id']
+
+        async with db.execute("SELECT * FROM games WHERE id = ?", (game_id,)) as cur:
+            game = await cur.fetchone()
+            if not game: return "not_found"
+            if game['host_id'] != user_pk: return "not_host"
+            if game['status'] != 'open': return "started"
+
+        # Возврат средств
+        if game['wager_type'] == 'balance':
+            await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], user_pk))
+        elif game['wager_type'] == 'item':
+            await db.execute("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", (user_pk, game['wager_item_id']))
+
+        await db.execute("DELETE FROM games WHERE id = ?", (game_id,))
         await db.commit()
         return "ok"
 
@@ -201,25 +204,20 @@ async def join_game(game_id, tg_guest_id):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         
-        # Получаем гостя
         async with db.execute("SELECT id, balance FROM users WHERE tg_id = ?", (tg_guest_id,)) as cursor:
             guest = await cursor.fetchone()
-            if not guest: return "user_not_found"
             guest_pk = guest['id']
             guest_bal = guest['balance']
 
-        # Получаем игру
         async with db.execute("SELECT * FROM games WHERE id = ?", (game_id,)) as cur:
             game = await cur.fetchone()
             if not game: return "game_not_found"
             if game['status'] != 'open': return "game_not_open"
-            if game['host_id'] == guest_pk: return "self_join_error" # Нельзя играть с самим собой
+            if game['host_id'] == guest_pk: return "self_join_error"
 
-        # Списание средств/предмета у гостя
         if game['wager_type'] == 'balance':
             if guest_bal < game['wager_amount']: return "no_balance"
             await db.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (game['wager_amount'], guest_pk))
-        
         elif game['wager_type'] == 'item':
             sql_check = "SELECT rowid FROM inventory WHERE user_id = ? AND item_id = ? LIMIT 1"
             async with db.execute(sql_check, (guest_pk, game['wager_item_id'])) as cur:
@@ -228,7 +226,6 @@ async def join_game(game_id, tg_guest_id):
                 inv_rowid = row['rowid']
             await db.execute("DELETE FROM inventory WHERE rowid = ?", (inv_rowid,))
 
-        # Обновляем статус игры
         await db.execute("UPDATE games SET guest_id = ?, status = 'playing' WHERE id = ?", (guest_pk, game_id))
         await db.commit()
         return "ok"
@@ -271,9 +268,8 @@ async def check_game_result(game_id):
         host_id = game['host_id']
         guest_id = game['guest_id']
         
-        # Логика игры
         if game['game_type'] == 'rps':
-            if h_move == g_move: winner_id = 0 # Ничья
+            if h_move == g_move: winner_id = 0
             elif (h_move=='rock' and g_move=='scissors') or \
                  (h_move=='scissors' and g_move=='paper') or \
                  (h_move=='paper' and g_move=='rock'):
@@ -289,7 +285,6 @@ async def check_game_result(game_id):
             else:
                 winner_id = host_id
 
-        # Выдача призов
         if winner_id == 0: 
             if game['wager_type'] == 'balance':
                 await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], host_id))
@@ -337,7 +332,6 @@ async def get_my_active_game(tg_user_id):
             return None
 
 # --- ОСТАЛЬНЫЕ ФУНКЦИИ ---
-
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -430,25 +424,6 @@ async def get_all_items_sorted():
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT * FROM items ORDER BY price ASC") as cursor: return await cursor.fetchall()
 
-async def add_items_to_inventory_batch(tg_user_id, items_list):
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = sqlite3.Row
-        async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
-            user_row = await cursor.fetchone()
-            if not user_row: return 
-            user_pk_id = user_row['id']
-            
-        insert_data = []
-        for item in items_list:
-            i_id = item.get('id') if isinstance(item, dict) else item[0]
-            insert_data.append((user_pk_id, i_id))
-
-        await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
-        await db.commit()
-
-async def add_item_to_inventory(tg_user_id, item):
-    await add_items_with_mutations(tg_user_id, [item])
-
 async def add_specific_item_by_id(tg_user_id, item_id, quantity=1):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -460,6 +435,9 @@ async def add_specific_item_by_id(tg_user_id, item_id, quantity=1):
         await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
         await db.commit()
         return True
+
+async def add_item_to_inventory(tg_user_id, item):
+    await add_items_with_mutations(tg_user_id, [item])
 
 async def delete_one_item_by_id(tg_user_id, item_id):
     async with aiosqlite.connect(DB_NAME) as db:
