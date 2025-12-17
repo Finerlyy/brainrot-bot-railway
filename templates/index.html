@@ -51,59 +51,26 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        /* РУЛЕТКА В КЕЙСЕ */
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
-        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .roulette-card { 
+            width: 100px; height: 90px; 
+            background: #222; border: 1px solid #444; 
+            margin: 0 5px; border-radius: 8px; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            flex-shrink: 0; 
+        }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
         
         #multi-roulette-container {
-            width: 100%;
-            max-height: 300px; 
-            overflow-y: auto; 
-            display: none;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            background: #111;
-            border: 2px solid #333;
+            width: 100%; max-height: 300px; overflow-y: auto; display: none;
+            margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333;
         }
+        .case-roulette-row { width: 100%; height: 100px; position: relative; overflow: hidden; border-bottom: 1px solid #333; background: #151515; }
 
-        .case-roulette-row { 
-            width: 100%; height: 100px; 
-            position: relative; overflow: hidden; 
-            border-bottom: 1px solid #333;
-            background: #151515;
-        }
-        
-        .roulette-center-line { 
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; 
-            background: #fff; z-index: 10; transform: translateX(-50%); 
-            box-shadow: 0 0 10px #fff; 
-        }
-        
-        .roulette-track { 
-            display: flex; height: 100%; align-items: center; 
-            will-change: transform; 
-        }
-        
-        .roulette-card { 
-            width: 100px; /* Фиксированная ширина */
-            height: 90px; 
-            background: #222; border: 1px solid #444; 
-            margin: 0 5px; 
-            border-radius: 8px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            flex-shrink: 0;
-        }
-        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
-
-        .actions-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
+        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .btn-fast { background: #444; color: #fff; box-shadow: 0 4px 0 #222; }
         .btn-spin { background: var(--star-gradient); color: #000; box-shadow: 0 4px 0 var(--accent-dark); }
 
@@ -120,8 +87,7 @@
         .drop-item { 
             background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; 
-            transform: scale(0.5);
+            opacity: 0; transform: scale(0.5);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
             position: relative;
         }
@@ -129,8 +95,7 @@
         .drop-item .case-name { font-size: 0.7rem; }
 
         .drop-quantity {
-            position: absolute;
-            top: -5px; right: -5px;
+            position: absolute; top: -5px; right: -5px;
             background: var(--accent); color: #000;
             font-weight: 900; font-size: 0.8rem;
             width: 24px; height: 24px; border-radius: 50%;
@@ -153,7 +118,6 @@
         .spinning-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#444 0% 100%); box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 1; transition: transform 4s cubic-bezier(0.15, 0, 0.2, 1); }
         .spinning-ring.win-glow { box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
-        
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
         
@@ -177,7 +141,6 @@
         .select-card img { width: 50px; height: 50px; object-fit: contain; }
         .select-card span { font-size: 0.7rem; display: block; color: var(--accent); }
         
-        /* СЛАЙДЕР ДО 50 */
         input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; margin: 15px 0; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px var(--accent); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
@@ -186,6 +149,15 @@
         .rarity-Uncommon { border-color: #5e98d9; color: #5e98d9; } 
         .rarity-Rare { border-color: #4b69ff; color: #4b69ff; } 
         .rarity-Mythical { border-color: #d32ce6; color: #d32ce6; }
+        
+        /* НОВАЯ РЕДКОСТЬ: SECRET */
+        .rarity-Secret { 
+            border-color: #ff0000; 
+            color: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5));
+        }
+
         @keyframes popIn { 
             0% { opacity:0; transform: scale(0.5); } 
             70% { transform: scale(1.1); }
@@ -432,10 +404,13 @@
             
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
-                if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
+                
+                // Проверка на редкость: Rare, Mythical, Legendary, Immortal, Secret
+                if(['Rare', 'Mythical', 'Legendary', 'Immortal', 'Secret'].includes(sellingItem.rarity)) {
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
+
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -538,7 +513,6 @@
                 const randomOffset = Math.floor(Math.random() * 70) - 35;
                 const scrollAmount = centerOfWinningCard - centerOfContainer + randomOffset;
 
-                // Ускоренная анимация для большого количества (по 50мс задержка)
                 setTimeout(() => {
                     track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
                     track.style.transform = `translateX(-${scrollAmount}px)`;

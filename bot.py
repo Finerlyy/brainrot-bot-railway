@@ -9,7 +9,6 @@ import aiohttp_jinja2
 import jinja2
 import sqlite3
 
-# Импортируем функции БД (добавили update_user_ip)
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, add_items_to_inventory_batch, update_user_balance, 
@@ -17,7 +16,6 @@ from database import (
     delete_one_item_by_id, add_item_to_inventory, update_user_ip
 )
 
-# --- КОНФИГУРАЦИЯ ---
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -29,7 +27,6 @@ app = web.Application()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# --- ФУНКЦИЯ СПАСЕНИЯ ОТ ОШИБОК TUPLE ---
 def force_dict(item, key_map):
     if item is None: return None
     if hasattr(item, 'keys') or isinstance(item, dict): return dict(item)
@@ -37,18 +34,15 @@ def force_dict(item, key_map):
         return {key_map[i]: item[i] for i in range(min(len(item), len(key_map)))}
     return item
 
-# Ключи таблиц
 ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-USER_KEYS = ['id', 'tg_id', 'username', 'balance']
+USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip']
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await get_user(message.from_user.id, message.from_user.username or "Anon")
     kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="🕹 ОТКРЫТЬ КЕЙСЫ 🎰", web_app=WebAppInfo(url=WEB_APP_URL))]])
     await message.answer("Жми кнопку, чтобы играть!", reply_markup=kb)
-
-# --- API ---
 
 async def web_index(request):
     return aiohttp_jinja2.render_template('index.html', request, {'ver': random.randint(1, 99999)})
@@ -58,17 +52,9 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # --- ЛОГИКА ЗАХВАТА IP ---
-        # Railway передает реальный IP в заголовке X-Forwarded-For
         ip_header = request.headers.get('X-Forwarded-For')
-        if ip_header:
-            ip = ip_header.split(',')[0].strip() # Берем первый IP из списка
-        else:
-            ip = request.remote # Локальный IP, если нет прокси
-            
-        if ip:
-            await update_user_ip(user_id, ip)
-        # -------------------------
+        ip = ip_header.split(',')[0].strip() if ip_header else request.remote
+        if ip: await update_user_ip(user_id, ip)
 
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
@@ -80,7 +66,14 @@ async def api_get_data(request):
         for item in raw_inv:
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
-            i_dict['sell_price'] = max(1, int(p * 0.60)) 
+            r = i_dict.get('rarity', 'Common')
+            
+            # --- ЛОГИКА ЦЕНЫ ПРОДАЖИ ---
+            if r == 'Secret':
+                i_dict['sell_price'] = max(1, int(p * 0.90)) # Секретные продаются за 90%
+            else:
+                i_dict['sell_price'] = max(1, int(p * 0.60)) 
+            
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()

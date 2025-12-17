@@ -7,21 +7,18 @@ DB_NAME = "brainrot.db"
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row 
-        # Создаем таблицы (в users добавлено поле ip)
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
         
-        # --- МИГРАЦИЯ (Если база старая, добавляем колонку ip) ---
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
-        except:
-            pass # Колонка уже есть, игнорируем ошибку
+        # Миграция IP (если нет)
+        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except: pass
 
         await db.commit()
         
-        # --- НАПОЛНЕНИЕ БАЗЫ ---
+        # НАПОЛНЕНИЕ
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.ibb.co/mCZ9d327/1000002237.jpg'
@@ -35,6 +32,7 @@ async def init_db():
             case_id = row[0] if row else None
 
         if case_id:
+            # Добавлен пример SECRET предмета
             items_data = [
                 ('Lirili Bat Guy', 'Common', 100, 'https://i.imgur.com/vZkT4cu.jpeg', '-', case_id),
                 ('Tung Tung Elephant', 'Common', 150, 'https://i.imgur.com/4RtWcWY.jpeg', '-', case_id),
@@ -42,6 +40,7 @@ async def init_db():
                 ('Tralala Shark', 'Rare', 1200, 'https://i.imgur.com/iDcJaMp.jpeg', '-', case_id),
                 ('Orcalero Orca', 'Mythical', 3500, 'https://i.imgur.com/EsqyjjW.jpeg', '-', case_id),
                 ('Chimpanzini Bananini', 'Mythical', 10000, 'https://i.imgur.com/0QTbLT8.jpeg', '-', case_id),
+                ('SECRET ITEM', 'Secret', 50000, 'https://cdn-icons-png.flaticon.com/512/5726/5726775.png', '-', case_id),
             ]
             for i in items_data:
                 async with db.execute("SELECT id FROM items WHERE name = ?", (i[0],)) as cur:
@@ -66,11 +65,17 @@ async def get_user(tg_id, username):
                 user = await cursor.fetchone()
         return user
 
-# НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ IP
 async def update_user_ip(tg_id, ip_address):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("UPDATE users SET ip = ? WHERE tg_id = ?", (ip_address, tg_id))
         await db.commit()
+
+async def get_user_ip(tg_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT ip FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else None
 
 async def update_user_balance(tg_id, amount):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -174,3 +179,26 @@ async def admin_get_all_users():
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT * FROM users WHERE tg_id != 0") as cursor:
             return await cursor.fetchall()
+
+# --- АДМИН ФУНКЦИИ ---
+async def admin_add_case(name, price, url):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("INSERT INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (name, price, url))
+        await db.commit()
+
+async def admin_del_case(case_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        # Удаляем предметы в этом кейсе сначала
+        await db.execute("DELETE FROM items WHERE case_id = ?", (case_id,))
+        await db.execute("DELETE FROM cases WHERE id = ?", (case_id,))
+        await db.commit()
+
+async def admin_add_item(case_id, name, rarity, price, url):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", (name, rarity, price, url, '-', case_id))
+        await db.commit()
+
+async def admin_del_item(item_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("DELETE FROM items WHERE id = ?", (item_id,))
+        await db.commit()
