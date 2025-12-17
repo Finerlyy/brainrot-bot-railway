@@ -8,11 +8,11 @@ from aiogram.types import WebAppInfo
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
-import sqlite3
 
+# Исправленные импорты из базы данных (удален несуществующий add_items_to_inventory_batch)
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
-    get_case_items, add_items_to_inventory_batch, update_user_balance, 
+    get_case_items, update_user_balance, 
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
     get_user_keys, use_keys, get_profile_stats, increment_cases_opened,
@@ -22,6 +22,8 @@ from database import (
     cancel_game_db, sell_specific_item_stack
 )
 
+# --- КОНФИГУРАЦИЯ ---
+# Рекомендуется выносить токены в .env, но оставляю как у вас для простоты
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -31,9 +33,10 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 app = web.Application()
 
+# Настройка шаблонов
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# --- КОНФИГУРАЦИЯ МУТАЦИЙ ---
+# --- КОНФИГУРАЦИЯ МУТАЦИЙ И РЕДКОСТЕЙ ---
 MUTATIONS = {
     'Gold': 1.1,
     'Diamond': 1.2,
@@ -46,6 +49,7 @@ MUTATION_KEYS = list(MUTATIONS.keys())
 
 RARITY_RANKS = {'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7}
 
+# Вспомогательная функция для преобразования SQLite Row в словарь
 def force_dict(item, key_map):
     if item is None: return None
     if hasattr(item, 'keys') or isinstance(item, dict): return dict(item)
@@ -57,12 +61,14 @@ ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
 USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date', 'photo_url']
 
+# --- ХЕНДЛЕРЫ БОТА ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await get_user(message.from_user.id, message.from_user.username or "Anon")
     kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="🕹 ОТКРЫТЬ КЕЙСЫ 🎰", web_app=WebAppInfo(url=WEB_APP_URL))]])
     await message.answer("Жми кнопку, чтобы играть!", reply_markup=kb)
 
+# --- WEB HANDLERS ---
 async def web_index(request):
     return aiohttp_jinja2.render_template('index.html', request, {'ver': random.randint(1, 99999)})
 
@@ -71,20 +77,25 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
+        # IP Logging
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
 
+        # Photo Update
         photo_url = data.get('photo_url')
         if photo_url: await update_user_photo(user_id, photo_url)
 
+        # Get User Data
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
+        # Get Stats
         stats = await get_profile_stats(user_id)
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
         
+        # Get Inventory
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity']
         raw_inv = await get_inventory_grouped(user_id)
         
@@ -107,12 +118,13 @@ async def api_get_data(request):
             
             inventory.append(i_dict)
 
+        # Get Cases & Keys
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
-        
         user_keys = await get_user_keys(user_id)
         for c in cases: c['keys'] = user_keys.get(c['id'], 0)
 
+        # Get All Items (for roulette display/upgrades)
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
 
@@ -325,7 +337,6 @@ async def api_game_status(request):
     try:
         data = await request.json()
         user_id = int(data.get('user_id'))
-        # Ищем активную игру пользователя
         game = await get_my_active_game(user_id)
         if game: return web.json_response({"game": dict(game)})
         return web.json_response({"game": None})
@@ -342,7 +353,6 @@ async def api_game_move(request):
         return web.json_response({"status": res})
     except Exception as e: return web.json_response({"error": str(e)}, status=500)
 
-# --- NEW CANCEL API ---
 async def api_game_cancel(request):
     try:
         data = await request.json()
@@ -362,7 +372,6 @@ app.add_routes([
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/sell_all', api_sell_all),
     web.post('/api/upgrade', api_upgrade),
-    # Games Routes
     web.post('/api/games/list', api_games_list),
     web.post('/api/games/create', api_game_create),
     web.post('/api/games/join', api_game_join),
