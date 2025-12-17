@@ -12,11 +12,13 @@ import sqlite3
 
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
-    get_case_items, add_items_to_inventory_batch, update_user_balance, 
-    get_case_data, sell_items_batch_db, get_all_items_sorted, 
+    get_case_items, update_user_balance, 
+    get_case_data, sell_specific_item_stack, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
     get_user_keys, use_keys, get_profile_stats, increment_cases_opened,
-    update_user_photo, get_public_profile, get_rarity_weights
+    update_user_photo, get_public_profile, get_rarity_weights,
+    add_items_with_mutations,
+    create_game, get_open_games, join_game, make_move, get_my_active_game
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
@@ -30,16 +32,18 @@ app = web.Application()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# --- ИЕРАРХИЯ РЕДКОСТИ (ВАЖНО!) ---
-RARITY_RANKS = {
-    'Common': 1,
-    'Uncommon': 2,
-    'Rare': 3,
-    'Mythical': 4,
-    'Legendary': 5,
-    'Immortal': 6,
-    'Secret': 7
+# --- КОНФИГУРАЦИЯ МУТАЦИЙ ---
+MUTATIONS = {
+    'Gold': 1.1,
+    'Diamond': 1.2,
+    'Bloodrot': 1.5,
+    'Candy': 1.5,
+    'Rainbow': 2.0,
+    'Galaxy': 3.0
 }
+MUTATION_KEYS = list(MUTATIONS.keys())
+
+RARITY_RANKS = {'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7}
 
 def force_dict(item, key_map):
     if item is None: return None
@@ -80,16 +84,33 @@ async def api_get_data(request):
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
         
-        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
+        # Инвентарь с мутациями
+        # (item_id, name, rarity, image_url, price, mutations, quantity)
+        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity']
         raw_inv = await get_inventory_grouped(user_id)
         
         inventory = []
         for item in raw_inv:
             i_dict = force_dict(item, INV_KEYS)
-            p = i_dict.get('price', 0)
+            base_price = i_dict.get('price', 0)
             r = i_dict.get('rarity', 'Common')
-            if r == 'Secret': i_dict['sell_price'] = max(1, int(p * 0.90))
-            else: i_dict['sell_price'] = max(1, int(p * 0.60)) 
+            
+            # Разбор мутаций
+            muts = i_dict.get('mutations', '').split(',') if i_dict.get('mutations') else []
+            muts = [m for m in muts if m] # filter empty
+            i_dict['muts_list'] = muts
+            
+            # Расчет мультипликатора
+            multiplier = 1.0
+            for m in muts:
+                multiplier *= MUTATIONS.get(m, 1.0)
+            
+            if r == 'Secret': sell_mult = 0.90
+            else: sell_mult = 0.60
+            
+            # Финальная цена продажи
+            i_dict['sell_price'] = max(1, int(base_price * multiplier * sell_mult))
+            
             inventory.append(i_dict)
 
         raw_cases = await get_all_cases()
@@ -119,8 +140,7 @@ async def api_get_profile(request):
         profile = await get_public_profile(target_id)
         if profile: return web.json_response({"profile": profile})
         else: return web.json_response({"error": "User not found"}, status=404)
-    except Exception as e:
-        return web.json_response({"error": str(e)}, status=500)
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
 
 async def api_open_case(request):
     try:
@@ -155,18 +175,36 @@ async def api_open_case(request):
         items = [force_dict(i, ITEM_KEYS) for i in raw_items]
         if not items: return web.json_response({"error": "Кейс пуст"}, status=400)
 
-        # ШАНСЫ ПО ВЕСАМ
         rarity_map = await get_rarity_weights()
         weights = [rarity_map.get(item['rarity'], 0) for item in items]
-        
         if sum(weights) == 0: weights = [1] * len(items)
 
-        dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
+        dropped_base = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
-        await add_items_to_inventory_batch(user_id, dropped)
+        # --- ГЕНЕРАЦИЯ МУТАЦИЙ ---
+        dropped_final = []
+        for item in dropped_base:
+            # Копия, чтобы не менять глобальный список
+            new_item = item.copy()
+            new_item['mutations'] = []
+            
+            # Шанс на первую мутацию 5%
+            if random.random() < 0.05:
+                # Добавляем мутации пока везет (10% на следующую)
+                while True:
+                    m = random.choice(MUTATION_KEYS)
+                    if m not in new_item['mutations']:
+                        new_item['mutations'].append(m)
+                    
+                    if random.random() > 0.10: # 90% что цепочка прервется
+                        break
+            
+            dropped_final.append(new_item)
+
+        await add_items_with_mutations(user_id, dropped_final)
         await increment_cases_opened(user_id, count)
         
-        return web.json_response({"dropped": dropped, "used_keys": using_keys})
+        return web.json_response({"dropped": dropped_final, "used_keys": using_keys})
     except Exception as e: 
         logging.error(f"Error api_open_case: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
@@ -178,9 +216,12 @@ async def api_sell_batch(request):
         item_id = int(data.get('item_id')) 
         count = int(data.get('count'))
         price_per_item = int(data.get('price_per_item'))
+        # Приходят с фронта мутации как массив строк ['Gold']
+        mutations = data.get('mutations', [])
+        mutations_str = ",".join(mutations) if mutations else ""
         
         total_price = count * price_per_item
-        success = await sell_items_batch_db(user_id, item_id, count, total_price)
+        success = await sell_specific_item_stack(user_id, item_id, mutations_str, count, total_price)
         
         return web.json_response({"status": "ok"}) if success else web.json_response({"error": "Ошибка"}, status=400)
     except Exception as e: 
@@ -193,7 +234,7 @@ async def api_sell_all(request):
         user_id = int(data.get('user_id'))
         
         raw_inv = await get_inventory_grouped(user_id)
-        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
+        INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity']
         
         total_sell_price = 0
         
@@ -202,11 +243,17 @@ async def api_sell_all(request):
             p = i_dict.get('price', 0)
             r = i_dict.get('rarity', 'Common')
             count = i_dict.get('quantity', 0)
+            muts_str = i_dict.get('mutations', '')
+            muts = muts_str.split(',') if muts_str else []
             
-            price_one = max(1, int(p * 0.90)) if r == 'Secret' else max(1, int(p * 0.60))
+            multiplier = 1.0
+            for m in muts: multiplier *= MUTATIONS.get(m, 1.0)
+            
+            sell_mult = 0.90 if r == 'Secret' else 0.60
+            price_one = max(1, int(p * multiplier * sell_mult))
             total_sell_price += price_one * count
             
-            await sell_items_batch_db(user_id, i_dict['item_id'], count, 0)
+            await sell_specific_item_stack(user_id, i_dict['item_id'], muts_str, count, 0)
             
         if total_sell_price > 0:
             await update_user_balance(user_id, total_sell_price)
@@ -224,6 +271,8 @@ async def api_upgrade(request):
         target_id = int(data.get('target_id'))
         
         raw_inv = await get_inventory_grouped(user_id)
+        # В апгрейде берем предметы без мутаций (или просто первый попавшийся), упростим
+        # Для простоты апгрейда будем игнорировать мутации при сжигании (пользователь теряет бафф)
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
         inventory = [force_dict(i, INV_KEYS) for i in raw_inv]
         
@@ -235,12 +284,9 @@ async def api_upgrade(request):
         target_item = next((i for i in all_items if i['id'] == target_id), None)
         if not target_item: return web.json_response({"error": "Цель не найдена"}, status=400)
 
-        # --- ЗАПРЕТ ПОНИЖЕНИЯ РЕДКОСТИ ---
         my_rank = RARITY_RANKS.get(my_item['rarity'], 0)
         target_rank = RARITY_RANKS.get(target_item['rarity'], 0)
-        
-        if target_rank <= my_rank:
-            return web.json_response({"error": "Нельзя апгрейдить на предмет ниже или такой же редкости!"}, status=400)
+        if target_rank <= my_rank: return web.json_response({"error": "Нельзя апгрейдить на предмет ниже или такой же редкости!"}, status=400)
 
         chance = (my_item['price'] / target_item['price']) * 95
         if chance > 80: chance = 80
@@ -261,6 +307,57 @@ async def api_upgrade(request):
         logging.error(f"Upgrade Error: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
+# --- GAMES API ---
+async def api_games_list(request):
+    games = await get_open_games()
+    return web.json_response({"games": games})
+
+async def api_game_create(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        game_type = data.get('game_type') # 'rps' or 'even_odd'
+        wager_type = data.get('wager_type') # 'balance' or 'item'
+        wager_val = int(data.get('wager_amount', 0))
+        wager_item = int(data.get('wager_item_id', 0))
+        
+        res = await create_game(user_id, game_type, wager_type, wager_val, wager_item)
+        if res == 'ok': return web.json_response({"status": "ok"})
+        else: return web.json_response({"error": res}, status=400)
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_game_join(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        game_id = int(data.get('game_id'))
+        
+        res = await join_game(game_id, user_id)
+        if res == 'ok': return web.json_response({"status": "ok"})
+        else: return web.json_response({"error": res}, status=400)
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_game_status(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        # Ищем активную игру пользователя
+        game = await get_my_active_game(user_id)
+        if game: return web.json_response({"game": dict(game)})
+        return web.json_response({"game": None})
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_game_move(request):
+    try:
+        data = await request.json()
+        user_id = int(data.get('user_id'))
+        game_id = int(data.get('game_id'))
+        move = data.get('move')
+        
+        res = await make_move(game_id, user_id, move)
+        return web.json_response({"status": res})
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
 app.add_routes([
     web.get('/', web_index), 
     web.post('/api/data', api_get_data), 
@@ -268,6 +365,12 @@ app.add_routes([
     web.post('/api/open', api_open_case), 
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/sell_all', api_sell_all),
-    web.post('/api/upgrade', api_upgrade), 
+    web.post('/api/upgrade', api_upgrade),
+    # Games Routes
+    web.post('/api/games/list', api_games_list),
+    web.post('/api/games/create', api_game_create),
+    web.post('/api/games/join', api_game_join),
+    web.post('/api/games/status', api_game_status),
+    web.post('/api/games/move', api_game_move),
     web.static('/static', STATIC_DIR)
 ])

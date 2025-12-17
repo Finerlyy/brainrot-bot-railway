@@ -36,6 +36,10 @@
         
         .keys-badge { position: absolute; top: 5px; right: 5px; background: #33ff33; color: #000; font-weight: 900; font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
 
+        /* МУТАЦИИ */
+        .mutation-badges { position: absolute; top: 5px; left: 5px; display: flex; flex-direction: column; gap: 2px; z-index: 10; }
+        .mut-badge { font-size: 0.8rem; background: rgba(0,0,0,0.7); border-radius: 5px; padding: 2px; }
+
         .main-action-btn, .sell-btn, .upgrade-btn { background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; justify-content: center; align-items: center; gap: 5px; width: 100%; }
         .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
         .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
@@ -79,46 +83,16 @@
         .drop-item .case-name { font-size: 0.7rem; }
         .drop-quantity { position: absolute; top: -5px; right: -5px; background: var(--accent); color: #000; font-weight: 900; font-size: 0.8rem; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 15; animation: popIn 0.3s forwards; }
 
-        .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
-        .upgrade-slots { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 400px; align-items: center; }
-        .u-slot { width: 45%; background: rgba(0,0,0,0.3); border: 2px dashed #444; border-radius: 15px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; position: relative; padding: 10px; }
-        .u-slot.selected { border-style: solid; border-color: var(--accent); background: rgba(255, 215, 0, 0.05); }
-        .u-slot img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 5px; }
-        .u-slot p { font-size: 0.8rem; color: #888; text-align: center; }
-        .u-item-name { font-size: 0.7rem; font-weight: bold; color: #fff; margin-bottom: 5px; text-align: center; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .u-arrow { font-size: 2rem; color: var(--accent); font-weight: bold; }
+        /* GAMES */
+        .games-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        .game-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
+        .game-type-icon { font-size: 2rem; margin-right: 10px; }
+        .active-game-ui { display:none; flex-direction: column; gap: 20px; align-items: center; justify-content: center; height: 100%; text-align: center; }
+        .game-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; }
+        .move-btn { font-size: 2rem; padding: 20px; background: #333; border: 1px solid #555; border-radius: 10px; cursor: pointer; }
+        .move-btn:active { background: #555; }
 
-        .roulette-wrapper { position: relative; width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
-        .roulette-marker { position: absolute; top: -12px; z-index: 10; font-size: 24px; color: white; filter: drop-shadow(0 2px 2px #000); transform: scaleY(0.8); }
-        .spinning-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#444 0% 100%); box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 1; transition: transform 4s cubic-bezier(0.15, 0, 0.2, 1); }
-        .spinning-ring.win-glow { box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00; }
-        .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
-        .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
-        .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
-        .chance-text { font-size: 28px; font-weight: 900; color: #fff; }
-        .chance-sub { font-size: 10px; text-transform: uppercase; color: #ccc; }
-        .result-layer { position: absolute; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20; }
-        .result-layer.show { opacity: 1; }
-        #resultText { font-size: 32px; font-weight: 900; text-transform: uppercase; }
-        .text-win { color: #00ff00; text-shadow: 0 0 15px #00ff00; }
-        .text-lose { color: #ff0000; text-shadow: 0 0 15px #ff0000; }
-
-        .quick-chance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 400px; margin-bottom: 10px; }
-        .chance-btn { background: rgba(255,255,255,0.1); border: 1px solid #444; color: #fff; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .chance-btn:hover { background: rgba(255,215,0,0.2); border-color: var(--accent); color: var(--accent); }
-        
-        .item-select-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
-        .item-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 50px; }
-        .select-card { background: var(--card); padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid transparent; }
-        .select-card:hover { border-color: var(--accent); }
-        .select-card img { width: 50px; height: 50px; object-fit: contain; }
-        .select-card span { font-size: 0.7rem; display: block; color: var(--accent); }
-        
-        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; margin: 15px 0; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px var(--accent); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
-
+        /* RARITIES */
         .rarity-Common { border-color: #aaa; color: #aaa; } 
         .rarity-Uncommon { border-color: #5e98d9; color: #5e98d9; } 
         .rarity-Rare { border-color: #4b69ff; color: #4b69ff; } 
@@ -127,6 +101,7 @@
         .rarity-Immortal { border-color: #00ffff; color: #00ffff; }
         .rarity-Secret { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 10px #ff0000; background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5)); }
 
+        /* PROFILE */
         .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: var(--card); padding: 20px; border-radius: 15px; }
         .profile-avatar { width: 60px; height: 60px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -159,17 +134,28 @@
             <div id="cases-grid" class="cases-grid"></div>
         </section>
 
+        <section id="tab-games" class="tab-content">
+            <div id="active-game-ui" class="active-game-ui">
+                <h2 id="game-status-text">Ожидание...</h2>
+                <div id="game-controls" class="game-controls"></div>
+                <button class="close-btn" onclick="exitGame()">Выйти</button>
+            </div>
+
+            <div id="games-lobby">
+                <div style="display:flex; gap:10px; margin:10px;">
+                    <button class="main-action-btn" onclick="showCreateGameModal()">➕ Создать Игру</button>
+                </div>
+                <div id="games-list" class="games-list"></div>
+            </div>
+        </section>
+
         <section id="tab-upgrade" class="tab-content">
             <h2 style="text-align:center;margin-bottom:15px;color:var(--accent); font-size: 2rem;">📈</h2>
             <div class="upgrade-container">
                 <div class="upgrade-slots">
-                    <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
-                        <p>ВЫБЕРИ<br>ПРЕДМЕТ</p>
-                    </div>
+                    <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')"><p>ВЫБЕРИ<br>ПРЕДМЕТ</p></div>
                     <div class="u-arrow">➤</div>
-                    <div id="u-slot-right" class="u-slot" onclick="openItemSelect('right')">
-                        <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
-                    </div>
+                    <div id="u-slot-right" class="u-slot" onclick="openItemSelect('right')"><p>ВЫБЕРИ<br>ЦЕЛЬ</p></div>
                 </div>
                 <div class="quick-chance-grid">
                     <button class="chance-btn" onclick="autoSelectTarget(50)">50%</button>
@@ -199,10 +185,7 @@
             <button id="back-to-my-profile" class="close-btn" style="display:none; text-align:left; color: var(--accent);" onclick="load()">⬅ Вернуться к моему профилю</button>
             <div class="profile-header">
                 <div class="profile-avatar" id="prof-avatar">👤</div>
-                <div>
-                    <h2 id="profile-username">User</h2>
-                    <span style="color:#666;font-size:0.8rem">Игрок</span>
-                </div>
+                <div><h2 id="profile-username">User</h2><span style="color:#666;font-size:0.8rem">Игрок</span></div>
             </div>
             <div class="stat-grid">
                 <div class="stat-card"><span class="stat-val" id="prof-balance">0</span><span class="stat-label">Баланс</span></div>
@@ -219,10 +202,6 @@
             <div id="leaderboard-list"></div>
         </section>
 
-        <section id="tab-market" class="tab-content">
-            <h2 style="text-align:center;color:#666;margin-top:50px">СКОРО... 🚧</h2>
-        </section>
-
         <section id="tab-inventory" class="tab-content">
             <div class="sell-all-container">
                 <button class="sell-all-btn" onclick="sellAllItems()">🔥 ПРОДАТЬ ВСЕ ПРЕДМЕТЫ</button>
@@ -232,15 +211,32 @@
     </main>
 
     <nav class="bottom-nav">
-        <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span>Кейсы</button>
-        <button class="nav-btn" onclick="switchTab('upgrade')"><span>📈</span>Апгрейд</button>
-        <button class="nav-btn" onclick="switchTab('inventory')"><span>🎒</span>Инвент</button>
-        <button class="nav-btn" onclick="switchTab('leaderboard')"><span>🏆</span>Топ</button>
-        <button class="nav-btn" onclick="switchTab('profile')"><span>👤</span>Профиль</button>
+        <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span></button>
+        <button class="nav-btn" onclick="switchTab('upgrade')"><span>📈</span></button>
+        <button class="nav-btn" onclick="switchTab('games')"><span>🎮</span></button>
+        <button class="nav-btn" onclick="switchTab('inventory')"><span>🎒</span></button>
+        <button class="nav-btn" onclick="switchTab('leaderboard')"><span>🏆</span></button>
+        <button class="nav-btn" onclick="switchTab('profile')"><span>👤</span></button>
     </nav>
 
     <div id="select-modal" class="item-select-modal hidden"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><h3>Выбери предмет</h3><button onclick="document.getElementById('select-modal').classList.add('hidden')" style="background:none;border:none;color:#fff;font-size:1.5rem">&times;</button></div><div id="select-grid" class="item-select-grid"></div></div>
     
+    <div id="create-game-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Создать игру</h3>
+            <div style="margin:10px 0; display:flex; gap:5px;">
+                <button class="nav-btn active" onclick="selGameType='rps'; this.parentElement.children[1].classList.remove('active'); this.classList.add('active')">✂️ КНБ</button>
+                <button class="nav-btn" onclick="selGameType='even_odd'; this.parentElement.children[0].classList.remove('active'); this.classList.add('active')">🎲 Чет/Нечет</button>
+            </div>
+            <div style="margin:10px 0">
+                <label>Ставка (Звезды):</label>
+                <input type="number" id="wager-amount" value="100" style="width:100%; padding:10px; border-radius:5px; border:none; margin-top:5px;">
+            </div>
+            <button class="main-action-btn" onclick="createGame()">СОЗДАТЬ</button>
+            <button class="close-btn" onclick="closeModal('create-game-modal')">Отмена</button>
+        </div>
+    </div>
+
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name">...</h3>
@@ -290,21 +286,12 @@
             return num.toLocaleString();
         }
 
-        const RARITY_ORDER = {
-            'Common': 1, 'Uncommon': 2, 'Rare': 3, 
-            'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7
-        };
+        const RARITY_ORDER = {'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Mythical': 4, 'Legendary': 5, 'Immortal': 6, 'Secret': 7};
+        const VISUAL_WEIGHTS = {'Common': 1000, 'Uncommon': 500, 'Rare': 200, 'Mythical': 50, 'Legendary': 10, 'Immortal': 3, 'Secret': 1};
+        const MUT_EMOJIS = {'Gold':'🥇','Diamond':'💎','Bloodrot':'🩸','Candy':'🍬','Rainbow':'🌈','Galaxy':'🌌'};
 
-        // --- VISUAL WEIGHTS FOR ROULETTE SCROLL ---
-        const VISUAL_WEIGHTS = {
-            'Common': 1000,
-            'Uncommon': 500,
-            'Rare': 200,
-            'Mythical': 50,
-            'Legendary': 10,
-            'Immortal': 3,
-            'Secret': 1
-        };
+        let selGameType = 'rps';
+        let activeGameId = null;
 
         window.switchTab=function(t){
             document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
@@ -316,8 +303,6 @@
         }
         
         window.closeModal=function(id){document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('hidden');}
-
-        let lastDataJSON = ""; 
 
         document.addEventListener('DOMContentLoaded', () => {
             const tg = window.Telegram.WebApp; tg.expand();
@@ -331,36 +316,23 @@
             let upgMy=null, upgTarget=null;
             let sellingItem=null, sellCount=1;
 
-            const el={
-                bal:document.getElementById('balance'), cases:document.getElementById('cases-grid'), inv:document.getElementById('inventory-grid'), 
-                loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), 
-                mPrice:document.getElementById('modal-case-price'), 
-                slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'),
-                popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'),
-                selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'),
-                uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'),
-                uBtn:document.getElementById('upgrade-btn'),
-                ring:document.getElementById('spinRing'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'),
-                sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'),
-                sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'),
-                sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'),
-                sellSliderContainer:document.getElementById('sell-slider-container'),
-                multiBox: document.getElementById('multi-roulette-container'),
-                btnFast: document.getElementById('btn-fast'),
-                btnSpin: document.getElementById('btn-spin'),
-                profUser: document.getElementById('profile-username'),
-                profBal: document.getElementById('prof-balance'),
-                profNet: document.getElementById('prof-networth'),
-                profCases: document.getElementById('prof-cases'),
-                profDays: document.getElementById('prof-days'),
-                profBest: document.getElementById('prof-best-drop'),
-                profAvatar: document.getElementById('prof-avatar'),
-                lbList: document.getElementById('leaderboard-list'),
-                backBtn: document.getElementById('back-to-my-profile')
+            // DOM Elements Mapping (Shortened)
+            const el = {
+                bal: document.getElementById('balance'),
+                cases: document.getElementById('cases-grid'),
+                inv: document.getElementById('inventory-grid'),
+                gamesList: document.getElementById('games-list'),
+                gameUi: document.getElementById('active-game-ui'),
+                gamesLobby: document.getElementById('games-lobby'),
+                gameControls: document.getElementById('game-controls'),
+                gameStatus: document.getElementById('game-status-text'),
+                // ... (previous ones)
+                loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), mPrice:document.getElementById('modal-case-price'), slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'), selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'), uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'), uBtn:document.getElementById('upgrade-btn'), ring:document.getElementById('spinRing'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'), sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'), sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'), sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'), sellSliderContainer:document.getElementById('sell-slider-container'), multiBox: document.getElementById('multi-roulette-container'), btnFast: document.getElementById('btn-fast'), btnSpin: document.getElementById('btn-spin'), profUser: document.getElementById('profile-username'), profBal: document.getElementById('prof-balance'), profNet: document.getElementById('prof-networth'), profCases: document.getElementById('prof-cases'), profDays: document.getElementById('prof-days'), profBest: document.getElementById('prof-best-drop'), profAvatar: document.getElementById('prof-avatar'), lbList: document.getElementById('leaderboard-list'), backBtn: document.getElementById('back-to-my-profile')
             };
 
             function upBal(n){ if(n!==undefined){ currentBal=n; el.bal.innerText = formatBalance(n); } }
 
+            // RENDER FUNCTIONS
             function renderAll(d, isInitial) {
                 if(d.user) {
                     upBal(d.user.balance);
@@ -368,42 +340,43 @@
                         renderProfile(d.user, d.user.best_item, true);
                     }
                 }
-
                 const casesJSON = JSON.stringify(d.cases);
                 if (isInitial || el.cases.dataset.hash !== casesJSON) {
                     el.cases.dataset.hash = casesJSON;
                     el.cases.innerHTML=''; 
                     d.cases.forEach(c=>{
                         const div=document.createElement('div'); div.className='case-card';
-                        let keyBadge = '';
-                        if(c.keys && c.keys > 0) { keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`; }
+                        let keyBadge = ''; if(c.keys && c.keys > 0) { keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`; }
                         div.innerHTML=`${keyBadge}<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
                 }
-
                 const invJSON = JSON.stringify(d.inventory);
                 if (isInitial || el.inv.dataset.hash !== invJSON) {
                     el.inv.dataset.hash = invJSON;
                     el.inv.innerHTML=''; 
                     if(!d.inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center'>Пусто</p>";
                     [...d.inventory].reverse().forEach(i=>{
-                        const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`; 
-                        div.innerHTML=`<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id})">Продать: <span>⭐️ ${formatBalance(i.sell_price)}</span></button>`;
+                        const div=document.createElement('div'); div.className=`item-card rarity-${i.rarity}`;
+                        
+                        // MUTATIONS RENDER
+                        let mutsHtml = '';
+                        if(i.muts_list && i.muts_list.length > 0) {
+                            mutsHtml = '<div class="mutation-badges">';
+                            i.muts_list.forEach(m => { mutsHtml += `<span class="mut-badge">${MUT_EMOJIS[m] || m}</span>`; });
+                            mutsHtml += '</div>';
+                        }
+
+                        div.innerHTML=`${mutsHtml}<span class="item-quantity">x${i.quantity}</span><img src="${i.image_url}" class="item-img"><div class="case-name">${i.name}</div><button class="sell-btn" onclick="openSellModal(${i.item_id}, '${i.mutations || ''}')">Продать: <span>⭐️ ${formatBalance(i.sell_price)}</span></button>`;
                         el.inv.appendChild(div);
                     });
                 }
-                
                 if(d.leaderboard) {
                     el.lbList.innerHTML = '';
                     d.leaderboard.forEach((u, idx) => {
                         const rankClass = idx < 3 ? `lb-rank-${idx+1}` : '';
                         const avatarHtml = u.photo_url ? `<img src="${u.photo_url}" class="lb-avatar">` : '<span class="lb-avatar" style="background:#444;display:inline-block;text-align:center;line-height:30px">👤</span>';
-                        el.lbList.innerHTML += `
-                            <div class="leaderboard-item" onclick="viewProfile(${u.tg_id})">
-                                <div><span class="lb-rank ${rankClass}">#${idx+1}</span>${avatarHtml}<span>${u.username}</span></div>
-                                <span style="color:#FFD700;font-weight:bold">${formatBalance(u.balance)} ⭐️</span>
-                            </div>`;
+                        el.lbList.innerHTML += `<div class="leaderboard-item" onclick="viewProfile(${u.tg_id})"><div><span class="lb-rank ${rankClass}">#${idx+1}</span>${avatarHtml}<span>${u.username}</span></div><span style="color:#FFD700;font-weight:bold">${formatBalance(u.balance)} ⭐️</span></div>`;
                     });
                 }
             }
@@ -414,12 +387,22 @@
                     const d=await res.json();
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
                     renderAll(d, true);
+                    updateGamesList();
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){ console.error(e); }
             }
 
+            // --- POLLING ---
             async function autoUpdate(){
                 if(el.popup.classList.contains('active') || !el.openModal.classList.contains('hidden') || el.loader.style.display !== 'none') return;
+                
+                // Poll Game Status if active
+                if(activeGameId) {
+                    pollGameStatus();
+                } else {
+                    updateGamesList(); // Update lobby
+                }
+
                 try {
                     const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
                     const d=await res.json();
@@ -428,8 +411,140 @@
                     renderAll(d, false);
                 } catch(e){ console.error("AutoUpdate Error", e); }
             }
-            setInterval(autoUpdate, 3000);
+            setInterval(autoUpdate, 2000); // 2 sec
 
+            // --- GAMES LOGIC ---
+            window.showCreateGameModal = () => { document.getElementById('create-game-modal').classList.remove('hidden'); }
+            
+            window.createGame = async () => {
+                const amount = parseInt(document.getElementById('wager-amount').value);
+                try {
+                    const res = await fetch(`${API}/games/create`, {
+                        method: 'POST',
+                        body: JSON.stringify({user_id: userId, game_type: selGameType, wager_type: 'balance', wager_amount: amount})
+                    });
+                    const d = await res.json();
+                    if(d.status === 'ok') {
+                        closeModal('create-game-modal');
+                        tg.showAlert("Игра создана! Ждем соперника...");
+                        // We rely on autoUpdate/poll to switch to game view, or we can just fetch status
+                        pollGameStatus(); 
+                    } else tg.showAlert("Ошибка: " + d.error);
+                } catch(e) { console.error(e); }
+            }
+
+            async function updateGamesList() {
+                if(activeGameId) return; // Don't update list if playing
+                try {
+                    const res = await fetch(`${API}/games/list`, {method:'POST'});
+                    const d = await res.json();
+                    el.gamesList.innerHTML = '';
+                    if(d.games.length === 0) el.gamesList.innerHTML = "<p style='color:#666;text-align:center'>Нет активных игр</p>";
+                    
+                    d.games.forEach(g => {
+                        // Check if it is my game
+                        if(g.host_id === userId || g.guest_id === userId) {
+                            activeGameId = g.id;
+                            renderActiveGame(g);
+                            return;
+                        }
+                        
+                        let icon = g.game_type === 'rps' ? '✂️' : '🎲';
+                        let wager = g.wager_type === 'balance' ? `${g.wager_amount} ⭐️` : `📦 ${g.item_name}`;
+                        
+                        el.gamesList.innerHTML += `
+                            <div class="game-card">
+                                <div style="display:flex;align-items:center"><span class="game-type-icon">${icon}</span><div><div>${g.host_name}</div><small style="color:#aaa">${wager}</small></div></div>
+                                <button class="main-action-btn" style="width:auto;padding:8px 15px;" onclick="joinGame(${g.id})">Играть</button>
+                            </div>
+                        `;
+                    });
+                } catch(e) {}
+            }
+
+            window.joinGame = async (gid) => {
+                try {
+                    const res = await fetch(`${API}/games/join`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:gid})});
+                    const d = await res.json();
+                    if(d.status === 'ok') {
+                        activeGameId = gid;
+                        pollGameStatus();
+                    } else tg.showAlert(d.error);
+                } catch(e){}
+            }
+
+            async function pollGameStatus() {
+                try {
+                    const res = await fetch(`${API}/games/status`, {method:'POST', body:JSON.stringify({user_id:userId})});
+                    const d = await res.json();
+                    if(d.game) {
+                        activeGameId = d.game.id;
+                        renderActiveGame(d.game);
+                    } else {
+                        // Game finished or not found
+                        if(activeGameId) {
+                            activeGameId = null;
+                            exitGame();
+                        }
+                    }
+                } catch(e){}
+            }
+
+            function renderActiveGame(game) {
+                el.gamesLobby.style.display = 'none';
+                el.gameUi.style.display = 'flex';
+                
+                let isHost = (game.host_id === userId);
+                let myMove = isHost ? game.host_move : game.guest_move;
+                let oppName = isHost ? (game.guest_name || "Ожидание...") : game.host_name;
+                
+                if (game.status === 'finished') {
+                    let winText = (game.winner_id === userId) ? "🏆 ТЫ ВЫИГРАЛ!" : (game.winner_id === 0 ? "🤝 НИЧЬЯ" : "💀 ТЫ ПРОИГРАЛ");
+                    el.gameStatus.innerHTML = `${winText}<br><small>Против: ${oppName}</small>`;
+                    el.gameControls.innerHTML = '';
+                    return;
+                }
+
+                if (!myMove) {
+                    el.gameStatus.innerHTML = `Твой ход!<br><small>Против: ${oppName}</small>`;
+                    if(game.game_type === 'rps') {
+                        el.gameControls.innerHTML = `
+                            <button class="move-btn" onclick="sendMove('rock')">🪨</button>
+                            <button class="move-btn" onclick="sendMove('scissors')">✂️</button>
+                            <button class="move-btn" onclick="sendMove('paper')">📄</button>
+                        `;
+                    } else {
+                        if (isHost) { // Host guesses number 1 or 2
+                             el.gameControls.innerHTML = `
+                                <button class="move-btn" onclick="sendMove('1')">1</button>
+                                <button class="move-btn" onclick="sendMove('2')">2</button>
+                            `;
+                        } else { // Guest guesses Even/Odd
+                             el.gameControls.innerHTML = `
+                                <button class="move-btn" onclick="sendMove('odd')">Нечет</button>
+                                <button class="move-btn" onclick="sendMove('even')">Чет</button>
+                            `;
+                        }
+                    }
+                } else {
+                    el.gameStatus.innerHTML = `Ожидание соперника...<br><small>Против: ${oppName}</small>`;
+                    el.gameControls.innerHTML = '';
+                }
+            }
+
+            window.sendMove = async (mv) => {
+                await fetch(`${API}/games/move`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId, move:mv})});
+                pollGameStatus();
+            }
+
+            window.exitGame = () => {
+                el.gameUi.style.display = 'none';
+                el.gamesLobby.style.display = 'block';
+                activeGameId = null;
+                updateGamesList();
+            }
+
+            // --- PROFILE RENDER ---
             function renderProfile(user, best_item, isMe) {
                 el.profUser.innerText = user.username;
                 el.profBal.innerText = formatBalance(user.balance);
@@ -464,8 +579,10 @@
                 el.loader.style.display = 'none';
             }
 
-            window.openSellModal=(itemId)=>{
-                sellingItem = inventory.find(i => i.item_id === itemId);
+            // --- INVENTORY SELL LOGIC UPDATE (Handle Mutations) ---
+            window.openSellModal=(itemId, muts)=>{
+                // Find precise item stack
+                sellingItem = inventory.find(i => i.item_id === itemId && i.mutations === muts);
                 if(!sellingItem) return;
                 el.sellName.innerText = sellingItem.name;
                 el.sellImg.src = sellingItem.image_url;
@@ -482,10 +599,19 @@
                     if(!confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`)) return;
                 }
                 const totalPrice = sellingItem.sell_price * sellCount;
-                const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
                 upBal(currentBal + totalPrice);
-                try { await fetch(`${API}/sell_batch`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:itemId, count:sellCount, price_per_item:sellingItem.sell_price})}); load(); } catch(e) { load(); }
+                try { 
+                    // Pass mutations to backend to identify stack
+                    await fetch(`${API}/sell_batch`,{method:'POST',body:JSON.stringify({
+                        user_id:userId, 
+                        item_id:sellingItem.item_id, 
+                        count:sellCount, 
+                        price_per_item:sellingItem.sell_price,
+                        mutations: sellingItem.muts_list
+                    })}); 
+                    load(); 
+                } catch(e) { load(); }
             }
 
             window.sellAllItems = async () => {
@@ -501,16 +627,18 @@
                 el.loader.style.display = 'none';
             }
 
-            window.showOpenModal=()=>{
-                el.multiBox.style.display = 'none'; el.multiBox.innerHTML = '';
-                el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false;
-                el.slider.value = 1; updateSlider(1); el.openModal.classList.remove('hidden');
+            // --- ROULETTE LOGIC ---
+            function getWeightedRandomItem(itemsInCase) {
+                const pool = (itemsInCase && itemsInCase.length > 0) ? itemsInCase : allItemsSorted;
+                let totalWeight = 0; const weightedList = [];
+                pool.forEach(item => { const w = VISUAL_WEIGHTS[item.rarity] || 100; totalWeight += w; weightedList.push({item, weight: w}); });
+                let random = Math.random() * totalWeight;
+                for(const entry of weightedList) { if(random < entry.weight) return entry.item; random -= entry.weight; }
+                return pool[0];
             }
-            window.updateSlider=(v)=>{
-                openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                if(selectedCase.keys >= openCount) el.mPrice.innerHTML = `<span style="color:#33ff33">БЕСПЛАТНО (Ключи: ${selectedCase.keys})</span>`;
-                else el.mPrice.innerHTML = `Цена: <span class="star-icon">⭐️</span> ${formatBalance(selectedCase.price*openCount)}`;
-            }
+
+            window.showOpenModal=()=>{ el.multiBox.style.display = 'none'; el.multiBox.innerHTML = ''; el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false; el.slider.value = 1; updateSlider(1); el.openModal.classList.remove('hidden'); }
+            window.updateSlider=(v)=>{ openCount=parseInt(v); el.sliderVal.innerText=openCount; if(selectedCase.keys >= openCount) el.mPrice.innerHTML = `<span style="color:#33ff33">БЕСПЛАТНО (Ключи: ${selectedCase.keys})</span>`; else el.mPrice.innerHTML = `Цена: <span class="star-icon">⭐️</span> ${formatBalance(selectedCase.price*openCount)}`; }
 
             async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount;
@@ -522,61 +650,26 @@
                     if(d.error){ el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false; return tg.showAlert(d.error); }
                     if(!d.used_keys) { upBal(currentBal - price); } else { selectedCase.keys -= openCount; }
                     if (mode === 'fast') { el.openModal.classList.add('hidden'); showResults(d.dropped); } 
-                    else {
-                        el.multiBox.style.display = 'block'; el.multiBox.innerHTML = '';
-                        d.dropped.forEach((winItem, idx) => { createRouletteRow(winItem, idx); });
-                        setTimeout(() => { el.openModal.classList.add('hidden'); showResults(d.dropped); }, 5500); 
-                    }
+                    else { el.multiBox.style.display = 'block'; el.multiBox.innerHTML = ''; d.dropped.forEach((winItem, idx) => { createRouletteRow(winItem, idx); }); setTimeout(() => { el.openModal.classList.add('hidden'); showResults(d.dropped); }, 5500); }
                 } catch(e) { console.error(e); load(); }
             }
-            el.btnFast.onclick = () => runOpenCase('fast');
-            el.btnSpin.onclick = () => runOpenCase('spin');
-
-            // --- WEIGHTED RANDOM ITEM GENERATOR ---
-            function getWeightedRandomItem(itemsInCase) {
-                // Если нет предметов в кейсе, берем любой глобальный (fallback)
-                const pool = (itemsInCase && itemsInCase.length > 0) ? itemsInCase : allItemsSorted;
-                
-                let totalWeight = 0;
-                const weightedList = [];
-                
-                pool.forEach(item => {
-                    const w = VISUAL_WEIGHTS[item.rarity] || 100;
-                    totalWeight += w;
-                    weightedList.push({item, weight: w});
-                });
-                
-                let random = Math.random() * totalWeight;
-                for(const entry of weightedList) {
-                    if(random < entry.weight) return entry.item;
-                    random -= entry.weight;
-                }
-                return pool[0];
-            }
+            el.btnFast.onclick = () => runOpenCase('fast'); el.btnSpin.onclick = () => runOpenCase('spin');
 
             function createRouletteRow(winItem, index) {
                 const row = document.createElement('div'); row.className = 'case-roulette-row';
                 const line = document.createElement('div'); line.className = 'roulette-center-line';
                 const track = document.createElement('div'); track.className = 'roulette-track';
-                
                 const WIN_INDEX = 29; 
-                
-                // Фильтруем предметы ТОЛЬКО текущего кейса
                 const itemsInCase = allItemsSorted.filter(i => i.case_id === selectedCase.id);
-
                 for(let i=0; i<45; i++) {
-                    // Генерируем с учетом веса
                     let item = (i === WIN_INDEX) ? winItem : getWeightedRandomItem(itemsInCase);
-                    
                     const card = document.createElement('div'); card.className = `roulette-card rarity-${item.rarity}`;
                     let imgUrl = item.image_url; if(item.rarity === 'Secret') imgUrl = 'https://cdn-icons-png.flaticon.com/512/5726/5726678.png'; 
                     card.innerHTML = `<img src="${imgUrl}">`; track.appendChild(card);
                 }
                 row.appendChild(line); row.appendChild(track); el.multiBox.appendChild(row);
-                
                 const CARD_WIDTH = 100; const CARD_GAP = 10; const UNIT_WIDTH = CARD_WIDTH + CARD_GAP; 
-                const containerWidth = el.multiBox.clientWidth || 350;
-                const centerOfContainer = containerWidth / 2;
+                const containerWidth = el.multiBox.clientWidth || 350; const centerOfContainer = containerWidth / 2;
                 const centerOfWinningCard = (UNIT_WIDTH * WIN_INDEX) + (UNIT_WIDTH / 2);
                 const randomOffset = Math.floor(Math.random() * 70) - 35;
                 const scrollAmount = centerOfWinningCard - centerOfContainer + randomOffset;
@@ -587,31 +680,39 @@
                 el.popup.classList.remove('hidden'); el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
-                const grouped = {}; items.forEach(item => { if (grouped[item.id]) { grouped[item.id].count++; } else { grouped[item.id] = { ...item, count: 1 }; } });
+                // Grouping logic for results (ignoring mutations for simplicity in summary)
+                const grouped = {}; 
+                items.forEach(item => { 
+                    // Unique key includes mutations to separate stacks visually
+                    const key = item.id + (item.mutations ? item.mutations.join('') : '');
+                    if (grouped[key]) { grouped[key].count++; } 
+                    else { grouped[key] = { ...item, count: 1 }; } 
+                });
                 const uniqueItems = Object.values(grouped);
                 uniqueItems.forEach((item, index)=>{
                     const div=document.createElement('div'); div.className=`drop-item rarity-${item.rarity}`; div.style.animationDelay = `${index * 0.1}s`; 
                     const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
-                    div.innerHTML=`${countBadge}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
+                    
+                    let mutsHtml = '';
+                    if(item.mutations && item.mutations.length > 0) {
+                        mutsHtml = '<div class="mutation-badges" style="top:-10px;left:-5px">';
+                        item.mutations.forEach(m => { mutsHtml += `<span class="mut-badge">${MUT_EMOJIS[m] || m}</span>`; });
+                        mutsHtml += '</div>';
+                    }
+
+                    div.innerHTML=`${countBadge}${mutsHtml}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
                     if(index === 0 && item.sound_url && item.sound_url!=='-') { el.audio.src=item.sound_url; el.audio.play().catch(()=>{}); }
                 });
                 load();
             }
 
-            // --- АПГРЕЙД ---
+            // ... (Upgrade logic remains same as previous, just ensure load() is called correctly)
             window.openItemSelect=(side)=>{
                 el.selGrid.innerHTML=''; el.selModal.classList.remove('hidden');
-                
                 let list = side==='left' ? inventory.filter(i=>i.quantity>0) : allItemsSorted;
-                
-                if (side === 'right' && upgMy) {
-                    const myRank = RARITY_ORDER[upgMy.rarity] || 0;
-                    list = list.filter(item => (RARITY_ORDER[item.rarity] || 0) > myRank);
-                }
-
+                if (side === 'right' && upgMy) { const myRank = RARITY_ORDER[upgMy.rarity] || 0; list = list.filter(item => (RARITY_ORDER[item.rarity] || 0) > myRank); }
                 if(list.length === 0) { el.selGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:#666'>Нет доступных предметов</p>"; return; }
-
                 list.forEach(i=>{
                     const div=document.createElement('div'); div.className='select-card';
                     const countBadge = (side==='left') ? `<span class="item-quantity">x${i.quantity}</span>` : '';
@@ -621,12 +722,7 @@
                 });
             }
             function selectUpgradeItem(side, item){
-                if(side==='left'){ 
-                    upgMy=item; 
-                    el.uLeft.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; 
-                    el.uLeft.classList.add('selected'); 
-                    upgTarget = null; el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected');
-                } 
+                if(side==='left'){ upgMy=item; el.uLeft.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; el.uLeft.classList.add('selected'); upgTarget = null; el.uRight.innerHTML="<p>ВЫБЕРИ<br>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); } 
                 else { upgTarget=item; el.uRight.innerHTML=`<img src="${item.image_url}"><div class="u-item-name">${item.name}</div><p>${formatBalance(item.price)} ⭐️</p>`; el.uRight.classList.add('selected'); }
                 calcChance();
             }
