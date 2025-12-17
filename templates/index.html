@@ -14,7 +14,6 @@
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         
-        /* ДОБАВЛЕНА АНИМАЦИЯ SPIN */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(39, 39, 42, 0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
@@ -39,45 +38,95 @@
         
         .keys-badge { position: absolute; top: 5px; right: 5px; background: #33ff33; color: #000; font-weight: 900; font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
 
-        /* МУТАЦИИ */
         .mutation-badges { position: absolute; top: 5px; left: 5px; display: flex; flex-direction: column; gap: 2px; z-index: 10; }
         .mut-badge { font-size: 0.8rem; background: rgba(0,0,0,0.7); border-radius: 5px; padding: 2px; }
 
-        .main-action-btn, .sell-btn, .upgrade-btn { background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; justify-content: center; align-items: center; gap: 5px; width: 100%; }
-        .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
-        .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
-        .sell-btn:active { box-shadow: 0 0 0 #111; }
-        .sell-btn span { color: var(--accent); }
+        .main-action-btn, .upgrade-btn { background: var(--star-gradient); border: none; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 0.9rem; color: #000; cursor: pointer; box-shadow: 0 4px 0 var(--accent-dark); transition: all 0.1s; display: flex; justify-content: center; align-items: center; gap: 5px; width: 100%; }
+        .main-action-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
         .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Кнопка "Опасного" действия (отмена, продать все) - теперь спокойная */
+        .btn-secondary-danger {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--accent); /* Желтая обводка */
+            color: var(--accent);
+            font-size: 0.8rem;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 10px auto;
+            width: auto;
+            min-width: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .btn-secondary-danger:active { transform: scale(0.95); background: rgba(255, 50, 50, 0.2); }
+
+        .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; width:100%; cursor:pointer; border-radius:10px;}
+        .sell-btn:active { box-shadow: 0 0 0 #111; transform:translateY(3px); }
+        .sell-btn span { color: var(--accent); }
         
         .sell-all-container { margin: 10px 0; display: flex; justify-content: center; }
-        .sell-all-btn { background: #ff3333; color: #fff; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 0 #990000; width: 100%; max-width: 300px; }
-        .sell-all-btn:active { transform: translateY(4px); box-shadow: none; }
 
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.3s; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto;}
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
+        /* --- UPGRADE STYLES (ВОССТАНОВЛЕННЫЕ) --- */
+        .upgrade-container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .upgrade-slots { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-around; max-width: 350px; }
+        .u-slot { width: 100px; height: 120px; border: 2px dashed #444; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; transition: 0.2s; background: #222; text-align: center; padding: 5px; }
+        .u-slot.selected { border: 2px solid var(--accent); color: #fff; background: rgba(255,215,0,0.05); border-style: solid; }
+        .u-slot img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+        .u-arrow { font-size: 1.5rem; color: #444; }
+        
+        .quick-chance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 350px; margin-top: 5px;}
+        .chance-btn { background: #333; border: 1px solid #444; color: #aaa; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        .chance-btn:active { background: #555; color: #fff; }
+
+        .roulette-wrapper { position: relative; width: 220px; height: 220px; margin: 10px auto; display: flex; align-items: center; justify-content: center; }
+        .spinning-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#333 0% 100%); transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1); box-shadow: 0 0 20px rgba(0,0,0,0.3); border: 1px solid #333; }
+        .static-center { position: absolute; width: 180px; height: 180px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 2; border: 4px solid var(--card); }
+        .roulette-marker { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; color: #fff; z-index: 5; text-shadow: 0 2px 4px #000; }
+        
+        .center-logo { width: 60px; opacity: 0.2; margin-bottom: 5px; position:absolute; }
+        .center-content { position: absolute; z-index: 3; text-align: center; display:flex; flex-direction:column; align-items:center;}
+        .chance-text { font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1;}
+        .chance-sub { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+
+        .result-layer { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(0,0,0,0.85); z-index: 10; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .result-layer.show { opacity: 1; }
+        .text-win { color: #33ff33; font-weight: 900; font-size: 1.8rem; text-shadow: 0 0 15px rgba(51,255,51,0.5); }
+        .text-lose { color: #ff3333; font-weight: 900; font-size: 1.8rem; text-shadow: 0 0 15px rgba(255,51,51,0.5); }
+        .win-glow { box-shadow: 0 0 30px #33ff33; border-color: #33ff33; }
+        .lose-glow { box-shadow: 0 0 30px #ff3333; border-color: #ff3333; }
+
+        /* --- Item Select Modal --- */
+        .item-select-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:300; display:flex; flex-direction:column; padding:20px; }
+        .item-select-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap:10px; overflow-y:auto; padding-bottom:50px; }
+        .select-card { background:#222; border:1px solid #333; padding:10px; border-radius:10px; text-align:center; cursor:pointer; }
+        .select-card:active { border-color:var(--accent); background:#333; }
+        .select-card img { width:60px; height:60px; object-fit:contain; }
+
+        /* Common */
         .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
         .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
         .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
         .roulette-card { width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
-        
         #multi-roulette-container { width: 100%; max-height: 300px; overflow-y: auto; display: none; margin-bottom: 20px; border-radius: 10px; background: #111; border: 2px solid #333; }
         .case-roulette-row { width: 100%; height: 100px; position: relative; overflow: hidden; border-bottom: 1px solid #333; background: #151515; }
-
         .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .btn-fast { background: #444; color: #fff; box-shadow: 0 4px 0 #222; }
         .btn-spin { background: var(--star-gradient); color: #000; box-shadow: 0 4px 0 var(--accent-dark); }
-
         .popup { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 400; display: none; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; }
         .popup.active { display: flex; opacity: 1; }
         .popup-content { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; border: 2px solid var(--accent); width: 95%; max-width: 500px; transform: scale(0.9); transition: 0.3s; display:flex; flex-direction:column; max-height:80vh; position: relative;}
         .popup.active .popup-content { transform: scale(1); }
         .glow-bg { position: absolute; top:50%; left:50%; width: 250px; height: 250px; background: var(--accent); opacity: 0.15; filter: blur(60px); z-index: -1; transform: translate(-50%, -50%); }
-
         .drop-grid { display: grid; gap: 10px; margin-bottom: 15px; overflow-y: auto; padding: 5px; width: 100%; z-index: 10; }
         .drop-grid.single { grid-template-columns: 1fr; }
         .drop-grid.multi { grid-template-columns: repeat(3, 1fr); } 
@@ -85,8 +134,6 @@
         .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
         .drop-item .case-name { font-size: 0.7rem; }
         .drop-quantity { position: absolute; top: -5px; right: -5px; background: var(--accent); color: #000; font-weight: 900; font-size: 0.8rem; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 15; animation: popIn 0.3s forwards; }
-
-        /* GAMES */
         .games-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .game-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
         .game-type-icon { font-size: 2rem; margin-right: 10px; }
@@ -95,8 +142,6 @@
         .move-btn { font-size: 2rem; padding: 20px; background: #333; border: 1px solid #555; border-radius: 10px; cursor: pointer; }
         .move-btn:active { background: #555; }
         .game-loader-spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top: 5px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-
-        /* RARITIES */
         .rarity-Common { border-color: #aaa; color: #aaa; } 
         .rarity-Uncommon { border-color: #5e98d9; color: #5e98d9; } 
         .rarity-Rare { border-color: #4b69ff; color: #4b69ff; } 
@@ -104,8 +149,6 @@
         .rarity-Legendary { border-color: #ff9900; color: #ff9900; }
         .rarity-Immortal { border-color: #00ffff; color: #00ffff; }
         .rarity-Secret { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 10px #ff0000; background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(100,0,0,0.5)); }
-
-        /* PROFILE */
         .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: var(--card); padding: 20px; border-radius: 15px; }
         .profile-avatar { width: 60px; height: 60px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -113,13 +156,11 @@
         .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         .stat-label { font-size: 0.8rem; color: #888; }
-
         .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; cursor: pointer; transition: 0.2s; }
         .leaderboard-item:active { transform: scale(0.98); background: #333; }
         .lb-rank { font-weight: 900; color: #666; width: 30px; }
         .lb-rank-1 { color: #FFD700; } .lb-rank-2 { color: #C0C0C0; } .lb-rank-3 { color: #CD7F32; }
         .lb-avatar { width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; vertical-align: middle; }
-
         @keyframes popIn { 0% { opacity:0; transform: scale(0.5); } 70% { transform: scale(1.1); } 100% { opacity:1; transform: scale(1); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     </style>
@@ -143,8 +184,8 @@
                 <div id="game-loading-spinner" class="game-loader-spinner" style="display:none"></div>
                 <h2 id="game-status-text">Ожидание...</h2>
                 <div id="game-controls" class="game-controls"></div>
-                <button id="game-exit-btn" class="close-btn" onclick="exitGame()">Выйти</button>
-                <button id="game-cancel-btn" class="main-action-btn" style="background:#ff3333; margin-top:10px; display:none" onclick="cancelActiveGame()">⛔ ОТМЕНИТЬ ИГРУ</button>
+                <button id="game-exit-btn" class="btn-secondary-danger" onclick="exitGame()">Выйти</button>
+                <button id="game-cancel-btn" class="btn-secondary-danger" style="display:none" onclick="cancelActiveGame()">⛔ ОТМЕНИТЬ ИГРУ</button>
             </div>
 
             <div id="games-lobby">
@@ -210,7 +251,7 @@
 
         <section id="tab-inventory" class="tab-content">
             <div class="sell-all-container">
-                <button class="sell-all-btn" onclick="sellAllItems()">🔥 ПРОДАТЬ ВСЕ ПРЕДМЕТЫ</button>
+                <button class="btn-secondary-danger" onclick="sellAllItems()">♻️ Продать всё (мусор)</button>
             </div>
             <div id="inventory-grid" class="inventory-grid"></div>
         </section>
@@ -501,7 +542,6 @@
                 el.gamesLobby.style.display = 'none';
                 el.gameUi.style.display = 'flex';
                 
-                // ИСПРАВЛЕНА ЛОГИКА ОПРЕДЕЛЕНИЯ ХОСТА
                 let isHost = (game.host_tg_id === userId);
                 
                 let myMove = isHost ? game.host_move : game.guest_move;
@@ -550,16 +590,7 @@
                     }
                 } 
                 else if (game.status === 'finished') {
-                    // Исправлена логика ID победителя (теперь берем Internal ID, так как в базе winner_id это internal id)
-                    // Но проще сравнить через сервер
                     let winText;
-                    // Мы не знаем internal ID юзера здесь, но можем угадать
-                    // Если winner_id == 0 -> Ничья
-                    // Если winner_id == host_id (internal) и я host -> Win
-                    
-                    // Простое решение: сервер вернул winner_id (internal). 
-                    // Если мы хост, и winner_id == game.host_id -> Win
-                    
                     if(game.winner_id === 0) winText = "🤝 НИЧЬЯ";
                     else if((isHost && game.winner_id === game.host_id) || (!isHost && game.winner_id === game.guest_id)) winText = "🏆 ТЫ ВЫИГРАЛ!";
                     else winText = "💀 ТЫ ПРОИГРАЛ";
@@ -575,7 +606,6 @@
             }
 
             window.exitGame = async () => {
-                // Если игра завершена, удаляем её, чтобы она не висела
                 if(activeGameId) {
                     try {
                         await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})});
@@ -779,10 +809,10 @@
                 selectUpgradeItem('right', closestItem);
             }
             function calcChance(){
-                if(!upgMy || !upgTarget) { el.uChance.innerText="0%"; el.uBtn.disabled=true; el.ring.style.background='conic-gradient(#444 0% 100%)'; return; }
+                if(!upgMy || !upgTarget) { el.uChance.innerText="0%"; el.uBtn.disabled=true; el.ring.style.background='conic-gradient(#333 0% 100%)'; return; }
                 let ch = (upgMy.price / upgTarget.price) * 100 * 0.95; if(ch>80) ch=80; if(ch<1) ch=1;
                 const chanceVal = ch.toFixed(2); el.uChance.innerText = chanceVal + "%"; el.uBtn.disabled=false;
-                el.ring.style.background = `conic-gradient(#ffcc00 0% ${chanceVal}%, #2a2a2a ${chanceVal}% 100%)`;
+                el.ring.style.background = `conic-gradient(#ffcc00 0% ${chanceVal}%, #333 ${chanceVal}% 100%)`;
             }
             el.uBtn.onclick=async()=>{
                 if(!upgMy || !upgTarget) return;
