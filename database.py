@@ -21,8 +21,6 @@ async def init_db():
         await db.execute("CREATE TABLE IF NOT EXISTS keys (user_id INTEGER, case_id INTEGER, quantity INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (case_id) REFERENCES cases(id), UNIQUE(user_id, case_id))")
         
         # --- ТАБЛИЦА ИГР ---
-        # status: 'open', 'playing', 'finished'
-        # wager_type: 'balance', 'item'
         await db.execute("""
             CREATE TABLE IF NOT EXISTS games (
                 id INTEGER PRIMARY KEY, 
@@ -41,12 +39,31 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # МИГРАЦИИ
-        try: await db.execute("ALTER TABLE users ADD COLUMN ip TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT"); except: pass
-        try: await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT"); except: pass
-        try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''"); except: pass
+        # --- МИГРАЦИИ (ИСПРАВЛЕНО: МНОГОСТРОЧНЫЙ TRY-EXCEPT) ---
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
+        except:
+            pass
 
         default_weights = [('Common', 10000), ('Uncommon', 5000), ('Rare', 2500), ('Mythical', 500), ('Legendary', 100), ('Immortal', 20), ('Secret', 1)]
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
@@ -151,10 +168,7 @@ async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_i
             if user[1] < wager_val: return "no_balance"
             await db.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (wager_val, uid))
         elif wager_type == 'item':
-            # Списываем один предмет для ставки (находим любой подходящий по ID, без мутаций или с ними - упростим до "любой такой ID")
-            # Для простоты в играх ставим предметы БЕЗ мутаций или конкретный ID инвентаря.
-            # Сейчас сделаем так: ставится любой предмет такого типа.
-            # Чтобы было честно, нужно передавать rowid, но пока по item_id
+            # Списываем один предмет для ставки (находим любой подходящий по ID)
             sql_check = "SELECT rowid FROM inventory WHERE user_id = ? AND item_id = ? LIMIT 1"
             async with db.execute(sql_check, (uid, wager_item_id)) as cur:
                 row = await cur.fetchone()
@@ -255,9 +269,6 @@ async def check_game_result(game_id):
                 winner_id = game['guest_id']
                 
         elif game['game_type'] == 'even_odd': # Чет нечет
-            # Host загадывает (1 или 2), Guest угадывает (even или odd)
-            # h_move: '1' or '2'
-            # g_move: 'even' or 'odd'
             host_num = int(h_move)
             is_even = (host_num % 2 == 0)
             
@@ -315,7 +326,7 @@ async def get_my_active_game(tg_user_id):
                 return d
             return None
 
-# --- BASIC FUNCTIONS (Rest of them) ---
+# --- BASIC FUNCTIONS ---
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -423,7 +434,6 @@ async def add_item_to_inventory(tg_user_id, item):
     await add_items_with_mutations(tg_user_id, [item])
 
 async def delete_one_item_by_id(tg_user_id, item_id):
-    # Удаляет один любой предмет этого типа (для апгрейда)
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             u = await cursor.fetchone()
