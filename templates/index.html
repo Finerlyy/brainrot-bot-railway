@@ -34,8 +34,9 @@
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
 
         /* Loader */
-        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255,255,255,0.05); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 0.8s ease-in-out infinite; }
+        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255,255,255,0.05); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 0.8s ease-in-out infinite; margin-bottom: 20px; }
+        #loading-text { color: #888; font-size: 0.8rem; font-family: monospace; }
 
         /* Header */
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(18, 18, 20, 0.9); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -139,7 +140,10 @@
 </head>
 <body>
 
-    <div id="loading-screen"><div class="spinner"></div></div>
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <div id="loading-text">Загрузка...</div>
+    </div>
 
     <header>
         <div class="logo">🧠 BRAINROT <span>DROP</span></div>
@@ -354,7 +358,7 @@
     <script>
         // БЕЗОПАСНАЯ ФУНКЦИЯ ФОРМАТИРОВАНИЯ
         function formatBalance(num) {
-            if (num === undefined || num === null) return "0"; // Защита от null
+            if (num === undefined || num === null) return "0"; 
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
             return num.toLocaleString();
@@ -397,8 +401,16 @@
 
             async function load(){
                 try {
+                    // ТЕКСТ ЗАГРУЗКИ (ОТЛАДКА)
+                    el('loading-text').innerText = "Подключение к серверу...";
+                    
                     const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username, photo_url:photoUrl})});
-                    if(!res.ok) throw new Error("Server error");
+                    
+                    if(!res.ok) {
+                        const errText = await res.text();
+                        throw new Error(`Server Error ${res.status}: ${errText}`);
+                    }
+                    
                     const d=await res.json();
                     
                     // БЕЗОПАСНОЕ ПРИСВОЕНИЕ ДАННЫХ
@@ -429,11 +441,15 @@
                     if(d.leaderboard) renderLeaderboard(d.leaderboard);
                     updateGamesList(); // Инициализация игр
                     
+                    // СКРЫВАЕМ СПИННЕР ТОЛЬКО ЕСЛИ ВСЕ ОК
                     el('loading-screen').style.display='none';
                 } catch(e){ 
                     console.error(e); 
-                    // Если ошибка, скрываем лоадер, чтобы юзер хоть что-то видел
-                    // el('loading-screen').style.display='none'; 
+                    // ПОКАЗЫВАЕМ ОШИБКУ ПОЛЬЗОВАТЕЛЮ
+                    alert("Ошибка загрузки:\n" + e.message);
+                    el('loading-text').innerText = "Ошибка: " + e.message;
+                    // Принудительно скрываем, чтобы можно было хоть что-то нажать
+                    el('loading-screen').style.display='none'; 
                 }
             }
 
