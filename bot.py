@@ -10,7 +10,6 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 
-# --- ИСПРАВЛЕННЫЕ ИМПОРТЫ ---
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, update_user_balance, 
@@ -24,8 +23,8 @@ from database import (
     get_incubator_status, put_in_incubator, claim_incubator, take_from_incubator
 )
 
-TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
-# Убедись, что этот URL совпадает с твоим доменом на Railway
+# --- НОВЫЙ ТОКЕН ---
+TOKEN = "8292962840:AAF00ecLsKwSCI_pv_za9QhGGeaxnLiJnSo" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -301,6 +300,7 @@ async def api_upgrade(request):
         logging.error(f"Upgrade Error: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
+# --- INCUBATOR API ---
 async def api_incubator_put(request):
     try:
         data = await request.json()
@@ -333,6 +333,7 @@ async def api_incubator_take(request):
         else: return web.json_response({"error": "Инкубатор пуст"}, status=400)
     except Exception as e: return web.json_response({"error": str(e)}, status=500)
 
+# --- GAMES API ---
 async def api_games_list(request):
     games = await get_open_games()
     return web.json_response({"games": games})
@@ -401,9 +402,11 @@ app.add_routes([
     web.post('/api/sell_batch', api_sell_batch), 
     web.post('/api/sell_all', api_sell_all),
     web.post('/api/upgrade', api_upgrade),
+    # Incubator
     web.post('/api/incubator/put', api_incubator_put),
     web.post('/api/incubator/claim', api_incubator_claim),
     web.post('/api/incubator/take', api_incubator_take),
+    # Games
     web.post('/api/games/list', api_games_list),
     web.post('/api/games/create', api_game_create),
     web.post('/api/games/join', api_game_join),
