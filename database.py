@@ -10,11 +10,10 @@ async def init_db():
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
-        # Removed id from inventory to allow counting easily. Using rowid if needed internally.
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (user_id INTEGER, item_id INTEGER, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
         await db.commit()
         
-        # --- НАПОЛНЕНИЕ БАЗЫ ---
+        # --- НАПОЛНЕНИЕ БАЗЫ (Если пустая) ---
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
         case_icon = 'https://i.imgur.com/UOAnvOc.png' 
@@ -59,11 +58,9 @@ async def get_user(tg_id, username):
         return dict(user) if user else None
 
 async def update_user_balance(tg_id, amount):
-    # Эта функция работает мгновенно. Если в веб-аппе не обновляется - значит веб-апп не запросил новые данные.
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("UPDATE users SET balance = balance + ? WHERE tg_id = ?", (amount, tg_id))
         await db.commit()
-        logging.info(f"Updated balance for {tg_id} by {amount}")
 
 async def get_all_cases():
     async with aiosqlite.connect(DB_NAME) as db:
@@ -94,9 +91,12 @@ async def get_all_items_sorted():
 
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
+        # Получаем внутренний ID пользователя (PK)
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             user_row = await cursor.fetchone()
-            user_pk_id = user_row[0] 
+            if not user_row: return 
+            user_pk_id = user_row['id']
+            
         insert_data = [(user_pk_id, item['id']) for item in items_list]
         await db.executemany("INSERT INTO inventory (user_id, item_id) VALUES (?, ?)", insert_data)
         await db.commit()
@@ -104,7 +104,6 @@ async def add_items_to_inventory_batch(tg_user_id, items_list):
 async def add_item_to_inventory(tg_user_id, item):
     await add_items_to_inventory_batch(tg_user_id, [item])
 
-# --- НОВЫЙ ГРУППИРОВАННЫЙ ИНВЕНТАРЬ ---
 async def get_inventory_grouped(user_id_tg):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -113,7 +112,6 @@ async def get_inventory_grouped(user_id_tg):
             if not u: return []
             user_pk = u['id']
 
-        # SQL магия: Группируем по ID предмета и считаем количество (COUNT)
         sql = """
             SELECT i.id as item_id, i.name, i.rarity, i.image_url, i.price, COUNT(inv.item_id) as quantity
             FROM inventory AS inv 
@@ -124,7 +122,6 @@ async def get_inventory_grouped(user_id_tg):
         async with db.execute(sql, (user_pk,)) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
-# --- НОВАЯ МАССОВАЯ ПРОДАЖА ---
 async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
@@ -132,8 +129,7 @@ async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
             if not u: return False
             user_pk = u['id']
 
-        # Удаляем N штук конкретного предмета у пользователя
-        # Используем хитрый подзапрос с rowid и LIMIT для SQLite
+        # Удаляем N штук конкретного предмета (используя rowid для точного удаления)
         sql = """
             DELETE FROM inventory 
             WHERE rowid IN (
@@ -150,8 +146,8 @@ async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
         return True
 
 async def delete_one_item_by_id(tg_user_id, item_id):
-    # Используется для апгрейда (сжигаем 1 предмет по его ID)
-    await sell_items_batch_db(tg_user_id, item_id, 1, 0)
+    # Удаляем 1 штуку предмета (без начисления денег)
+    return await sell_items_batch_db(tg_user_id, item_id, 1, 0)
 
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
