@@ -9,7 +9,6 @@ DB_NAME = "brainrot.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
-        # Включаем доступ по названиям колонок глобально
         db.row_factory = sqlite3.Row 
         
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 5000, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT)")
@@ -36,31 +35,14 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # --- МИГРАЦИИ (ТЕПЕРЬ ТОЧНО ПРАВИЛЬНО) ---
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN ip TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN cases_opened INTEGER DEFAULT 0")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN reg_date TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
-        except:
-            pass
-
-        try:
-            await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
-        except:
-            pass
+        # --- МИГРАЦИИ ---
+        cols = ["ip", "cases_opened", "reg_date", "photo_url"]
+        for col in cols:
+            try: await db.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT") # Упростил тип для надежности
+            except: pass
+        
+        try: await db.execute("ALTER TABLE inventory ADD COLUMN mutations TEXT DEFAULT ''")
+        except: pass
 
         default_weights = [('Common', 10000), ('Uncommon', 5000), ('Rare', 2500), ('Mythical', 500), ('Legendary', 100), ('Immortal', 20), ('Secret', 1)]
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
@@ -190,8 +172,16 @@ async def cancel_game_db(game_id, tg_user_id):
         async with db.execute("SELECT * FROM games WHERE id = ?", (game_id,)) as cur:
             game = await cur.fetchone()
             if not game: return "not_found"
-            if game['host_id'] != user_pk: return "not_host"
-            if game['status'] != 'open': return "started"
+        
+        # Если игра уже завершена, просто удаляем запись из БД (чтобы не висела в активных)
+        if game['status'] == 'finished':
+             await db.execute("DELETE FROM games WHERE id = ?", (game_id,))
+             await db.commit()
+             return "ok"
+
+        # Если игра активна, проверяем хоста
+        if game['host_id'] != user_pk: return "not_host"
+        if game['status'] != 'open': return "started"
 
         if game['wager_type'] == 'balance':
             await db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (game['wager_amount'], user_pk))
@@ -333,18 +323,20 @@ async def get_my_active_game(tg_user_id):
             SELECT g.*, 
                    u1.username as host_name, 
                    u2.username as guest_name,
+                   u1.tg_id as host_tg_id,
+                   u2.tg_id as guest_tg_id,
                    i.name as item_name, i.image_url as item_img
             FROM games g
             LEFT JOIN users u1 ON g.host_id = u1.id
             LEFT JOIN users u2 ON g.guest_id = u2.id
             LEFT JOIN items i ON g.wager_item_id = i.id
-            WHERE (g.host_id = ? OR g.guest_id = ?) AND g.status != 'finished'
+            WHERE (g.host_id = ? OR g.guest_id = ?) 
+            ORDER BY g.id DESC LIMIT 1
         """
         async with db.execute(sql, (uid, uid)) as cur:
             row = await cur.fetchone()
             if row:
                 d = dict(row)
-                d['is_host'] = (d['host_id'] == uid)
                 return d
             return None
 

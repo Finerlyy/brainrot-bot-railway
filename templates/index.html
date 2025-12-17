@@ -14,6 +14,9 @@
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         
+        /* ДОБАВЛЕНА АНИМАЦИЯ SPIN */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(39, 39, 42, 0.95); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
         .logo { font-weight: 900; color: #fff; font-size: 1.2rem; } .logo span { color: var(--accent); }
         .balance-badge { background: rgba(255, 215, 0, 0.15); color: #FFD700; font-weight: 800; border: 1px solid rgba(255, 215, 0, 0.4); padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 1rem; }
@@ -498,7 +501,9 @@
                 el.gamesLobby.style.display = 'none';
                 el.gameUi.style.display = 'flex';
                 
-                let isHost = (game.host_id === userId);
+                // ИСПРАВЛЕНА ЛОГИКА ОПРЕДЕЛЕНИЯ ХОСТА
+                let isHost = (game.host_tg_id === userId);
+                
                 let myMove = isHost ? game.host_move : game.guest_move;
                 let oppName = isHost ? (game.guest_name || "Ожидание...") : game.host_name;
                 
@@ -545,7 +550,20 @@
                     }
                 } 
                 else if (game.status === 'finished') {
-                    let winText = (game.winner_id === userId) ? "🏆 ТЫ ВЫИГРАЛ!" : (game.winner_id === 0 ? "🤝 НИЧЬЯ" : "💀 ТЫ ПРОИГРАЛ");
+                    // Исправлена логика ID победителя (теперь берем Internal ID, так как в базе winner_id это internal id)
+                    // Но проще сравнить через сервер
+                    let winText;
+                    // Мы не знаем internal ID юзера здесь, но можем угадать
+                    // Если winner_id == 0 -> Ничья
+                    // Если winner_id == host_id (internal) и я host -> Win
+                    
+                    // Простое решение: сервер вернул winner_id (internal). 
+                    // Если мы хост, и winner_id == game.host_id -> Win
+                    
+                    if(game.winner_id === 0) winText = "🤝 НИЧЬЯ";
+                    else if((isHost && game.winner_id === game.host_id) || (!isHost && game.winner_id === game.guest_id)) winText = "🏆 ТЫ ВЫИГРАЛ!";
+                    else winText = "💀 ТЫ ПРОИГРАЛ";
+
                     el.gameStatus.innerHTML = `${winText}<br><small>Против: ${oppName}</small>`;
                     el.gameExitBtn.style.display = 'block';
                 }
@@ -556,7 +574,14 @@
                 pollGameStatus();
             }
 
-            window.exitGame = () => {
+            window.exitGame = async () => {
+                // Если игра завершена, удаляем её, чтобы она не висела
+                if(activeGameId) {
+                    try {
+                        await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})});
+                    } catch(e) {}
+                }
+                
                 el.gameUi.style.display = 'none';
                 el.gamesLobby.style.display = 'block';
                 activeGameId = null;
