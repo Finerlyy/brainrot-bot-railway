@@ -110,6 +110,7 @@
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         .stat-label { font-size: 0.8rem; color: #888; }
 
+        /* ЛИДЕРБОРД */
         .leaderboard-item { display: flex; justify-content: space-between; padding: 15px; background: var(--card); margin-bottom: 5px; border-radius: 10px; align-items: center; cursor: pointer; transition: 0.2s; }
         .leaderboard-item:active { transform: scale(0.98); background: #333; }
         .lb-rank { font-weight: 900; color: #666; width: 30px; }
@@ -388,6 +389,8 @@
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
                     renderAll(d, true);
                     updateGamesList();
+                    // Check if already in active game
+                    pollGameStatus();
                     setTimeout(()=>el.loader.style.display='none',500);
                 } catch(e){ console.error(e); }
             }
@@ -680,10 +683,8 @@
                 el.popup.classList.remove('hidden'); el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
-                // Grouping logic for results (ignoring mutations for simplicity in summary)
                 const grouped = {}; 
                 items.forEach(item => { 
-                    // Unique key includes mutations to separate stacks visually
                     const key = item.id + (item.mutations ? item.mutations.join('') : '');
                     if (grouped[key]) { grouped[key].count++; } 
                     else { grouped[key] = { ...item, count: 1 }; } 
