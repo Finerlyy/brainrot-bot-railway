@@ -113,7 +113,10 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* ЛОГОТИП ЦЕНТРАЛЬНЫЙ (НОВАЯ ССЫЛКА) */
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.8; position: absolute; z-index: 1; }
+        
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
         
         .chance-text { font-size: 28px; font-weight: 900; color: #fff; }
@@ -154,7 +157,7 @@
 
     <header>
         <div class="logo">🧠 BRAINROT <span>DROP</span></div>
-        <div class="balance-badge"><span class="star-icon"⭐️</span> <span id="balance">0</span></div>
+        <div class="balance-badge"><span class="star-icon">⭐️</span> <span id="balance">0</span></div>
     </header>
 
     <main>
@@ -187,7 +190,7 @@
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
                     <div class="static-center">
-                        <img src="https://i.imgur.com/VpDSFGu.png" class="center-logo">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2881/2881142.png" class="center-logo">
                         <div class="center-content">
                             <div class="chance-text" id="u-chance">0%</div>
                             <div class="chance-sub">шанс</div>
@@ -233,12 +236,12 @@
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name">...</h3>
-            <img id="modal-case-img" src="https://i.imgur.com/kQQXAj8.jpeg" alt="" class="modal-main-img">
+            <img id="modal-case-img" src="https://cdn-icons-png.flaticon.com/512/9338/9338047.png" alt="" class="modal-main-img">
             <p class="modal-price">Цена: <span class="star-icon">⭐️</span> <span id="modal-case-price">0</span></p>
             
             <div class="slider-container">
                 <span class="slider-val">Количество: <span id="slider-count">1</span></span>
-                <input type="range" min="1" max="1" value="1" id="case-slider" oninput="updateSlider(this.value)">
+                <input type="range" min="1" max="10" value="1" id="case-slider" oninput="updateSlider(this.value)">
             </div>
             
             <div id="case-roulette" class="case-roulette-container">
@@ -383,8 +386,7 @@
                 el.openBtn.disabled = false;
                 el.openBtn.innerText = `ОТКРЫТЬ (⭐️ ${selectedCase.price})`;
                 
-                // Фикс слайдера: в анимации открываем только по 1
-                el.slider.value=1; el.slider.disabled=true; // Временно блочим слайдер для анимации
+                el.slider.value=1; el.slider.disabled=false; // РАЗБЛОКИРОВАЛ СЛАЙДЕР
                 updateSlider(1); 
                 el.openModal.classList.remove('hidden');
             }
@@ -394,22 +396,17 @@
             }
 
             el.openBtn.onclick=async()=>{
-                const price = selectedCase.price;
+                const price = selectedCase.price * openCount;
                 if(currentBal < price) return tg.showAlert("Мало звезд!");
                 
-                // 1. Блокируем кнопку
                 el.openBtn.disabled = true;
-                
-                // 2. Скрываем картинку кейса, показываем рулетку
-                el.mImg.style.display = 'none';
-                el.rouletteBox.style.display = 'block';
-                el.rouletteTrack.innerHTML = '';
-                el.rouletteTrack.style.transition = 'none';
-                el.rouletteTrack.style.transform = 'translateX(0px)';
+
+                // ЛОГИКА АНИМАЦИИ: 
+                // Если 1 кейс -> Анимация
+                // Если >1 кейс -> Сразу результат
                 
                 try {
-                    // 3. Запрос к серверу
-                    const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:1})});
+                    const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
                     const d = await res.json();
                     
                     if(d.error){ 
@@ -417,55 +414,50 @@
                         return tg.showAlert(d.error); 
                     }
                     
-                    // Списываем баланс визуально
                     upBal(currentBal - price);
 
-                    const winItem = d.dropped[0];
-                    
-                    // 4. Генерируем ленту рулетки (40 предметов)
-                    // Победитель будет на 35 позиции
-                    const WIN_INDEX = 35; 
-                    let tapeItems = [];
-                    
-                    // Заполняем рандомом из всех предметов
-                    for(let i=0; i<45; i++) {
-                        if(i === WIN_INDEX) {
-                            tapeItems.push(winItem);
-                        } else {
-                            const rand = allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
-                            tapeItems.push(rand);
+                    if (openCount > 1) {
+                        // БЫСТРОЕ ОТКРЫТИЕ
+                        el.openModal.classList.add('hidden');
+                        showResults(d.dropped);
+                    } else {
+                        // АНИМАЦИЯ (ТОЛЬКО ДЛЯ 1 КЕЙСА)
+                        el.mImg.style.display = 'none';
+                        el.rouletteBox.style.display = 'block';
+                        el.rouletteTrack.innerHTML = '';
+                        el.rouletteTrack.style.transition = 'none';
+                        el.rouletteTrack.style.transform = 'translateX(0px)';
+                        
+                        const winItem = d.dropped[0];
+                        const WIN_INDEX = 35; 
+                        let tapeItems = [];
+                        
+                        for(let i=0; i<45; i++) {
+                            if(i === WIN_INDEX) tapeItems.push(winItem);
+                            else tapeItems.push(allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)]);
                         }
+
+                        tapeItems.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = `roulette-card rarity-${item.rarity}`;
+                            card.innerHTML = `<img src="${item.image_url}">`;
+                            el.rouletteTrack.appendChild(card);
+                        });
+
+                        const CARD_WIDTH = 110;
+                        const offset = Math.floor(Math.random() * 80) - 40;
+                        const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (el.rouletteBox.clientWidth / 2) + (CARD_WIDTH / 2) + offset;
+
+                        setTimeout(() => {
+                            el.rouletteTrack.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
+                            el.rouletteTrack.style.transform = `translateX(-${scrollAmount}px)`;
+                        }, 50);
+
+                        setTimeout(() => {
+                             el.openModal.classList.add('hidden');
+                             showResults([winItem]);
+                        }, 5500); 
                     }
-
-                    // Рендерим ленту
-                    tapeItems.forEach(item => {
-                        const card = document.createElement('div');
-                        card.className = `roulette-card rarity-${item.rarity}`;
-                        card.innerHTML = `<img src="${item.image_url}">`;
-                        el.rouletteTrack.appendChild(card);
-                    });
-
-                    // 5. Запуск анимации
-                    // Ширина карточки (100px) + отступ (10px) = 110px
-                    const CARD_WIDTH = 110;
-                    // Смещение чтобы 35-й элемент был по центру
-                    // Центр контейнера (ширина ~350px / 2 = 175px)
-                    // Мы хотим сдвинуть влево на: (WIN_INDEX * 110) - (175 - 50 половина карточки)
-                    // Упрощенно: сдвигаем так, чтобы 35 элемент встал в центр.
-                    // Рандомный сдвиг внутри карточки для реализма (+- 40px)
-                    const offset = Math.floor(Math.random() * 80) - 40;
-                    const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (el.rouletteBox.clientWidth / 2) + (CARD_WIDTH / 2) + offset;
-
-                    setTimeout(() => {
-                        el.rouletteTrack.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)"; // Эффект замедления
-                        el.rouletteTrack.style.transform = `translateX(-${scrollAmount}px)`;
-                    }, 50);
-
-                    // 6. Показываем результат после конца анимации
-                    setTimeout(() => {
-                         el.openModal.classList.add('hidden');
-                         showResults([winItem]);
-                    }, 5500); // 5 сек анимация + 0.5 сек пауза
 
                 } catch(e) { 
                     console.error(e);
@@ -476,7 +468,8 @@
             function showResults(items){
                 el.popup.classList.add('active');
                 el.dropGrid.innerHTML=''; 
-                el.dropGrid.className='drop-grid single';
+                el.dropGrid.className = items.length > 1 ? 'drop-grid multi' : 'drop-grid single';
+                
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
                 items.forEach((item)=>{

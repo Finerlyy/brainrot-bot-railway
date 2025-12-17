@@ -16,14 +16,15 @@ async def init_db():
         # --- НАПОЛНЕНИЕ БАЗЫ ---
         case_name = '🧠 Ultimate Brainrot Case'
         case_price = 300
-        case_icon = 'https://i.imgur.com/UOAnvOc.png' 
+        # ИСПРАВЛЕННАЯ ССЫЛКА НА ИКОНКУ КЕЙСА
+        case_icon = 'https://cdn-icons-png.flaticon.com/512/9338/9338047.png'
 
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, case_price, case_icon))
         await db.commit()
 
         async with db.execute("SELECT id FROM cases WHERE name = ?", (case_name,)) as cur:
             row = await cur.fetchone()
-            # ИСПРАВЛЕНИЕ: Используем индекс 0 вместо ['id']
+            # ФИКС ОШИБКИ TUPLE
             case_id = row[0] if row else None
 
         if case_id:
@@ -56,7 +57,6 @@ async def get_user(tg_id, username):
             except sqlite3.IntegrityError: pass
             async with db.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
                 user = await cursor.fetchone()
-        # Возвращаем как есть (bot.py сам разберется с форматом)
         return user
 
 async def update_user_balance(tg_id, amount):
@@ -92,18 +92,14 @@ async def get_all_items_sorted():
 
 async def add_items_to_inventory_batch(tg_user_id, items_list):
     async with aiosqlite.connect(DB_NAME) as db:
-        # ИСПРАВЛЕНИЕ: Получаем ID через индекс [0]
+        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             user_row = await cursor.fetchone()
             if not user_row: return 
             user_pk_id = user_row[0] 
             
-        # items_list приходит из bot.py уже как список словарей
-        # Нам нужно вытащить оттуда ID. item['id'] или item.get('id')
         insert_data = []
         for item in items_list:
-            # item может быть dict или Row или tuple, нужно безопасно достать ID
-            # Но в bot.py мы уже конвертировали в dict. Берем ['id']
             i_id = item.get('id') if isinstance(item, dict) else item[0]
             insert_data.append((user_pk_id, i_id))
 
@@ -116,7 +112,7 @@ async def add_item_to_inventory(tg_user_id, item):
 async def get_inventory_grouped(user_id_tg):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        # ИСПРАВЛЕНИЕ: Получаем ID через индекс [0]
+        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (user_id_tg,)) as cursor:
             u = await cursor.fetchone()
             if not u: return []
@@ -134,7 +130,7 @@ async def get_inventory_grouped(user_id_tg):
 
 async def sell_items_batch_db(tg_user_id, item_id, count, total_price):
     async with aiosqlite.connect(DB_NAME) as db:
-        # ИСПРАВЛЕНИЕ: Получаем ID через индекс [0]
+        # ФИКС ОШИБКИ TUPLE
         async with db.execute("SELECT id FROM users WHERE tg_id = ?", (tg_user_id,)) as cursor:
             u = await cursor.fetchone()
             if not u: return False
