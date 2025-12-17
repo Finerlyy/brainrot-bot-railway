@@ -10,7 +10,7 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 
-# ПОЛНЫЙ НАБОР ИМПОРТОВ
+# --- ИСПРАВЛЕННЫЕ ИМПОРТЫ ---
 from database import (
     get_user, get_inventory_grouped, get_leaderboard, get_all_cases, 
     get_case_items, update_user_balance, 
@@ -25,6 +25,7 @@ from database import (
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
+# Убедись, что этот URL совпадает с твоим доменом на Railway
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -73,7 +74,6 @@ async def api_get_data(request):
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # 1. Логирование и обновление фото
         ip_header = request.headers.get('X-Forwarded-For')
         ip = ip_header.split(',')[0].strip() if ip_header else request.remote
         if ip: await update_user_ip(user_id, ip)
@@ -81,7 +81,6 @@ async def api_get_data(request):
         photo_url = data.get('photo_url')
         if photo_url: await update_user_photo(user_id, photo_url)
 
-        # 2. Данные пользователя
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
@@ -89,7 +88,6 @@ async def api_get_data(request):
         user_data['best_item'] = stats.get('best_item')
         user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
         
-        # 3. Инвентарь
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'mutations', 'quantity', 'sample_id']
         raw_inv = await get_inventory_grouped(user_id)
         
@@ -112,17 +110,14 @@ async def api_get_data(request):
             
             inventory.append(i_dict)
 
-        # 4. Кейсы и Ключи
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
         user_keys = await get_user_keys(user_id)
         for c in cases: c['keys'] = user_keys.get(c['id'], 0)
 
-        # 5. Все предметы (для рулетки и апгрейда)
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
 
-        # 6. Инкубатор
         incubator = await get_incubator_status(user_id)
         if incubator:
              added = await claim_incubator(user_id)
@@ -130,12 +125,11 @@ async def api_get_data(request):
                  incubator = await get_incubator_status(user_id) 
                  user_data['brainrot_coins'] += added
 
-        # 7. Возврат ВСЕХ данных
         return web.json_response({
             "user": user_data, 
             "inventory": inventory, 
             "cases": cases, 
-            "leaderboard": await get_leaderboard(), # Возвращаем лидерборд
+            "leaderboard": await get_leaderboard(),
             "all_items": all_items,
             "incubator": incubator
         })
@@ -307,7 +301,6 @@ async def api_upgrade(request):
         logging.error(f"Upgrade Error: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
-# --- INCUBATOR API ---
 async def api_incubator_put(request):
     try:
         data = await request.json()
@@ -340,7 +333,6 @@ async def api_incubator_take(request):
         else: return web.json_response({"error": "Инкубатор пуст"}, status=400)
     except Exception as e: return web.json_response({"error": str(e)}, status=500)
 
-# --- GAMES API ---
 async def api_games_list(request):
     games = await get_open_games()
     return web.json_response({"games": games})
