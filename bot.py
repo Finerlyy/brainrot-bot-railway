@@ -16,7 +16,7 @@ from database import (
     get_case_data, sell_items_batch_db, get_all_items_sorted, 
     delete_one_item_by_id, add_item_to_inventory, update_user_ip,
     get_user_keys, use_keys, get_profile_stats, increment_cases_opened,
-    update_user_photo, get_public_profile
+    update_user_photo, get_public_profile, get_rarity_weights
 )
 
 TOKEN = "8292962840:AAHqOus6QIKOhYoYeEXjE4zMGHkGRSR_Ztc" 
@@ -29,6 +29,17 @@ dp = Dispatcher()
 app = web.Application()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
+
+# ИЕРАРХИЯ РЕДКОСТИ ДЛЯ АПГРЕЙДА
+RARITY_RANKS = {
+    'Common': 1,
+    'Uncommon': 2,
+    'Rare': 3,
+    'Mythical': 4,
+    'Legendary': 5,
+    'Immortal': 6,
+    'Secret': 7
+}
 
 def force_dict(item, key_map):
     if item is None: return None
@@ -144,7 +155,16 @@ async def api_open_case(request):
         items = [force_dict(i, ITEM_KEYS) for i in raw_items]
         if not items: return web.json_response({"error": "Кейс пуст"}, status=400)
 
-        weights = [10000 / (item.get('price', 1) + 1) for item in items]
+        # --- НОВАЯ ЛОГИКА ШАНСОВ ---
+        rarity_map = await get_rarity_weights() # Получаем веса из БД
+        
+        # Если предмета нет в базе весов, даем вес 0 (не выпадет)
+        weights = [rarity_map.get(item['rarity'], 0) for item in items]
+        
+        # Если все веса 0 (ошибка конфига), ставим равные шансы
+        if sum(weights) == 0:
+            weights = [1] * len(items)
+
         dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
         await add_items_to_inventory_batch(user_id, dropped)
@@ -171,13 +191,11 @@ async def api_sell_batch(request):
         logging.error(f"Error api_sell_batch: {e}", exc_info=True)
         return web.json_response({"error": str(e)}, status=500)
 
-# --- НОВЫЙ МЕТОД: ПРОДАТЬ ВСЕ ---
 async def api_sell_all(request):
     try:
         data = await request.json()
         user_id = int(data.get('user_id'))
         
-        # Получаем весь инвентарь чтобы посчитать сумму и удалить
         raw_inv = await get_inventory_grouped(user_id)
         INV_KEYS = ['item_id', 'name', 'rarity', 'image_url', 'price', 'quantity']
         
@@ -189,14 +207,11 @@ async def api_sell_all(request):
             r = i_dict.get('rarity', 'Common')
             count = i_dict.get('quantity', 0)
             
-            # Та же логика цены
             price_one = max(1, int(p * 0.90)) if r == 'Secret' else max(1, int(p * 0.60))
             total_sell_price += price_one * count
             
-            # Удаляем пачками (можно оптимизировать через DELETE FROM inventory WHERE user_id=...)
-            await sell_items_batch_db(user_id, i_dict['item_id'], count, 0) # 0 т.к. начислим в конце сумму
+            await sell_items_batch_db(user_id, i_dict['item_id'], count, 0)
             
-        # Начисляем общую сумму
         if total_sell_price > 0:
             await update_user_balance(user_id, total_sell_price)
             
@@ -224,6 +239,13 @@ async def api_upgrade(request):
         target_item = next((i for i in all_items if i['id'] == target_id), None)
         if not target_item: return web.json_response({"error": "Цель не найдена"}, status=400)
 
+        # --- ЗАПРЕТ ПОНИЖЕНИЯ РЕДКОСТИ ---
+        my_rank = RARITY_RANKS.get(my_item['rarity'], 0)
+        target_rank = RARITY_RANKS.get(target_item['rarity'], 0)
+        
+        if target_rank <= my_rank:
+            return web.json_response({"error": "Нельзя крафтить предмет такой же или меньшей редкости!"}, status=400)
+
         chance = (my_item['price'] / target_item['price']) * 95
         if chance > 80: chance = 80
         if chance < 1: chance = 1
@@ -249,7 +271,7 @@ app.add_routes([
     web.post('/api/profile', api_get_profile),
     web.post('/api/open', api_open_case), 
     web.post('/api/sell_batch', api_sell_batch), 
-    web.post('/api/sell_all', api_sell_all), # Новый роут
+    web.post('/api/sell_all', api_sell_all),
     web.post('/api/upgrade', api_upgrade), 
     web.static('/static', STATIC_DIR)
 ])
