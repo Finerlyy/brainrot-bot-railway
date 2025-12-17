@@ -51,7 +51,13 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        /* --- НОВЫЙ БЛОК: МУЛЬТИ-РУЛЕТКА --- */
+        /* РУЛЕТКА В КЕЙСЕ */
+        .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
+        .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
+        .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
+        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
+        
         #multi-roulette-container {
             width: 100%;
             max-height: 300px; 
@@ -81,19 +87,17 @@
             will-change: transform; 
         }
         
-        /* Исправлен CSS карточки рулетки: жесткая ширина */
         .roulette-card { 
             width: 100px; /* Фиксированная ширина */
             height: 90px; 
             background: #222; border: 1px solid #444; 
-            margin: 0 5px; /* Отступы 5px слева и 5px справа */
+            margin: 0 5px; 
             border-radius: 8px; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; 
-            flex-shrink: 0; /* ЗАПРЕЩАЕМ сжиматься */
+            flex-shrink: 0;
         }
         .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
 
-        /* Кнопки действий */
         .actions-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -173,6 +177,7 @@
         .select-card img { width: 50px; height: 50px; object-fit: contain; }
         .select-card span { font-size: 0.7rem; display: block; color: var(--accent); }
         
+        /* СЛАЙДЕР ДО 50 */
         input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; margin: 15px 0; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px var(--accent); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
@@ -278,7 +283,7 @@
             
             <div class="slider-container">
                 <span class="slider-val">Количество: <span id="slider-count">1</span></span>
-                <input type="range" min="1" max="10" value="1" id="case-slider" oninput="updateSlider(this.value)">
+                <input type="range" min="1" max="50" value="1" id="case-slider" oninput="updateSlider(this.value)">
             </div>
             
             <div id="multi-roulette-container"></div>
@@ -511,7 +516,7 @@
                 const track = document.createElement('div');
                 track.className = 'roulette-track';
                 
-                const WIN_INDEX = 29; // 30-й элемент
+                const WIN_INDEX = 29; 
                 for(let i=0; i<45; i++) {
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
                     const card = document.createElement('div');
@@ -524,27 +529,20 @@
                 row.appendChild(track);
                 el.multiBox.appendChild(row);
                 
-                // Фиксированные размеры
                 const CARD_WIDTH = 100;
                 const CARD_GAP = 10;
-                const UNIT_WIDTH = CARD_WIDTH + CARD_GAP; // 110px
+                const UNIT_WIDTH = CARD_WIDTH + CARD_GAP; 
                 const containerWidth = el.multiBox.clientWidth || 350;
-                
-                // Центр контейнера
                 const centerOfContainer = containerWidth / 2;
-                // Центр выигрышной карточки (ее левый край + половина ширины)
                 const centerOfWinningCard = (UNIT_WIDTH * WIN_INDEX) + (UNIT_WIDTH / 2);
-                
-                // Рандомный сдвиг внутри карточки (+/- 35px)
                 const randomOffset = Math.floor(Math.random() * 70) - 35;
-                
-                // Итоговое смещение:
                 const scrollAmount = centerOfWinningCard - centerOfContainer + randomOffset;
 
+                // Ускоренная анимация для большого количества (по 50мс задержка)
                 setTimeout(() => {
                     track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
                     track.style.transform = `translateX(-${scrollAmount}px)`;
-                }, 50 + (index * 100));
+                }, 50 + (index * 50));
             }
 
             function showResults(items){
@@ -555,7 +553,6 @@
                 
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
-                // ГРУППИРОВКА ПРЕДМЕТОВ (Стаки)
                 const grouped = {};
                 items.forEach(item => {
                     if (grouped[item.id]) {

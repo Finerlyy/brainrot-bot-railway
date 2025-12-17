@@ -69,7 +69,7 @@ async def api_get_data(request):
             i_dict = force_dict(item, INV_KEYS)
             p = i_dict.get('price', 0)
             
-            # --- ИЗМЕНЕНИЕ: 60% от стоимости ---
+            # --- 60% от стоимости ---
             i_dict['sell_price'] = max(1, int(p * 0.60)) 
             
             inventory.append(i_dict)
@@ -97,6 +97,10 @@ async def api_open_case(request):
         user_id = int(data.get('user_id'))
         case_id = int(data.get('case_id'))
         count = int(data.get('count', 1))
+        
+        # --- ЛИМИТ ДО 50 КЕЙСОВ ---
+        if count > 50: count = 50
+        if count < 1: count = 1
         
         raw_case = await get_case_data(case_id)
         case_data = force_dict(raw_case, CASE_KEYS)
