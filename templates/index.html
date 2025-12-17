@@ -41,7 +41,6 @@
             justify-content: center; align-items: center; gap: 5px; width: 100%;
         }
         .main-action-btn:active, .sell-btn:active, .upgrade-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-dark); }
-        
         .sell-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; box-shadow: 0 3px 0 #111; font-size: 0.75rem; padding: 8px; }
         .sell-btn:active { box-shadow: 0 0 0 #111; }
         .sell-btn span { color: var(--accent); }
@@ -52,7 +51,13 @@
         .modal-main-img { width: 140px; height: 140px; object-fit: contain; margin: 20px auto; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2)); }
         .close-btn { width: 100%; background: none; border: none; color: #888; padding: 10px; cursor: pointer; margin-top: 10px;}
 
-        /* --- НОВЫЙ БЛОК: МУЛЬТИ-РУЛЕТКА --- */
+        /* РУЛЕТКА В КЕЙСЕ */
+        .case-roulette-container { width: 100%; height: 120px; background: #111; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); position: relative; overflow: hidden; margin-bottom: 20px; border-radius: 10px; display: none; }
+        .roulette-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px #fff; }
+        .roulette-track { display: flex; height: 100%; align-items: center; will-change: transform; }
+        .roulette-card { min-width: 100px; height: 90px; background: #222; border: 1px solid #444; margin: 0 5px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .roulette-card img { width: 60px; height: 60px; object-fit: contain; }
+        
         #multi-roulette-container {
             width: 100%;
             max-height: 300px; /* Ограничение высоты, если много кейсов */
@@ -70,27 +75,7 @@
             border-bottom: 1px solid #333;
             background: #151515;
         }
-        
-        .roulette-center-line { 
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; 
-            background: #fff; z-index: 10; transform: translateX(-50%); 
-            box-shadow: 0 0 10px #fff; 
-        }
-        
-        .roulette-track { 
-            display: flex; height: 100%; align-items: center; 
-            will-change: transform; 
-        }
-        
-        .roulette-card { 
-            min-width: 90px; height: 80px; 
-            background: #222; border: 1px solid #444; margin: 0 4px; 
-            border-radius: 8px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-        }
-        .roulette-card img { width: 50px; height: 50px; object-fit: contain; }
 
-        /* Кнопки действий */
         .actions-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -116,9 +101,30 @@
             opacity: 0; 
             transform: scale(0.5);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+            position: relative; /* Для позиционирования счетчика */
         }
         .drop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
         .drop-item .case-name { font-size: 0.7rem; }
+
+        /* Счетчик для выпавших предметов */
+        .drop-quantity {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent);
+            color: #000;
+            font-weight: 900;
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 15;
+            animation: popIn 0.3s forwards;
+        }
 
         .upgrade-container { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-top: 20px; }
         .upgrade-slots { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 400px; align-items: center; }
@@ -136,6 +142,7 @@
         .spinning-ring.lose-glow { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000; }
         
         .static-center { position: absolute; width: 230px; height: 230px; background: #151515; border-radius: 50%; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        
         .center-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: absolute; z-index: 1; }
         
         .center-content { position: relative; z-index: 5; text-align: center; text-shadow: 0 2px 5px #000; }
@@ -190,6 +197,7 @@
 
         <section id="tab-upgrade" class="tab-content">
             <h2 style="text-align:center;margin-bottom:15px;color:var(--accent); font-size: 2rem;">📈</h2>
+            
             <div class="upgrade-container">
                 <div class="upgrade-slots">
                     <div id="u-slot-left" class="u-slot" onclick="openItemSelect('left')">
@@ -200,12 +208,14 @@
                         <p>ВЫБЕРИ<br>ЦЕЛЬ</p>
                     </div>
                 </div>
+                
                 <div class="quick-chance-grid">
                     <button class="chance-btn" onclick="autoSelectTarget(50)">50%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(30)">30%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(20)">20%</button>
                     <button class="chance-btn" onclick="autoSelectTarget(10)">10%</button>
                 </div>
+
                 <div class="roulette-wrapper">
                     <div class="roulette-marker">▼</div>
                     <div class="spinning-ring" id="spinRing"></div>
@@ -220,6 +230,7 @@
                         </div>
                     </div>
                 </div>
+
                 <button id="upgrade-btn" class="upgrade-btn" disabled>ПРОКАЧАТЬ</button>
             </div>
         </section>
@@ -262,8 +273,7 @@
                 <input type="range" min="1" max="10" value="1" id="case-slider" oninput="updateSlider(this.value)">
             </div>
             
-            <div id="multi-roulette-container">
-                </div>
+            <div id="multi-roulette-container"></div>
 
             <div class="actions-grid">
                 <button id="btn-fast" class="main-action-btn btn-fast">⏩ БЫСТРО</button>
@@ -323,7 +333,7 @@
             const el={
                 bal:document.getElementById('balance'), cases:document.getElementById('cases-grid'), inv:document.getElementById('inventory-grid'), 
                 loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), 
-                mImg:document.getElementById('modal-case-img'), mPrice:document.getElementById('modal-case-price'), 
+                mPrice:document.getElementById('modal-case-price'), 
                 slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'),
                 popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'),
                 selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'),
@@ -336,7 +346,6 @@
                 sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'),
                 sellSliderContainer:document.getElementById('sell-slider-container'),
                 
-                // Мульти-рулетка
                 multiBox: document.getElementById('multi-roulette-container'),
                 btnFast: document.getElementById('btn-fast'),
                 btnSpin: document.getElementById('btn-spin')
@@ -410,10 +419,12 @@
             
             el.confirmSellBtn.onclick = async() => {
                 if(!sellingItem) return;
+                
                 if(['Rare', 'Mythical', 'Legendary', 'Immortal'].includes(sellingItem.rarity)) {
                     const confirmed = confirm(`Этот предмет редкий (${sellingItem.rarity}). Вы точно хотите продать его?`);
                     if(!confirmed) return;
                 }
+
                 const totalPrice = sellingItem.sell_price * sellCount;
                 const itemId = sellingItem.item_id;
                 el.sellModal.classList.add('hidden');
@@ -424,9 +435,8 @@
                 } catch(e) { load(); }
             }
 
-            // --- ОТКРЫТИЕ КЕЙСА (НОВАЯ ЛОГИКА) ---
             window.showOpenModal=()=>{
-                el.multiBox.style.display = 'none'; // Скрываем рулетки при открытии
+                el.multiBox.style.display = 'none'; 
                 el.multiBox.innerHTML = '';
                 
                 el.btnFast.disabled = false;
@@ -440,11 +450,9 @@
             
             window.updateSlider=(v)=>{
                 openCount=parseInt(v); el.sliderVal.innerText=openCount; 
-                // Обновляем текст на кнопках, если нужно, или просто цену
                 el.mPrice.innerText = formatBalance(selectedCase.price*openCount);
             }
 
-            // Функция запуска (fast или spin)
             async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount;
                 if(currentBal < price) return tg.showAlert("Мало звезд!");
@@ -465,20 +473,16 @@
                     upBal(currentBal - price);
 
                     if (mode === 'fast') {
-                        // БЫСТРО: Сразу попап
                         el.openModal.classList.add('hidden');
                         showResults(d.dropped);
                     } else {
-                        // КРУТИТЬ: Создаем N рулеток
                         el.multiBox.style.display = 'block';
                         el.multiBox.innerHTML = '';
                         
-                        // Генерируем строки
                         d.dropped.forEach((winItem, idx) => {
                             createRouletteRow(winItem, idx);
                         });
                         
-                        // Задержка перед показом результата (5.5 сек)
                         setTimeout(() => {
                              el.openModal.classList.add('hidden');
                              showResults(d.dropped);
@@ -492,7 +496,6 @@
             el.btnSpin.onclick = () => runOpenCase('spin');
 
             function createRouletteRow(winItem, index) {
-                // Создаем контейнер строки
                 const row = document.createElement('div');
                 row.className = 'case-roulette-row';
                 
@@ -502,7 +505,6 @@
                 const track = document.createElement('div');
                 track.className = 'roulette-track';
                 
-                // Наполняем ленту
                 const WIN_INDEX = 35;
                 for(let i=0; i<45; i++) {
                     let item = (i === WIN_INDEX) ? winItem : allItemsSorted[Math.floor(Math.random() * allItemsSorted.length)];
@@ -516,13 +518,11 @@
                 row.appendChild(track);
                 el.multiBox.appendChild(row);
                 
-                // Анимация
-                const CARD_WIDTH = 98; // 90px width + 8px margin
-                const offset = Math.floor(Math.random() * 60) - 30; // Рандом для живости
-                const containerWidth = el.multiBox.clientWidth || 350; // Fallback width
+                const CARD_WIDTH = 98; 
+                const offset = Math.floor(Math.random() * 60) - 30; 
+                const containerWidth = el.multiBox.clientWidth || 350; 
                 const scrollAmount = (WIN_INDEX * CARD_WIDTH) - (containerWidth / 2) + (CARD_WIDTH / 2) + offset;
 
-                // Задержка старта для красоты (каскад)
                 setTimeout(() => {
                     track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)";
                     track.style.transform = `translateX(-${scrollAmount}px)`;
@@ -537,11 +537,28 @@
                 
                 document.getElementById('drop-title').innerText = "🎉 ВЫПАЛО! 🎉";
                 
-                items.forEach((item, index)=>{
+                // --- НОВАЯ ЛОГИКА ГРУППИРОВКИ ---
+                const grouped = {};
+                items.forEach(item => {
+                    // Используем ID как ключ
+                    if (grouped[item.id]) {
+                        grouped[item.id].count++;
+                    } else {
+                        grouped[item.id] = { ...item, count: 1 };
+                    }
+                });
+                
+                const uniqueItems = Object.values(grouped);
+
+                uniqueItems.forEach((item, index)=>{
                     const div=document.createElement('div'); 
                     div.className=`drop-item rarity-${item.rarity}`; 
                     div.style.animationDelay = `${index * 0.1}s`; 
-                    div.innerHTML=`<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
+                    
+                    // Если больше 1 предмета, добавляем бейдж
+                    const countBadge = item.count > 1 ? `<div class="drop-quantity">x${item.count}</div>` : '';
+                    
+                    div.innerHTML=`${countBadge}<img src="${item.image_url}"><div class="case-name">${item.name}</div>`;
                     el.dropGrid.appendChild(div);
                     
                     if(index === 0 && item.sound_url && item.sound_url!=='-') { 
