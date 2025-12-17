@@ -30,7 +30,7 @@ app = web.Application()
 
 aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
-# ИЕРАРХИЯ РЕДКОСТИ ДЛЯ АПГРЕЙДА
+# --- ИЕРАРХИЯ РЕДКОСТИ (ВАЖНО!) ---
 RARITY_RANKS = {
     'Common': 1,
     'Uncommon': 2,
@@ -155,15 +155,11 @@ async def api_open_case(request):
         items = [force_dict(i, ITEM_KEYS) for i in raw_items]
         if not items: return web.json_response({"error": "Кейс пуст"}, status=400)
 
-        # --- НОВАЯ ЛОГИКА ШАНСОВ ---
-        rarity_map = await get_rarity_weights() # Получаем веса из БД
-        
-        # Если предмета нет в базе весов, даем вес 0 (не выпадет)
+        # ШАНСЫ ПО ВЕСАМ
+        rarity_map = await get_rarity_weights()
         weights = [rarity_map.get(item['rarity'], 0) for item in items]
         
-        # Если все веса 0 (ошибка конфига), ставим равные шансы
-        if sum(weights) == 0:
-            weights = [1] * len(items)
+        if sum(weights) == 0: weights = [1] * len(items)
 
         dropped = [random.choices(items, weights=weights, k=1)[0] for _ in range(count)]
         
@@ -244,7 +240,7 @@ async def api_upgrade(request):
         target_rank = RARITY_RANKS.get(target_item['rarity'], 0)
         
         if target_rank <= my_rank:
-            return web.json_response({"error": "Нельзя крафтить предмет такой же или меньшей редкости!"}, status=400)
+            return web.json_response({"error": "Нельзя апгрейдить на предмет ниже или такой же редкости!"}, status=400)
 
         chance = (my_item['price'] / target_item['price']) * 95
         if chance > 80: chance = 80
