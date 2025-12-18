@@ -31,7 +31,7 @@
             100% { box-shadow: 0 0 5px var(--glow-color), inset 0 0 5px var(--glow-color); border-color: var(--glow-color); }
         }
 
-        /* Анимация рук */
+        /* Анимация рук (КНБ) */
         @keyframes handShakeLeft { 
             0% { transform: rotate(0deg) translateY(0); } 
             100% { transform: rotate(-25deg) translateY(-10px); } 
@@ -39,6 +39,12 @@
         @keyframes handShakeRight { 
             0% { transform: scaleX(-1) rotate(0deg) translateY(0); } 
             100% { transform: scaleX(-1) rotate(-25deg) translateY(-10px); } 
+        }
+
+        /* Анимация ожидания (Чет/Нечет) */
+        @keyframes diceSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Loader */
@@ -276,9 +282,22 @@
         /* Hand Classes */
         .hand-left { display: inline-block; }
         .hand-right { display: inline-block; transform: scaleX(-1); /* Mirror for right side */ }
-
+        
         .hand-shaking-left { animation: handShakeLeft 0.5s infinite alternate ease-in-out; }
         .hand-shaking-right { animation: handShakeRight 0.5s infinite alternate ease-in-out; }
+
+        /* Classes for Dice/Spinner mode (No mirror) */
+        .hand-spinner {
+            display: inline-block;
+            transform: none !important; /* Force no mirror */
+            animation: diceSpin 1s linear infinite;
+        }
+        .hand-result-no-mirror {
+            display: inline-block;
+            transform: none !important;
+            font-size: 1.5rem; /* Smaller font for text like "Нечет" */
+            font-weight: 800;
+        }
 
         .vs-divider {
             position: absolute;
@@ -429,7 +448,7 @@
 
             <!-- БЛОК ЛУЧШИЙ ДРОП (ВСЕГДА ВИДЕН) -->
             <div id="prof-best-container" style="margin-top: 20px;">
-                <h3 style="margin-bottom: 10px; font-size: 1.1rem; color: #eee;">🏆 Лучший предмет</h3>
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem; color: #eee;">🏆 Лучший дроп</h3>
                 <div id="prof-best-drop"><div style="text-align:center; color:#555; padding:10px; font-size:0.9rem;">Нет предметов</div></div>
             </div>
 
@@ -878,7 +897,7 @@
                 } catch(e){}
             }
 
-            // --- VISUAL LOGIC FOR HANDS ---
+            // --- VISUAL LOGIC FOR GAMES ---
             function renderActiveGame(game) {
                 el.gamesLobby.style.display = 'none'; el.gameUi.style.display = 'flex';
                 
@@ -893,64 +912,77 @@
                 
                 el.avLeft.innerHTML = myPhoto ? `<img src="${myPhoto}">` : '👤';
                 el.nameLeft.innerText = "Вы";
-                
                 el.avRight.innerHTML = oppPhoto ? `<img src="${oppPhoto}">` : '👤';
                 el.nameRight.innerText = oppName;
 
-                // Hands Logic
-                // 1. Idle / Playing
-                if (game.status === 'open' || game.status === 'playing') {
-                    // My Hand
-                    if(myMove) {
-                        el.handLeft.className = "hand-left"; // No shake
-                        el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
-                    } else {
-                        el.handLeft.className = "hand-left hand-shaking-left";
-                        el.handLeft.innerText = "🤜";
-                    }
-
-                    // Opponent Hand (Always hidden until finish)
-                    el.handRight.className = "hand-right hand-shaking-right";
-                    el.handRight.innerText = "🤜"; 
-                    
-                    if (game.status === 'open') {
-                        el.gameStatus.innerText = "Ожидание соперника...";
-                        el.gameSpinner.style.display = 'block';
-                        el.gameControls.innerHTML = '';
-                        el.gameCancelBtn.style.display = isHost ? 'block' : 'none';
-                        el.gameExitBtn.style.display = 'none';
-                    } else {
-                        // Playing
-                        if (!myMove) {
-                            el.gameStatus.innerText = "Твой ход!";
-                            el.gameSpinner.style.display = 'none';
-                            el.gameCancelBtn.style.display = 'none';
-                            el.gameExitBtn.style.display = 'none';
-                            
-                            if(game.game_type === 'rps') {
-                                el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('rock')">🪨</button><button class="move-btn" onclick="sendMove('scissors')">✂️</button><button class="move-btn" onclick="sendMove('paper')">📄</button>`;
-                            } else {
-                                if (isHost) el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('1')">1</button><button class="move-btn" onclick="sendMove('2')">2</button>`;
-                                else el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('odd')">Нечет</button><button class="move-btn" onclick="sendMove('even')">Чет</button>`;
-                            }
+                // --- VISUALS BASED ON GAME TYPE ---
+                if (game.game_type === 'rps') {
+                    // RPS Logic: Hands + Mirroring
+                    if (game.status === 'open' || game.status === 'playing') {
+                        if(myMove) {
+                            el.handLeft.className = "hand-left"; 
+                            el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
                         } else {
-                            el.gameStatus.innerText = "Ждем ход соперника...";
-                            el.gameSpinner.style.display = 'block';
-                            el.gameControls.innerHTML = '';
-                            el.gameCancelBtn.style.display = 'none';
-                            el.gameExitBtn.style.display = 'none';
+                            el.handLeft.className = "hand-left hand-shaking-left";
+                            el.handLeft.innerText = "🤜";
                         }
+                        el.handRight.className = "hand-right hand-shaking-right"; // Mirrored shaking
+                        el.handRight.innerText = "🤜"; 
+                    } else { // Finished
+                        el.handLeft.className = "hand-left";
+                        el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
+                        el.handRight.className = "hand-right";
+                        el.handRight.innerText = GAME_EMOJIS[oppMove] || '✊';
                     }
                 } 
-                // 2. Finished
-                else if (game.status === 'finished') {
-                    // Reveal both
-                    el.handLeft.className = "hand-left";
-                    el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
-                    
-                    el.handRight.className = "hand-right";
-                    el.handRight.innerText = GAME_EMOJIS[oppMove] || '✊';
+                else { 
+                    // EVEN/ODD Logic: Spinner + No Mirroring
+                    if (game.status === 'open' || game.status === 'playing') {
+                        if(myMove) {
+                            el.handLeft.className = "hand-result-no-mirror"; // Just Text/Number
+                            el.handLeft.innerText = GAME_EMOJIS[myMove] || myMove;
+                        } else {
+                            el.handLeft.className = "hand-spinner";
+                            el.handLeft.innerText = "🎲";
+                        }
+                        el.handRight.className = "hand-spinner"; // No mirror spinner
+                        el.handRight.innerText = "🎲"; 
+                    } else { // Finished
+                        el.handLeft.className = "hand-result-no-mirror";
+                        el.handLeft.innerText = GAME_EMOJIS[myMove] || myMove;
+                        el.handRight.className = "hand-result-no-mirror";
+                        el.handRight.innerText = GAME_EMOJIS[oppMove] || oppMove;
+                    }
+                }
 
+                // --- UI CONTROLS ---
+                if (game.status === 'open') {
+                    el.gameStatus.innerText = "Ожидание соперника...";
+                    el.gameSpinner.style.display = 'block';
+                    el.gameControls.innerHTML = '';
+                    el.gameCancelBtn.style.display = isHost ? 'block' : 'none';
+                    el.gameExitBtn.style.display = 'none';
+                } else if (game.status === 'playing') {
+                    if (!myMove) {
+                        el.gameStatus.innerText = "Твой ход!";
+                        el.gameSpinner.style.display = 'none';
+                        el.gameCancelBtn.style.display = 'none';
+                        el.gameExitBtn.style.display = 'none';
+                        
+                        if(game.game_type === 'rps') {
+                            el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('rock')">🪨</button><button class="move-btn" onclick="sendMove('scissors')">✂️</button><button class="move-btn" onclick="sendMove('paper')">📄</button>`;
+                        } else {
+                            if (isHost) el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('1')">1</button><button class="move-btn" onclick="sendMove('2')">2</button>`;
+                            else el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('odd')">Нечет</button><button class="move-btn" onclick="sendMove('even')">Чет</button>`;
+                        }
+                    } else {
+                        el.gameStatus.innerText = "Ждем ход соперника...";
+                        el.gameSpinner.style.display = 'block';
+                        el.gameControls.innerHTML = '';
+                        el.gameCancelBtn.style.display = 'none';
+                        el.gameExitBtn.style.display = 'none';
+                    }
+                } else if (game.status === 'finished') {
                     let winText;
                     if(game.winner_id === 0) winText = "🤝 НИЧЬЯ";
                     else if((isHost && game.winner_id === game.host_id) || (!isHost && game.winner_id === game.guest_id)) winText = "🏆 ТЫ ВЫИГРАЛ!";
