@@ -38,7 +38,6 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # Миграции
         try: await db.execute("ALTER TABLE games ADD COLUMN wager_mutations TEXT DEFAULT ''")
         except: pass
         try: await db.execute("ALTER TABLE games ADD COLUMN guest_mutations TEXT DEFAULT ''")
@@ -377,6 +376,12 @@ async def sell_specific_item_stack(uid, iid, muts, n, price):
         if price>0: await db.execute("UPDATE users SET balance=balance+? WHERE id=?",(price,pk))
         await db.commit(); return True
 async def add_item_to_inventory(uid, item): await add_items_with_mutations(uid, [item])
+async def add_items_with_mutations(uid, items):
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())[0]
+        data = [(pk, i.get('id'), ",".join(i.get('mutations',[]))) for i in items]
+        await db.executemany("INSERT INTO inventory (user_id, item_id, mutations) VALUES (?,?,?)", data)
+        await db.commit()
 async def admin_get_all_users(): 
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
