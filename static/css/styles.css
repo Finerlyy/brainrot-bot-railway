@@ -128,7 +128,8 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .upgrade-container { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 10px; }
 .upgrade-slots { display: flex; align-items: center; gap: 15px; width: 100%; justify-content: center; }
 .u-slot { 
-    width: 100px; height: 130px; 
+    width: 100px; 
+    aspect-ratio: 1 / 1; /* КВАДРАТНЫЕ СЛОТЫ */
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.1); 
     border-radius: 20px; 
@@ -139,7 +140,7 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 }
 .u-slot:active { transform: scale(0.96); }
 .u-slot.selected { border: 1px solid var(--accent); color: #fff; background: rgba(255, 215, 0, 0.05); }
-.u-slot img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; }
+.u-slot img { width: 60%; height: 60%; object-fit: contain; margin-bottom: 8px; }
 .u-arrow { font-size: 1.2rem; color: #333; }
 
 .quick-chance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 320px; }
