@@ -1,5 +1,3 @@
---- START OF FILE admin_bot.py ---
-
 import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
@@ -16,6 +14,7 @@ from database import (
     admin_get_user_inventory_detailed, admin_update_inventory_mutation
 )
 
+# Вставьте сюда токен админ-бота (можно тот же, что и у основного, если хотите одного бота)
 TOKEN = "8547237995:AAEj8wYaQUXCWpBpjBC5CQI_pzGgYF4Fpog"
 
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +31,7 @@ def force_dict(item):
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     txt = (
-        "👨‍💻 <b>ADMIN PANEL v6.5 (Clean)</b>\n\n"
+        "👨‍💻 <b>ADMIN PANEL (No Incubator)</b>\n\n"
         "<b>Игроки:</b>\n"
         "/users, /ip [id], /give [id] [sum]\n"
         "/checkinv [id] - Инвентарь с ID предметов\n"
@@ -69,6 +68,7 @@ async def cmd_checkinv(message: types.Message):
 @dp.message(Command("setmut"))
 async def cmd_setmut(message: types.Message):
     try:
+        # /setmut 123 Galaxy,Gold
         args = message.text.split(maxsplit=2)
         inv_id = int(args[1])
         new_muts = args[2] if len(args) > 2 else ""
@@ -77,6 +77,7 @@ async def cmd_setmut(message: types.Message):
         await message.answer(f"✅ Предмет #{inv_id} обновлен. Мутации: {new_muts}")
     except: await message.answer("Ошибка. /setmut [inv_unique_id] [mut1,mut2] (или пусто для сброса)")
 
+# --- УПРАВЛЕНИЕ ШАНСАМИ ---
 @dp.message(Command("chances"))
 async def cmd_chances(message: types.Message):
     weights = await get_rarity_weights()
@@ -96,6 +97,7 @@ async def cmd_setchance(message: types.Message):
         await message.answer(f"✅ Вес для <b>{rarity}</b> установлен на <b>{weight}</b>", parse_mode="HTML")
     except: await message.answer("Ошибка. /setchance [Rarity] [Weight]")
 
+# --- ОСТАЛЬНОЕ ---
 @dp.message(Command("cases"))
 async def cmd_cases(message: types.Message):
     cases = await get_all_cases()

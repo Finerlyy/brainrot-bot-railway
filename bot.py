@@ -1,8 +1,6 @@
 import logging
 import random
 import os
-import time
-from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo
@@ -73,7 +71,7 @@ def process_inventory(raw_inv):
         i_dict['sell_price'] = max(1, int(i_dict.get('price', 0) * mult * sell_mult))
         inventory.append(i_dict)
     
-    # Сортировка: Сначала самые редкие, потом дорогие
+    # Сортировка: Редкость -> Цена
     inventory.sort(key=lambda x: (RARITY_RANKS.get(x['rarity'], 0), x['price']), reverse=True)
     return inventory
 
@@ -102,7 +100,6 @@ async def api_get_data(request):
 
         raw_all_items = await get_all_items_sorted()
         all_items = [force_dict(i, ITEM_KEYS) for i in raw_all_items]
-        # Сортировка для апгрейда
         all_items.sort(key=lambda x: (RARITY_RANKS.get(x['rarity'], 0), x['price']), reverse=True)
 
         return web.json_response({
