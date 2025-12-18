@@ -7,19 +7,15 @@ from database import init_db
 
 async def main():
     await init_db()
-    
-    # Запускаем веб-сервер
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     await site.start()
     print("🌍 Web server started on port 8080")
 
-    # Удаляем вебхуки, если были
     await main_bot.delete_webhook(drop_pending_updates=True)
     await admin_bot.delete_webhook(drop_pending_updates=True)
 
-    # Запускаем поллинг обоих ботов
     await asyncio.gather(
         main_dp.start_polling(main_bot),
         admin_dp.start_polling(admin_bot)
