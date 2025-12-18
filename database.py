@@ -12,7 +12,6 @@ async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row 
         
-        # БАЛАНС 0, last_claim для бонуса
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 0, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT, last_claim INTEGER DEFAULT 0)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
@@ -53,7 +52,6 @@ async def init_db():
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
         await db.commit()
         
-        # --- КЕЙСЫ ---
         case_name = '🧠 Brainrot Case'
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, 300, 'https://i.ibb.co/mCZ9d327/1000002237.jpg'))
         
@@ -65,7 +63,6 @@ async def init_db():
         async with db.execute("SELECT id FROM cases WHERE name = ?", (free_case_name,)) as cur:
             free_case_id = (await cur.fetchone())['id']
             
-        # Основной кейс
         async with db.execute("SELECT count(*) FROM items WHERE case_id = ?", (main_case_id,)) as cur:
             if (await cur.fetchone())[0] == 0:
                 items_data = [
@@ -80,7 +77,6 @@ async def init_db():
                 for i in items_data:
                     await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
         
-        # Бесплатный кейс
         async with db.execute("SELECT count(*) FROM items WHERE case_id = ?", (free_case_id,)) as cur:
             if (await cur.fetchone())[0] == 0:
                 items_data_free = [
@@ -111,7 +107,6 @@ async def get_user(tg_id, username):
         return user
 
 async def get_best_item_db(user_pk):
-    """Поиск лучшего предмета"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         sql_best = """
@@ -146,7 +141,7 @@ async def claim_free_case_key(tg_id):
             last = u['last_claim']
         
         now = int(time.time())
-        if now - last < 172800: # 48 часов
+        if now - last < 172800:
             return "too_early"
         
         async with db.execute("SELECT id FROM cases WHERE name = '🎁 Free Box'") as cur:
@@ -176,6 +171,18 @@ async def get_inventory_grouped(user_id_tg):
         """
         async with db.execute(sql, (user_pk,)) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
+
+async def get_leaderboard():
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        sql="SELECT username, photo_url, tg_id, balance, (balance + COALESCE((SELECT SUM(items.price) FROM inventory JOIN items ON inventory.item_id=items.id WHERE inventory.user_id=users.id),0)) as net_worth FROM users WHERE tg_id!=0 ORDER BY net_worth DESC LIMIT 10"
+        async with db.execute(sql) as c: return [dict(r) for r in await c.fetchall()]
+
+async def get_open_games():
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        sql="SELECT g.*, u.username as host_name, i.name as item_name, i.image_url as item_img, i.rarity as item_rarity FROM games g JOIN users u ON g.host_id=u.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE g.status='open' ORDER BY g.id DESC"
+        async with db.execute(sql) as c: return [dict(r) for r in await c.fetchall()]
 
 # --- ИГРЫ ---
 
