@@ -203,9 +203,9 @@ async def cmd_u(m: types.Message):
 @dp.message(Command("ip"))
 async def cmd_ip(m: types.Message):
     try: ip = await get_user_ip(int(m.text.split()[1])); await m.answer(f"IP: {ip}")
-    except: await m.answer("Err")
+    except: await m.answer("Error")
 
 @dp.message(Command("give"))
 async def cmd_g(m: types.Message):
     try: args = m.text.split(); await update_user_balance(int(args[1]), int(args[2])); await m.answer("✅")
-    except: await m.answer("Err")
+    except: await m.answer("Error")
