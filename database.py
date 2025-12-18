@@ -17,7 +17,7 @@ async def init_db():
         await db.execute("CREATE TABLE IF NOT EXISTS inventory (rowid INTEGER PRIMARY KEY, user_id INTEGER, item_id INTEGER, mutations TEXT DEFAULT '', FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (item_id) REFERENCES items(id))")
         await db.execute("CREATE TABLE IF NOT EXISTS keys (user_id INTEGER, case_id INTEGER, quantity INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (case_id) REFERENCES cases(id), UNIQUE(user_id, case_id))")
         
-        # Таблица игр с полями для мутаций обоих игроков
+        # Обновленная таблица игр
         await db.execute("""
             CREATE TABLE IF NOT EXISTS games (
                 id INTEGER PRIMARY KEY, 
@@ -38,7 +38,7 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
-        # Миграции на случай старой БД
+        # Миграции
         try: await db.execute("ALTER TABLE games ADD COLUMN wager_mutations TEXT DEFAULT ''")
         except: pass
         try: await db.execute("ALTER TABLE games ADD COLUMN guest_mutations TEXT DEFAULT ''")
@@ -71,7 +71,7 @@ async def init_db():
                     await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
                 await db.commit()
 
-# --- ФУНКЦИИ ---
+# --- ФУНКЦИИ ПОЛЬЗОВАТЕЛЯ ---
 
 async def get_user(tg_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -105,7 +105,7 @@ async def get_inventory_grouped(user_id_tg):
         async with db.execute(sql, (user_pk,)) as cursor:
             return [dict(row) for row in await cursor.fetchall()]
 
-# --- ИГРЫ ---
+# --- ИГРОВАЯ ЛОГИКА ---
 
 async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_id=None):
     async with aiosqlite.connect(DB_NAME) as db:
@@ -207,6 +207,47 @@ async def check_game_result(game_id):
         await db.commit()
         return "finished"
 
+async def make_move(gid, uid, move):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
+        async with db.execute("SELECT * FROM games WHERE id=?",(gid,)) as c: game=await c.fetchone()
+        if pk==game['host_id']: await db.execute("UPDATE games SET host_move=? WHERE id=?",(move,gid))
+        else: await db.execute("UPDATE games SET guest_move=? WHERE id=?",(move,gid))
+        await db.commit()
+    return await check_game_result(gid)
+
+async def get_my_active_game(uid):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
+        # ОБНОВЛЕННЫЙ SQL ЗАПРОС (С ФОТОГРАФИЯМИ)
+        sql="""
+            SELECT g.*, 
+            u1.username as host_name, u1.photo_url as host_photo,
+            u2.username as guest_name, u2.photo_url as guest_photo,
+            u1.tg_id as host_tg_id, u2.tg_id as guest_tg_id, 
+            i.name as item_name, i.image_url as item_img 
+            FROM games g 
+            LEFT JOIN users u1 ON g.host_id=u1.id 
+            LEFT JOIN users u2 ON g.guest_id=u2.id 
+            LEFT JOIN items i ON g.wager_item_id=i.id 
+            WHERE (g.host_id=? OR g.guest_id=?) 
+            ORDER BY g.id DESC LIMIT 1
+        """
+        async with db.execute(sql,(pk,pk)) as c: r=await c.fetchone(); return dict(r) if r else None
+
+async def cancel_game_db(gid, uid):
+    async with aiosqlite.connect(DB_NAME) as db:
+        db.row_factory = sqlite3.Row
+        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
+        async with db.execute("SELECT * FROM games WHERE id=?",(gid,)) as c: game=await c.fetchone()
+        if not game: return "err"
+        if game['status']=='finished': await db.execute("DELETE FROM games WHERE id=?",(gid,)); await db.commit(); return "ok"
+        if game['wager_type']=='balance': await db.execute("UPDATE users SET balance=balance+? WHERE id=?",(game['wager_amount'],pk))
+        else: await db.execute("INSERT INTO inventory (user_id, item_id, mutations) VALUES (?,?,?)",(pk,game['wager_item_id'],game['wager_mutations']))
+        await db.execute("DELETE FROM games WHERE id=?",(gid,)); await db.commit(); return "ok"
+
 # --- ПРОФИЛЬ ---
 
 async def get_public_profile(target_tg_id):
@@ -217,7 +258,6 @@ async def get_public_profile(target_tg_id):
         db.row_factory = sqlite3.Row
         user_pk = user['id']
         
-        # Получаем полный инвентарь
         sql_inv = """
             SELECT i.id as item_id, i.name, i.rarity, i.image_url, i.price, inv.mutations, COUNT(inv.item_id) as quantity
             FROM inventory AS inv JOIN items AS i ON inv.item_id = i.id 
@@ -229,7 +269,6 @@ async def get_public_profile(target_tg_id):
         sql_sum = "SELECT SUM(i.price) FROM inventory inv JOIN items i ON inv.item_id = i.id WHERE inv.user_id = ?"
         async with db.execute(sql_sum, (user_pk,)) as cur: inv_val = (await cur.fetchone())[0] or 0
 
-        # Лучший предмет
         sql_best = "SELECT i.name, i.price, i.image_url, i.rarity FROM inventory inv JOIN items i ON inv.item_id = i.id WHERE inv.user_id = ? ORDER BY i.price DESC LIMIT 1"
         best_item = None
         async with db.execute(sql_best, (user_pk,)) as cur:
@@ -241,6 +280,10 @@ async def get_public_profile(target_tg_id):
     user_dict['net_worth'] = user['balance'] + inv_val
     user_dict['inventory'] = inventory
     return user_dict
+
+async def get_profile_stats(uid): 
+    # Заглушка, т.к. статистика теперь собирается в api_get_data
+    return {"best_item":None, "inv_value":0} 
 
 # --- BASIC FUNCS ---
 async def get_all_cases():
@@ -300,10 +343,6 @@ async def delete_one_item_by_id(uid, iid):
         async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())[0]
         await db.execute("DELETE FROM inventory WHERE rowid IN (SELECT rowid FROM inventory WHERE user_id=? AND item_id=? LIMIT 1)",(pk,iid)); await db.commit()
 async def add_item_to_inventory(uid, item): await add_items_with_mutations(uid, [item])
-async def get_profile_stats(uid): 
-    # Эта функция больше не нужна для "Best Item", так как мы берем его в api_get_data через отдельный запрос,
-    # но оставим заглушку чтобы не ломать старый код если где-то есть вызов
-    return {"best_item":None, "inv_value":0} 
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -314,31 +353,6 @@ async def get_open_games():
         db.row_factory = sqlite3.Row
         sql="SELECT g.*, u.username as host_name, i.name as item_name, i.image_url as item_img, i.rarity as item_rarity FROM games g JOIN users u ON g.host_id=u.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE g.status='open' ORDER BY g.id DESC"
         async with db.execute(sql) as c: return [dict(r) for r in await c.fetchall()]
-async def make_move(gid, uid, move):
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = sqlite3.Row
-        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
-        async with db.execute("SELECT * FROM games WHERE id=?",(gid,)) as c: game=await c.fetchone()
-        if pk==game['host_id']: await db.execute("UPDATE games SET host_move=? WHERE id=?",(move,gid))
-        else: await db.execute("UPDATE games SET guest_move=? WHERE id=?",(move,gid))
-        await db.commit()
-    return await check_game_result(gid)
-async def get_my_active_game(uid):
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = sqlite3.Row
-        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
-        sql="SELECT g.*, u1.username as host_name, u2.username as guest_name, u1.tg_id as host_tg_id, u2.tg_id as guest_tg_id, i.name as item_name, i.image_url as item_img FROM games g LEFT JOIN users u1 ON g.host_id=u1.id LEFT JOIN users u2 ON g.guest_id=u2.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE (g.host_id=? OR g.guest_id=?) ORDER BY g.id DESC LIMIT 1"
-        async with db.execute(sql,(pk,pk)) as c: r=await c.fetchone(); return dict(r) if r else None
-async def cancel_game_db(gid, uid):
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = sqlite3.Row
-        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c: pk=(await c.fetchone())['id']
-        async with db.execute("SELECT * FROM games WHERE id=?",(gid,)) as c: game=await c.fetchone()
-        if not game: return "err"
-        if game['status']=='finished': await db.execute("DELETE FROM games WHERE id=?",(gid,)); await db.commit(); return "ok"
-        if game['wager_type']=='balance': await db.execute("UPDATE users SET balance=balance+? WHERE id=?",(game['wager_amount'],pk))
-        else: await db.execute("INSERT INTO inventory (user_id, item_id, mutations) VALUES (?,?,?)",(pk,game['wager_item_id'],game['wager_mutations']))
-        await db.execute("DELETE FROM games WHERE id=?",(gid,)); await db.commit(); return "ok"
 
 # Admin Funcs
 async def add_keys_to_user(uid, cid, n):

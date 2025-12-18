@@ -31,6 +31,16 @@
             100% { box-shadow: 0 0 5px var(--glow-color), inset 0 0 5px var(--glow-color); border-color: var(--glow-color); }
         }
 
+        /* Анимация рук */
+        @keyframes handShakeLeft { 
+            0% { transform: rotate(0deg) translateY(0); } 
+            100% { transform: rotate(-25deg) translateY(-10px); } 
+        }
+        @keyframes handShakeRight { 
+            0% { transform: scaleX(-1) rotate(0deg) translateY(0); } 
+            100% { transform: scaleX(-1) rotate(-25deg) translateY(-10px); } 
+        }
+
         /* Loader */
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         .spinner { width: 45px; height: 45px; border: 4px solid rgba(255,255,255,0.05); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 0.8s ease-in-out infinite; }
@@ -138,7 +148,7 @@
         .upgrade-slots { display: flex; align-items: center; gap: 15px; width: 100%; justify-content: center; }
         .u-slot { 
             width: 100px; 
-            aspect-ratio: 1 / 1; /* КВАДРАТНЫЕ СЛОТЫ */
+            aspect-ratio: 1 / 1; 
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.1); 
             border-radius: 20px; 
@@ -208,14 +218,77 @@
         .drop-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; animation: popItem 0.6s ease-out forwards; position: relative; }
         .drop-item img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
         
-        /* Games */
+        /* Games & Table */
         .games-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .game-card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
         .game-card:active { transform: scale(0.98); background: #26262b; }
         .game-type-icon { font-size: 2rem; margin-right: 15px; background: rgba(255,255,255,0.05); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .active-game-ui { display:none; flex-direction: column; gap: 20px; align-items: center; justify-content: center; height: 100%; text-align: center; }
-        .game-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; }
-        .move-btn { font-size: 2.5rem; padding: 25px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .active-game-ui { display:none; flex-direction: column; gap: 10px; align-items: center; justify-content: flex-start; height: 100%; text-align: center; padding-top: 10px; }
+        .game-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; margin-top: 10px; }
+        .move-btn { font-size: 2.5rem; padding: 20px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .move-btn:active { transform: scale(0.95); background: #333; border-color: var(--accent); }
+
+        /* GAME TABLE STYLES */
+        .game-table-container {
+            width: 95%;
+            max-width: 400px;
+            background: #252529;
+            border: 4px solid #3a3a40;
+            border-radius: 40px;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 200px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+        
+        .player-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%;
+            position: relative;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #444;
+            border: 2px solid var(--accent);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .player-name { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; }
+
+        .hand-wrapper {
+            font-size: 3.5rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hand Classes */
+        .hand-left { display: inline-block; }
+        .hand-right { display: inline-block; transform: scaleX(-1); /* Mirror for right side */ }
+
+        .hand-shaking-left { animation: handShakeLeft 0.5s infinite alternate ease-in-out; }
+        .hand-shaking-right { animation: handShakeRight 0.5s infinite alternate ease-in-out; }
+
+        .vs-divider {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 900;
+            color: rgba(255,255,255,0.1);
+            font-size: 2rem;
+        }
         
         /* Rarities */
         .rarity-Common { border-color: #666; } 
@@ -262,11 +335,38 @@
 
         <section id="tab-games" class="tab-content">
             <div id="active-game-ui" class="active-game-ui">
+                <h2 id="game-status-text" style="font-size: 1.1rem; margin-bottom: 10px;">Ожидание...</h2>
+                
+                <!-- ИГРОВОЙ СТОЛ -->
+                <div class="game-table-container">
+                    <div class="vs-divider">VS</div>
+                    
+                    <!-- ЛЕВАЯ СТОРОНА (ВЫ) -->
+                    <div class="player-zone" id="zone-left">
+                        <div class="player-avatar" id="avatar-left">👤</div>
+                        <div class="player-name" id="name-left">Вы</div>
+                        <div class="hand-wrapper">
+                            <span id="hand-left" class="hand-left">🤜</span>
+                        </div>
+                    </div>
+
+                    <!-- ПРАВАЯ СТОРОНА (ПРОТИВНИК) -->
+                    <div class="player-zone" id="zone-right">
+                        <div class="player-avatar" id="avatar-right">👤</div>
+                        <div class="player-name" id="name-right">Соперник</div>
+                        <div class="hand-wrapper">
+                            <span id="hand-right" class="hand-right">🤜</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="game-loading-spinner" class="spinner" style="display:none; margin-bottom:20px;"></div>
-                <h2 id="game-status-text">Ожидание...</h2>
                 <div id="game-controls" class="game-controls"></div>
-                <button id="game-exit-btn" class="btn-secondary-danger" onclick="exitGame()">Выйти</button>
-                <button id="game-cancel-btn" class="btn-secondary-danger" style="display:none" onclick="cancelActiveGame()">⛔ Отменить</button>
+                
+                <div style="margin-top: 15px; width: 100%; display: flex; justify-content: center; gap: 10px;">
+                    <button id="game-exit-btn" class="btn-secondary-danger" onclick="exitGame()">Выйти</button>
+                    <button id="game-cancel-btn" class="btn-secondary-danger" style="display:none" onclick="cancelActiveGame()">⛔ Отменить</button>
+                </div>
             </div>
 
             <div id="games-lobby">
@@ -327,15 +427,15 @@
                 <div class="stat-card"><span class="stat-val" id="prof-days">0</span><span class="stat-label">Дней в игре</span></div>
             </div>
 
-            <!-- БЛОК ЛУЧШИЙ ДРОП (Вернули) -->
+            <!-- БЛОК ЛУЧШИЙ ДРОП (ВСЕГДА ВИДЕН) -->
             <div id="prof-best-container" style="margin-top: 20px;">
                 <h3 style="margin-bottom: 10px; font-size: 1.1rem; color: #eee;">🏆 Лучший предмет</h3>
                 <div id="prof-best-drop"><div style="text-align:center; color:#555; padding:10px; font-size:0.9rem;">Нет предметов</div></div>
             </div>
 
-            <!-- БЛОК ИНВЕНТАРЯ ДРУГОГО ИГРОКА (Скрыт по умолчанию) -->
+            <!-- БЛОК ИНВЕНТАРЯ ЧУЖОГО (С КНОПКОЙ) -->
             <div id="prof-inv-container" style="display: none; margin-top: 20px;">
-                <button id="btn-view-prof-inv" class="main-action-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px;">🎒 Посмотреть инвентарь</button>
+                <button id="btn-view-prof-inv" class="main-action-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px;">🎒 Инвентарь</button>
                 <div id="prof-inventory" class="inventory-grid" style="display: none;"></div>
             </div>
         </section>
@@ -496,6 +596,8 @@
         const VISUAL_WEIGHTS = {'Common': 1000, 'Uncommon': 500, 'Rare': 200, 'Mythical': 50, 'Legendary': 10, 'Immortal': 3, 'Secret': 1};
         const MUT_EMOJIS = {'Gold':'🥇','Diamond':'💎','Bloodrot':'🩸','Candy':'🍬','Rainbow':'🌈','Galaxy':'🌌'};
 
+        const GAME_EMOJIS = { 'rock': '🪨', 'scissors': '✂️', 'paper': '📄', '1': '1', '2': '2', 'odd': 'Нечет', 'even': 'Чет' };
+
         let selGameType = 'rps';
         let activeGameId = null;
         let wagerType = 'money';
@@ -512,23 +614,20 @@
 
         window.closeModal=function(id){document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('hidden');}
 
-        // --- УНИВЕРСАЛЬНАЯ ФУНКЦИЯ СОРТИРОВКИ ---
         function sortItems(items) {
             return items.sort((a,b) => {
                 let rA = RARITY_ORDER[a.rarity] || 0;
                 let rB = RARITY_ORDER[b.rarity] || 0;
-                if (rB !== rA) return rB - rA; // Сначала по редкости (по убыванию)
-                return b.price - a.price; // Потом по цене
+                if (rB !== rA) return rB - rA; 
+                return b.price - a.price; 
             });
         }
 
-        // --- ГЕНЕРАЦИЯ HTML КАРТОЧКИ ПРЕДМЕТА ---
         function createItemCardHTML(item, isClickable=true, onClickAction=null) {
             const div = document.createElement('div'); 
             div.className = `item-card rarity-${item.rarity}`;
             
             let mutsHtml = '';
-            // Проверяем мутации
             let mList = item.muts_list || [];
             if(!mList.length && item.mutations && Array.isArray(item.mutations)) mList = item.mutations;
             else if(!mList.length && typeof item.mutations === 'string' && item.mutations) mList = item.mutations.split(',').filter(x=>x);
@@ -544,9 +643,7 @@
                 mutsHtml += '</div>';
             }
             
-            // Цена продажи или базовая цена
             let priceDisplay = item.sell_price ? item.sell_price : item.price;
-
             let sellBtnHtml = '';
             if(item.sell_price && isClickable && !onClickAction) {
                 sellBtnHtml = `<button class="sell-btn" onclick="openSellModal(${item.item_id}, '${mList.join(',')}')">Продать: <span>⭐️ ${formatBalance(priceDisplay)}</span></button>`;
@@ -555,7 +652,6 @@
             }
 
             let qtyHtml = item.quantity > 0 ? `<span class="item-quantity">x${item.quantity}</span>` : '';
-
             div.innerHTML = `${mutsHtml}${qtyHtml}<img src="${item.image_url}" class="item-img"><div class="case-name">${item.name}</div>${sellBtnHtml}`;
 
             if(isClickable) {
@@ -567,7 +663,6 @@
             }
             return div;
         }
-
 
         document.addEventListener('DOMContentLoaded', () => {
             const tg = window.Telegram.WebApp; tg.expand();
@@ -594,6 +689,14 @@
                 gameExitBtn: document.getElementById('game-exit-btn'),
                 gameCancelBtn: document.getElementById('game-cancel-btn'),
                 
+                // Game Visuals
+                avLeft: document.getElementById('avatar-left'),
+                nameLeft: document.getElementById('name-left'),
+                handLeft: document.getElementById('hand-left'),
+                avRight: document.getElementById('avatar-right'),
+                nameRight: document.getElementById('name-right'),
+                handRight: document.getElementById('hand-right'),
+
                 loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), mPrice:document.getElementById('modal-case-price'), slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'), selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'), uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'), uBtn:document.getElementById('upgrade-btn'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'), sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'), sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'), sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'), sellSliderContainer:document.getElementById('sell-slider-container'), multiBox: document.getElementById('multi-roulette-container'), btnFast: document.getElementById('btn-fast'), btnSpin: document.getElementById('btn-spin'), profUser: document.getElementById('profile-username'), profBal: document.getElementById('prof-balance'), profNet: document.getElementById('prof-networth'), profCases: document.getElementById('prof-cases'), profDays: document.getElementById('prof-days'), 
                 profInventory: document.getElementById('prof-inventory'), 
                 profInvContainer: document.getElementById('prof-inv-container'),
@@ -623,6 +726,7 @@
             function renderAll(d, isInitial) {
                 if(d.user) {
                     upBal(d.user.balance);
+                    // Обновляем "свой профиль" только если мы сейчас не смотрим чужой
                     if(document.getElementById('back-to-my-profile').style.display === 'none') {
                         renderProfile(d.user, d.inventory, true, d.user.best_item);
                     }
@@ -705,7 +809,6 @@
                 } catch(e){ console.error(e); }
             }
 
-            // --- POLLING ---
             async function autoUpdate(){
                 if(el.popup.classList.contains('active') || !el.openModal.classList.contains('hidden') || el.loader.style.display !== 'none') return;
                 if(activeGameId) pollGameStatus(); else updateGamesList(); 
@@ -719,7 +822,6 @@
             }
             setInterval(autoUpdate, 2000); 
 
-            // --- GAME LOGIC ---
             window.showCreateGameModal = () => { document.getElementById('create-game-modal').classList.remove('hidden'); setWagerType('money'); }
             window.setWagerType = (type) => {
                 wagerType = type;
@@ -775,41 +877,93 @@
                     if(d.game) { activeGameId = d.game.id; renderActiveGame(d.game); } else { if(activeGameId) { activeGameId = null; exitGame(); } }
                 } catch(e){}
             }
+
+            // --- VISUAL LOGIC FOR HANDS ---
             function renderActiveGame(game) {
                 el.gamesLobby.style.display = 'none'; el.gameUi.style.display = 'flex';
+                
                 let isHost = (game.host_tg_id === userId);
                 let myMove = isHost ? game.host_move : game.guest_move;
+                let oppMove = isHost ? game.guest_move : game.host_move;
                 let oppName = isHost ? (game.guest_name || "Ожидание...") : game.host_name;
-                let wagerText = game.wager_type === 'balance' ? `${game.wager_amount} ⭐` : `📦 ${game.item_name}`;
-                el.gameSpinner.style.display = 'none'; el.gameControls.innerHTML = ''; el.gameCancelBtn.style.display = 'none'; el.gameExitBtn.style.display = 'block';
-                if (game.status === 'open') {
-                    el.gameStatus.innerHTML = `Ожидание соперника...<br><small style='color:#888;font-weight:400'>Ставка: ${wagerText}</small>`;
-                    el.gameSpinner.style.display = 'block';
-                    if(isHost) el.gameCancelBtn.style.display = 'block'; 
-                    el.gameExitBtn.style.display = 'none'; 
-                } else if (game.status === 'playing') {
-                    if (!myMove) {
-                        el.gameStatus.innerHTML = `Твой ход!<br><small style='color:#aaa'>Против: ${oppName}</small>`;
-                        if(game.game_type === 'rps') {
-                            el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('rock')">🪨</button><button class="move-btn" onclick="sendMove('scissors')">✂️</button><button class="move-btn" onclick="sendMove('paper')">📄</button>`;
-                        } else {
-                            if (isHost) el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('1')">1</button><button class="move-btn" onclick="sendMove('2')">2</button>`;
-                            else el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('odd')">Нечет</button><button class="move-btn" onclick="sendMove('even')">Чет</button>`;
-                        }
+                
+                // Set Avatars
+                let myPhoto = isHost ? game.host_photo : game.guest_photo;
+                let oppPhoto = isHost ? game.guest_photo : game.host_photo;
+                
+                el.avLeft.innerHTML = myPhoto ? `<img src="${myPhoto}">` : '👤';
+                el.nameLeft.innerText = "Вы";
+                
+                el.avRight.innerHTML = oppPhoto ? `<img src="${oppPhoto}">` : '👤';
+                el.nameRight.innerText = oppName;
+
+                // Hands Logic
+                // 1. Idle / Playing
+                if (game.status === 'open' || game.status === 'playing') {
+                    // My Hand
+                    if(myMove) {
+                        el.handLeft.className = "hand-left"; // No shake
+                        el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
                     } else {
-                        el.gameStatus.innerHTML = `Ждем ход соперника...<br><small style='color:#aaa'>Против: ${oppName}</small>`;
-                        el.gameSpinner.style.display = 'block';
-                        el.gameExitBtn.style.display = 'none'; 
+                        el.handLeft.className = "hand-left hand-shaking-left";
+                        el.handLeft.innerText = "🤜";
                     }
-                } else if (game.status === 'finished') {
+
+                    // Opponent Hand (Always hidden until finish)
+                    el.handRight.className = "hand-right hand-shaking-right";
+                    el.handRight.innerText = "🤜"; 
+                    
+                    if (game.status === 'open') {
+                        el.gameStatus.innerText = "Ожидание соперника...";
+                        el.gameSpinner.style.display = 'block';
+                        el.gameControls.innerHTML = '';
+                        el.gameCancelBtn.style.display = isHost ? 'block' : 'none';
+                        el.gameExitBtn.style.display = 'none';
+                    } else {
+                        // Playing
+                        if (!myMove) {
+                            el.gameStatus.innerText = "Твой ход!";
+                            el.gameSpinner.style.display = 'none';
+                            el.gameCancelBtn.style.display = 'none';
+                            el.gameExitBtn.style.display = 'none';
+                            
+                            if(game.game_type === 'rps') {
+                                el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('rock')">🪨</button><button class="move-btn" onclick="sendMove('scissors')">✂️</button><button class="move-btn" onclick="sendMove('paper')">📄</button>`;
+                            } else {
+                                if (isHost) el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('1')">1</button><button class="move-btn" onclick="sendMove('2')">2</button>`;
+                                else el.gameControls.innerHTML = `<button class="move-btn" onclick="sendMove('odd')">Нечет</button><button class="move-btn" onclick="sendMove('even')">Чет</button>`;
+                            }
+                        } else {
+                            el.gameStatus.innerText = "Ждем ход соперника...";
+                            el.gameSpinner.style.display = 'block';
+                            el.gameControls.innerHTML = '';
+                            el.gameCancelBtn.style.display = 'none';
+                            el.gameExitBtn.style.display = 'none';
+                        }
+                    }
+                } 
+                // 2. Finished
+                else if (game.status === 'finished') {
+                    // Reveal both
+                    el.handLeft.className = "hand-left";
+                    el.handLeft.innerText = GAME_EMOJIS[myMove] || '✊';
+                    
+                    el.handRight.className = "hand-right";
+                    el.handRight.innerText = GAME_EMOJIS[oppMove] || '✊';
+
                     let winText;
                     if(game.winner_id === 0) winText = "🤝 НИЧЬЯ";
                     else if((isHost && game.winner_id === game.host_id) || (!isHost && game.winner_id === game.guest_id)) winText = "🏆 ТЫ ВЫИГРАЛ!";
                     else winText = "💀 ТЫ ПРОИГРАЛ";
-                    el.gameStatus.innerHTML = `${winText}<br><small style='color:#aaa'>Против: ${oppName}</small>`;
+                    
+                    el.gameStatus.innerText = winText;
+                    el.gameSpinner.style.display = 'none';
+                    el.gameControls.innerHTML = '';
                     el.gameExitBtn.style.display = 'block';
+                    el.gameCancelBtn.style.display = 'none';
                 }
             }
+
             window.sendMove = async (mv) => { await fetch(`${API}/games/move`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId, move:mv})}); pollGameStatus(); }
             window.exitGame = async () => { if(activeGameId) try { await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})}); } catch(e) {}; el.gameUi.style.display = 'none'; el.gamesLobby.style.display = 'block'; activeGameId = null; updateGamesList(); }
             window.cancelActiveGame = async () => { if(!confirm("Отменить игру и вернуть ставку?")) return; try { await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})}); exitGame(); } catch(e) {} }
@@ -827,9 +981,9 @@
                 if(user.photo_url) el.profAvatar.innerHTML = `<img src="${user.photo_url}">`;
                 else el.profAvatar.innerHTML = '👤';
                 
-                // --- Рендер Лучшего Дропа ---
+                // --- Рендер Лучшего Дропа (ОБЕСПЕЧЕН ВИЗУАЛ) ---
+                el.profBestDrop.innerHTML = '';
                 if (bestItem) {
-                     el.profBestDrop.innerHTML = '';
                      const card = createItemCardHTML({
                          name: bestItem.name,
                          price: bestItem.price,
@@ -844,6 +998,7 @@
                      el.profBestDrop.innerHTML = '<div style="text-align:center; color:#555; padding:10px; font-size:0.9rem;">Нет предметов</div>';
                 }
 
+                // Инвентарь
                 el.profInventory.innerHTML = '';
                 el.profInventory.style.display = 'none'; 
 
