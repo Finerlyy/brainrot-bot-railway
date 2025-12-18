@@ -1,6 +1,7 @@
 import logging
 import random
 import os
+import time
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo
@@ -17,7 +18,8 @@ from database import (
     update_user_photo, get_public_profile, get_rarity_weights,
     add_items_with_mutations,
     create_game, get_open_games, join_game, make_move, get_my_active_game,
-    cancel_game_db, sell_specific_item_stack
+    cancel_game_db, sell_specific_item_stack,
+    get_best_item_db, claim_free_case_key
 )
 
 TOKEN = "8292962840:AAEHmybp8iU3e7HjWgXUZ_c4pcQ2TE2g1Kw" 
@@ -44,7 +46,7 @@ def force_dict(item, key_map):
 
 ITEM_KEYS = ['id', 'name', 'rarity', 'price', 'image_url', 'sound_url', 'case_id']
 CASE_KEYS = ['id', 'name', 'price', 'icon_url']
-USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date', 'photo_url']
+USER_KEYS = ['id', 'tg_id', 'username', 'balance', 'ip', 'cases_opened', 'reg_date', 'photo_url', 'last_claim']
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -71,7 +73,6 @@ def process_inventory(raw_inv):
         i_dict['sell_price'] = max(1, int(i_dict.get('price', 0) * mult * sell_mult))
         inventory.append(i_dict)
     
-    # Сортировка: Редкость -> Цена
     inventory.sort(key=lambda x: (RARITY_RANKS.get(x['rarity'], 0), x['price']), reverse=True)
     return inventory
 
@@ -86,12 +87,13 @@ async def api_get_data(request):
         raw_user = await get_user(user_id, data.get('username'))
         user_data = force_dict(raw_user, USER_KEYS)
         
-        stats = await get_profile_stats(user_id)
-        user_data['best_item'] = stats.get('best_item')
-        user_data['net_worth'] = user_data['balance'] + (stats.get('inv_value') or 0)
+        best = await get_best_item_db(user_data['id'])
+        user_data['best_item'] = best
         
         raw_inv = await get_inventory_grouped(user_id)
         inventory = process_inventory(raw_inv)
+        inv_val = sum(i['price'] * i['quantity'] for i in raw_inv)
+        user_data['net_worth'] = user_data['balance'] + inv_val
 
         raw_cases = await get_all_cases()
         cases = [force_dict(c, CASE_KEYS) for c in raw_cases]
@@ -109,6 +111,13 @@ async def api_get_data(request):
             "leaderboard": await get_leaderboard(),
             "all_items": all_items
         })
+    except Exception as e: return web.json_response({"error": str(e)}, status=500)
+
+async def api_claim_free(request):
+    try:
+        data = await request.json()
+        res = await claim_free_case_key(int(data.get('user_id')))
+        return web.json_response({"status": res})
     except Exception as e: return web.json_response({"error": str(e)}, status=500)
 
 async def api_get_profile(request):
@@ -140,11 +149,14 @@ async def api_open_case(request):
             using_keys = True
             if not await use_keys(user_id, case_id, count): return web.json_response({"error": "Err keys"}, status=400)
         else:
-            total_price = case_data['price'] * count
-            raw_user = await get_user(user_id, 'temp')
-            user = force_dict(raw_user, USER_KEYS)
-            if user['balance'] < total_price: return web.json_response({"error": "Мало денег!"}, status=400)
-            await update_user_balance(user_id, -total_price) 
+            if case_data['price'] > 0:
+                total_price = case_data['price'] * count
+                raw_user = await get_user(user_id, 'temp')
+                user = force_dict(raw_user, USER_KEYS)
+                if user['balance'] < total_price: return web.json_response({"error": "Мало денег!"}, status=400)
+                await update_user_balance(user_id, -total_price)
+            else:
+                return web.json_response({"error": "Нужен ключ! (Бесплатно раз в 48ч)"}, status=400)
 
         raw_items = await get_case_items(case_id)
         items = [force_dict(i, ITEM_KEYS) for i in raw_items]
@@ -267,6 +279,7 @@ async def api_game_cancel(request):
 app.add_routes([
     web.get('/', web_index), 
     web.post('/api/data', api_get_data), 
+    web.post('/api/claim_free', api_claim_free),
     web.post('/api/profile', api_get_profile),
     web.post('/api/open', api_open_case), 
     web.post('/api/sell_batch', api_sell_batch), 
