@@ -72,7 +72,7 @@
         
         .case-card, .item-card { 
             background: var(--card); 
-            padding: 10px; 
+            padding: 5px; 
             border-radius: 18px; 
             text-align: center; 
             border: 1px solid rgba(255,255,255,0.03); 
@@ -85,15 +85,14 @@
         }
         .case-card:active, .item-card:active { transform: scale(0.96); background: #252529; }
         
-        /* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ИЗОБРАЖЕНИЙ (ПРОЗРАЧНОСТЬ) */
         .case-img, .item-img { 
-            width: 85%;  /* Чуть больше, так как contain может уменьшать визуально */
-            height: 85%; 
-            object-fit: contain; /* Важно: сохраняет пропорции и не обрезает */
-            background: transparent; /* Убирает белый фон */
-            margin-bottom: 8px; 
-            /* Тень падает от контура PNG, а не от квадрата */
+            width: 90%; 
+            height: 90%; 
+            object-fit: contain; 
+            background: transparent;
+            margin-bottom: 5px; 
             filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); 
+            will-change: transform;
         }
         
         .mutated {
@@ -101,8 +100,8 @@
             border: 1px solid var(--glow-color);
         }
 
-        .case-name { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
-        .case-price { color: var(--text-muted); font-size: 0.75rem; display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 600; }
+        .case-name { font-weight: 700; margin-bottom: 2px; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
+        .case-price { color: var(--text-muted); font-size: 0.7rem; display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 600; }
         
         .keys-badge { position: absolute; top: 8px; right: 8px; background: rgba(51, 255, 51, 0.15); color: #33ff33; font-weight: 800; font-size: 0.65rem; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(51, 255, 51, 0.3); z-index: 10; }
         .mutation-badges { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 3px; z-index: 10; }
@@ -195,7 +194,7 @@
         }
         .u-slot:active { transform: scale(0.96); }
         .u-slot.selected { border: 1px solid var(--accent); color: #fff; background: rgba(255, 215, 0, 0.05); }
-        .u-slot img { width: 70%; height: 70%; object-fit: contain; margin-bottom: 8px; background:transparent;}
+        .u-slot img { width: 70%; height: 70%; object-fit: contain; margin-bottom: 8px; background: transparent; }
         .u-arrow { font-size: 1.2rem; color: #333; }
         
         .quick-chance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 320px; }
