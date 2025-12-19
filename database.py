@@ -12,6 +12,7 @@ async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row 
         
+        # БАЛАНС 0
         await db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, tg_id INTEGER UNIQUE, username TEXT, balance INTEGER DEFAULT 0, ip TEXT, cases_opened INTEGER DEFAULT 0, reg_date TEXT, photo_url TEXT, last_claim INTEGER DEFAULT 0)")
         await db.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY, name TEXT UNIQUE, price INTEGER, icon_url TEXT)")
         await db.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT, rarity TEXT, price INTEGER, image_url TEXT, sound_url TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id))")
@@ -38,6 +39,7 @@ async def init_db():
 
         await db.execute("CREATE TABLE IF NOT EXISTS rarity_weights (rarity TEXT PRIMARY KEY, weight INTEGER)")
 
+        # Миграции
         try: await db.execute("ALTER TABLE games ADD COLUMN wager_mutations TEXT DEFAULT ''")
         except: pass
         try: await db.execute("ALTER TABLE games ADD COLUMN guest_mutations TEXT DEFAULT ''")
@@ -51,8 +53,10 @@ async def init_db():
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
         await db.commit()
         
+        # --- КЕЙСЫ (ОБНОВЛЕНА КАРТИНКА) ---
         case_name = '🧠 Brainrot Case'
-        await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, 300, 'https://i.ibb.co/mCZ9d327/1000002237.jpg'))
+        # Новая ссылка на картинку
+        await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, 300, 'https://i.ibb.co/Kcph3txZ/123-Photoroom.png'))
         
         free_case_name = '🎁 Free Box'
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (free_case_name, 0, 'https://cdn-icons-png.flaticon.com/512/669/669954.png'))
@@ -62,6 +66,7 @@ async def init_db():
         async with db.execute("SELECT id FROM cases WHERE name = ?", (free_case_name,)) as cur:
             free_case_id = (await cur.fetchone())['id']
             
+        # Заполняем основной кейс
         async with db.execute("SELECT count(*) FROM items WHERE case_id = ?", (main_case_id,)) as cur:
             if (await cur.fetchone())[0] == 0:
                 items_data = [
@@ -76,6 +81,7 @@ async def init_db():
                 for i in items_data:
                     await db.execute("INSERT INTO items (name, rarity, price, image_url, sound_url, case_id) VALUES (?, ?, ?, ?, ?, ?)", i)
         
+        # Заполняем бесплатный кейс
         async with db.execute("SELECT count(*) FROM items WHERE case_id = ?", (free_case_id,)) as cur:
             if (await cur.fetchone())[0] == 0:
                 items_data_free = [
@@ -106,6 +112,7 @@ async def get_user(tg_id, username):
         return user
 
 async def get_best_item_db(user_pk):
+    """Поиск лучшего предмета"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         sql_best = """
