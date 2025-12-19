@@ -85,14 +85,16 @@
         }
         .case-card:active, .item-card:active { transform: scale(0.96); background: #252529; }
         
-        .case-img, .item-img { 
-            width: 70%; 
-            height: 70%; 
-            object-fit: cover; 
-            margin-bottom: 8px; 
-            border-radius: 16px; 
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
-        }
+        .case-img { 
+    width: 70%; 
+    height: 70%; 
+    object-fit: contain; /* БЫЛО: cover. СТАЛО: contain */
+    margin-bottom: 8px; 
+    border-radius: 16px; 
+    /* drop-shadow отлично работает с PNG, создавая тень по контуру предмета */
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
+    background: transparent; /* Гарантируем отсутствие фона */
+}
         
         .mutated { animation: neonPulse 2s infinite ease-in-out; border: 1px solid var(--glow-color); }
         .case-name { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
