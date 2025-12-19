@@ -163,13 +163,13 @@ async def get_inventory_grouped(user_id_tg):
 async def get_leaderboard():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        sql="SELECT username, photo_url, tg_id, balance, (balance + COALESCE((SELECT SUM(items.price) FROM inventory JOIN items ON inventory.item_id=items.id WHERE inventory.user_id=users.id),0)) as net_worth FROM users WHERE tg_id!=0 ORDER BY net_worth DESC LIMIT 10"
+        sql="""SELECT username, photo_url, tg_id, balance, (balance + COALESCE((SELECT SUM(items.price) FROM inventory JOIN items ON inventory.item_id=items.id WHERE inventory.user_id=users.id),0)) as net_worth FROM users WHERE tg_id!=0 ORDER BY net_worth DESC LIMIT 10"""
         async with db.execute(sql) as c: return [dict(r) for r in await c.fetchall()]
 
 async def get_open_games():
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
-        sql="SELECT g.*, u.username as host_name, i.name as item_name, i.image_url as item_img, i.rarity as item_rarity FROM games g JOIN users u ON g.host_id=u.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE g.status='open' ORDER BY g.id DESC"
+        sql="""SELECT g.*, u.username as host_name, i.name as item_name, i.image_url as item_img, i.rarity as item_rarity FROM games g JOIN users u ON g.host_id=u.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE g.status='open' ORDER BY g.id DESC"""
         async with db.execute(sql) as c: return [dict(r) for r in await c.fetchall()]
 
 async def create_game(tg_user_id, game_type, wager_type, wager_val, wager_item_id=None):
@@ -270,7 +270,7 @@ async def get_my_active_game(uid):
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c:
             u_row = await c.fetchone()
-            if not u_row: return None # Юзер еще не создан
+            if not u_row: return None 
             pk = u_row['id']
         sql="""SELECT g.*, u1.username as host_name, u1.photo_url as host_photo, u2.username as guest_name, u2.photo_url as guest_photo, u1.tg_id as host_tg_id, u2.tg_id as guest_tg_id, i.name as item_name, i.image_url as item_img FROM games g LEFT JOIN users u1 ON g.host_id=u1.id LEFT JOIN users u2 ON g.guest_id=u2.id LEFT JOIN items i ON g.wager_item_id=i.id WHERE (g.host_id=? OR g.guest_id=?) AND g.status != 'finished' ORDER BY g.id DESC LIMIT 1"""
         async with db.execute(sql,(pk,pk)) as c: r=await c.fetchone(); return dict(r) if r else None
@@ -343,6 +343,7 @@ async def sell_specific_item_stack(uid, iid, muts, n, price):
         await db.execute("DELETE FROM inventory WHERE rowid IN (SELECT rowid FROM inventory WHERE user_id=? AND item_id=? AND mutations=? LIMIT ?)",(pk,iid,muts,n))
         if price>0: await db.execute("UPDATE users SET balance=balance+? WHERE id=?",(price,pk))
         await db.commit(); return True
+
 async def add_items_with_mutations(uid, items):
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c:
@@ -352,7 +353,18 @@ async def add_items_with_mutations(uid, items):
         data = [(pk, i.get('id'), ",".join(i.get('mutations',[]))) for i in items]
         await db.executemany("INSERT INTO inventory (user_id, item_id, mutations) VALUES (?,?,?)", data)
         await db.commit()
+
 async def add_item_to_inventory(uid, item): await add_items_with_mutations(uid, [item])
+
+async def delete_one_item_by_id(uid, iid):
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM users WHERE tg_id=?",(uid,)) as c:
+            row = await c.fetchone()
+            if not row: return
+            pk = row[0]
+        await db.execute("DELETE FROM inventory WHERE rowid IN (SELECT rowid FROM inventory WHERE user_id=? AND item_id=? LIMIT 1)",(pk,iid))
+        await db.commit()
+
 async def admin_get_all_users(): 
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
@@ -400,4 +412,3 @@ async def get_case_by_id(cid):
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = sqlite3.Row
         async with db.execute("SELECT * FROM cases WHERE id=?",(cid,)) as c: return await c.fetchone()
-async def get_profile_stats(uid): return {"best_item":None, "inv_value":0}
