@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ЭТОТ ТЕГ ЧИНИТ ЗАГРУЗКУ КАРТИНОК С IBB.CO НА ТЕЛЕФОНАХ -->
     <meta name="referrer" content="no-referrer">
     <title>Brainrot Drop</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -68,10 +69,36 @@
         .nav-btn.active span { color: #fff; filter: grayscale(0) opacity(1); transform: translateY(-5px); text-shadow: 0 0 10px var(--accent-glow); }
         .nav-btn.active::after { content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
 
-        /* Grid & Cards */
-        .cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
+        /* --- СЕТКА КЕЙСОВ (ПРЯМОУГОЛЬНИКИ) --- */
+        .cases-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
         
-        .case-card, .item-card { 
+        .case-card { 
+            background: transparent; /* ПРОЗРАЧНЫЙ ФОН */
+            padding: 10px; 
+            border-radius: 18px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            transition: 0.2s; 
+            position: relative; 
+            overflow: hidden; 
+            aspect-ratio: 16 / 9; /* ГОРИЗОНТАЛЬНЫЙ ПРЯМОУГОЛЬНИК */
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .case-card:active { transform: scale(0.96); background: rgba(255,255,255,0.03); }
+        
+        .case-img { 
+            width: 100%; 
+            height: 70%; 
+            object-fit: contain; /* КАРТИНКА ЦЕЛИКОМ */
+            margin-bottom: 5px; 
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
+        }
+
+        /* --- СЕТКА ИНВЕНТАРЯ (КВАДРАТЫ) --- */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
+        
+        .item-card { 
             background: var(--card); 
             padding: 10px; 
             border-radius: 18px; 
@@ -84,9 +111,9 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer;
         }
-        .case-card:active, .item-card:active { transform: scale(0.96); background: #252529; }
+        .item-card:active { transform: scale(0.96); background: #252529; }
         
-        .case-img, .item-img { 
+        .item-img { 
             width: 70%; 
             height: 70%; 
             object-fit: cover; 
@@ -101,8 +128,17 @@
         }
 
         .case-name { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
-        .case-price { color: var(--text-muted); font-size: 0.75rem; display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 600; }
+        .case-price { color: var(--accent); font-size: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 700; }
         
+        /* ПРЕДПРОСМОТР В МОДАЛКЕ */
+        .preview-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 10px;
+            max-height: 160px; overflow-y: auto; margin: 15px 0; padding: 10px;
+            background: rgba(0,0,0,0.3); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .preview-item { display: flex; flex-direction: column; align-items: center; font-size: 0.65rem; color: #ccc; text-align: center; }
+        .preview-item img { width: 50px; height: 50px; object-fit: contain; border-radius: 10px; background: rgba(255,255,255,0.02); margin-bottom: 4px; }
+
         .keys-badge { position: absolute; top: 8px; right: 8px; background: rgba(51, 255, 51, 0.15); color: #33ff33; font-weight: 800; font-size: 0.65rem; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(51, 255, 51, 0.3); z-index: 10; }
         .mutation-badges { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 3px; z-index: 10; }
         .mut-badge { font-size: 0.75rem; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 2px 4px; }
@@ -123,36 +159,8 @@
             display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; 
             text-transform: uppercase; letter-spacing: 0.5px;
         }
-
-        /* --- НОВЫЕ СТИЛИ ДЛЯ ПРЕДПРОСМОТРА --- */
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
-            gap: 10px;
-            max-height: 160px;
-            overflow-y: auto;
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .preview-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.65rem;
-            color: #ccc;
-            text-align: center;
-        }
-        .preview-item img {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.02);
-            margin-bottom: 4px;
-        }
+        .main-action-btn:active, .upgrade-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .main-action-btn:disabled, .upgrade-btn:disabled { opacity: 0.6; filter: grayscale(1); cursor: not-allowed; transform: none; }
 
         .sell-btn { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #fff; border: none; font-size: 0.7rem; padding: 6px; cursor: pointer; font-weight: 600; opacity: 0; transition: 0.2s; z-index: 20; }
         .item-card:hover .sell-btn { opacity: 1; }
@@ -364,8 +372,8 @@
         .sell-all-container { margin: 15px 0; display: flex; justify-content: center; }
         .btn-secondary-danger { background: transparent; border: 1px solid rgba(255, 51, 51, 0.4); color: #ff5555; font-size: 0.8rem; padding: 8px 16px; border-radius: 12px; cursor: pointer; margin: 10px auto; width: auto; min-width: 150px; display: flex; justify-content: center; align-items: center; transition: 0.2s; font-weight: 600; }
         
-        /* --- ПРАВКА СЛАЙДЕРА (ОТСТУП ВЫШЕ) --- */
-        .slider-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; color: #aaa; }
+        /* --- ПРАВКА ПОЛЗУНКА (ОТСТУП ВЫШЕ) --- */
+        .slider-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.95rem; color: #fff; font-weight: 800; }
         
         .star-icon { color: #FFD700; }
     </style>
@@ -388,9 +396,11 @@
             <div id="active-game-ui" class="active-game-ui">
                 <h2 id="game-status-text" style="font-size: 1.1rem; margin-bottom: 10px;">Ожидание...</h2>
                 
+                <!-- ИГРОВОЙ СТОЛ -->
                 <div class="game-table-container">
                     <div class="vs-divider">VS</div>
                     
+                    <!-- ЛЕВАЯ СТОРОНА (ВЫ) -->
                     <div class="player-zone" id="zone-left">
                         <div class="player-avatar" id="avatar-left">👤</div>
                         <div class="player-name" id="name-left">Вы</div>
@@ -399,6 +409,7 @@
                         </div>
                     </div>
 
+                    <!-- ПРАВАЯ СТОРОНА (ПРОТИВНИК) -->
                     <div class="player-zone" id="zone-right">
                         <div class="player-avatar" id="avatar-right">👤</div>
                         <div class="player-name" id="name-right">Соперник</div>
@@ -475,11 +486,13 @@
                 <div class="stat-card"><span class="stat-val" id="prof-days">0</span><span class="stat-label">Дней в игре</span></div>
             </div>
 
+            <!-- БЛОК ЛУЧШИЙ ДРОП (ВСЕГДА ВИДЕН) -->
             <div id="prof-best-container" style="margin-top: 20px;">
                 <h3 style="margin-bottom: 10px; font-size: 1.1rem; color: #eee;">🏆 Лучший дроп</h3>
                 <div id="prof-best-drop"><div style="text-align:center; color:#555; padding:10px; font-size:0.9rem;">Нет предметов</div></div>
             </div>
 
+            <!-- БЛОК ИНВЕНТАРЯ ЧУЖОГО (С КНОПКОЙ) -->
             <div id="prof-inv-container" style="display: none; margin-top: 20px;">
                 <button id="btn-view-prof-inv" class="main-action-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px;">🎒 Инвентарь</button>
                 <div id="prof-inventory" class="inventory-grid" style="display: none;"></div>
@@ -498,7 +511,9 @@
             </div>
             <div id="inventory-grid" class="inventory-grid"></div>
         </section>
-<nav class="bottom-nav">
+    </main>
+
+    <nav class="bottom-nav">
         <button class="nav-btn active" onclick="switchTab('cases')"><span>📦</span></button>
         <button class="nav-btn" onclick="switchTab('upgrade')"><span>📈</span></button>
         <button class="nav-btn" onclick="switchTab('games')"><span>🎮</span></button>
@@ -538,6 +553,7 @@
         </div>
     </div>
 
+    <!-- ОБНОВЛЕННАЯ МОДАЛКА ОТКРЫТИЯ -->
     <div id="open-modal" class="modal hidden">
         <div class="modal-content open-case-content">
             <h3 id="modal-case-name" style="margin-bottom:5px;">Кейс</h3>
@@ -547,6 +563,7 @@
                 Шанс мутации: <span id="modal-mut-chance" style="color: var(--accent); font-weight: 800;">0%</span>
             </div>
 
+            <!-- ПРЕДПРОСМОТР ПРЕДМЕТОВ -->
             <div id="modal-preview" class="preview-grid"></div>
 
             <div class="slider-container" style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px; margin-bottom:15px;">
@@ -560,8 +577,8 @@
             <div id="multi-roulette-container"></div>
             
             <div class="actions-grid">
-                <button id="btn-fast" class="main-action-btn btn-fast">БЫСТРО</button>
-                <button id="btn-spin" class="main-action-btn btn-spin">МЕДЛЕННО</button>
+                <button id="btn-fast" class="main-action-btn">БЫСТРО</button>
+                <button id="btn-spin" class="main-action-btn" style="background:#2a2a2a; color:#fff; box-shadow:none;">МЕДЛЕННО</button>
             </div>
             <button class="close-btn" onclick="closeModal('open-modal')">Отмена</button>
         </div>
@@ -573,7 +590,7 @@
             <img id="sell-item-img" src="" alt="" class="modal-main-img" style="width: 120px; height: 120px; border-radius: 20px;">
             <p style="color:#888; margin-bottom: 15px;">В наличии: <span id="sell-owned-count" style="color:#fff; font-weight:bold;">0</span></p>
             <div class="slider-container" id="sell-slider-container" style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px; margin-bottom:15px;">
-                <div class="slider-info">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem; color:#aaa;">
                     <span>Продать:</span>
                     <span id="sell-slider-count" style="color:#fff; font-weight:bold;">1</span>
                 </div>
@@ -619,6 +636,11 @@
     <audio id="audio-player"></audio>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        // ФИКС JSON ОШИБКИ: Используем относительный путь
+        const API = '/api'; 
+        const tg = window.Telegram.WebApp; 
+        tg.expand();
+        
         function formatBalance(num) {
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
@@ -655,6 +677,7 @@
             let mList = item.muts_list || [];
             if(!mList.length && item.mutations && Array.isArray(item.mutations)) mList = item.mutations;
             else if(!mList.length && typeof item.mutations === 'string' && item.mutations) mList = item.mutations.split(',').filter(x=>x);
+
             if(mList.length > 0) {
                 div.classList.add('mutated');
                 const mainMut = mList[0];
@@ -664,32 +687,31 @@
                 mList.forEach(m => { mutsHtml += `<span class="mut-badge">${MUT_EMOJIS[m] || m}</span>`; });
                 mutsHtml += '</div>';
             }
+            
             let priceDisplay = item.sell_price ? item.sell_price : item.price;
             let sellBtnHtml = '';
             if(item.sell_price && isClickable && !onClickAction) { sellBtnHtml = `<button class="sell-btn" onclick="openSellModal(${item.item_id}, '${mList.join(',')}')">Продать: <span>⭐️ ${formatBalance(priceDisplay)}</span></button>`; } 
             else { sellBtnHtml = `<div class="case-price" style="margin-top:5px;">⭐️ ${formatBalance(item.price)}</div>`; }
+
             let qtyHtml = item.quantity > 0 ? `<span class="item-quantity">x${item.quantity}</span>` : '';
             div.innerHTML = `${mutsHtml}${qtyHtml}<img src="${item.image_url}" class="item-img"><div class="case-name">${item.name}</div>${sellBtnHtml}`;
+
             if(isClickable) { div.onclick = (e) => { if(e.target.closest('.sell-btn')) return; if(onClickAction) onClickAction(item); else viewItemDetails(item); }; }
             return div;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const tg = window.Telegram.WebApp; tg.expand();
-            const API = window.location.origin + '/api';
             let userId = tg.initDataUnsafe?.user?.id || 0;
             let username = tg.initDataUnsafe?.user?.username || 'Guest';
             let photoUrl = tg.initDataUnsafe?.user?.photo_url || '';
             let allItems=[], inventory=[], allItemsSorted=[], currentBal=0;
-            let selectedCase={id:0, price:0, keys: 0, mutation_chance: 5}, openCount=1;
-            let upgMy=null, upgTarget=null, sellingItem=null, sellCount=1;
+            let selectedCase=null, openCount=1, upgMy=null, upgTarget=null, sellingItem=null, sellCount=1;
 
             const el = {
                 bal: document.getElementById('balance'), cases: document.getElementById('cases-grid'), inv: document.getElementById('inventory-grid'),
                 gamesList: document.getElementById('games-list'), gameUi: document.getElementById('active-game-ui'), gamesLobby: document.getElementById('games-lobby'), gameControls: document.getElementById('game-controls'), gameStatus: document.getElementById('game-status-text'), gameSpinner: document.getElementById('game-loading-spinner'), gameExitBtn: document.getElementById('game-exit-btn'), gameCancelBtn: document.getElementById('game-cancel-btn'),
                 avLeft: document.getElementById('avatar-left'), nameLeft: document.getElementById('name-left'), handLeft: document.getElementById('hand-left'), avRight: document.getElementById('avatar-right'), nameRight: document.getElementById('name-right'), handRight: document.getElementById('hand-right'),
-                loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), mPrice:document.getElementById('modal-case-price'), slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'), selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'), uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'), uBtn:document.getElementById('upgrade-btn'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'), sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'), sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'), sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'), sellSliderContainer:document.getElementById('sell-slider-container'), multiBox: document.getElementById('multi-roulette-container'), btnFast: document.getElementById('btn-fast'), btnSpin: document.getElementById('btn-spin'), profUser: document.getElementById('profile-username'), profBal: document.getElementById('prof-balance'), profNet: document.getElementById('prof-networth'), profCases: document.getElementById('prof-cases'), profDays: document.getElementById('prof-days'), 
-                profInventory: document.getElementById('prof-inventory'), profInvContainer: document.getElementById('prof-inv-container'), btnViewProfInv: document.getElementById('btn-view-prof-inv'), profBestContainer: document.getElementById('prof-best-container'), profBestDrop: document.getElementById('prof-best-drop'), profAvatar: document.getElementById('prof-avatar'), lbList: document.getElementById('leaderboard-list'), backBtn: document.getElementById('back-to-my-profile'), upgCircleFg: document.getElementById('upgrade-circle-fg'), wagerMoneyBlock: document.getElementById('wager-money-block'), wagerItemBlock: document.getElementById('wager-item-block'), selWagerItemDiv: document.getElementById('selected-wager-item'), btnWagerMoney: document.getElementById('btn-wager-money'), btnWagerItem: document.getElementById('btn-wager-item'), detModal: document.getElementById('details-modal'), detName: document.getElementById('det-item-name'), detImg: document.getElementById('det-item-img'), detBase: document.getElementById('det-base-price'), detMuts: document.getElementById('det-mutations-block'), detFinal: document.getElementById('det-final-price'), detRarity: document.getElementById('det-rarity-badge')
+                loader:document.getElementById('loading-screen'), openModal:document.getElementById('open-modal'), mPrice:document.getElementById('modal-case-price'), slider:document.getElementById('case-slider'), sliderVal:document.getElementById('slider-count'), popup:document.getElementById('drop-popup'), dropGrid:document.getElementById('drop-results-grid'), audio:document.getElementById('audio-player'), selModal:document.getElementById('select-modal'), selGrid:document.getElementById('select-grid'), uLeft:document.getElementById('u-slot-left'), uRight:document.getElementById('u-slot-right'), uBtn:document.getElementById('upgrade-btn'), uChance:document.getElementById('u-chance'), resultLayer:document.getElementById('resultLayer'), resultText:document.getElementById('resultText'), sellModal:document.getElementById('sell-modal'), sellName:document.getElementById('sell-item-name'), sellImg:document.getElementById('sell-item-img'), sellOwned:document.getElementById('sell-owned-count'), sellSlider:document.getElementById('sell-slider'), sellSliderVal:document.getElementById('sell-slider-count'), sellTotalBtn:document.getElementById('total-sell-price'), confirmSellBtn:document.getElementById('confirm-sell-btn'), sellSliderContainer:document.getElementById('sell-slider-container'), multiBox: document.getElementById('multi-roulette-container'), btnFast: document.getElementById('btn-fast'), btnSpin: document.getElementById('btn-spin'), profUser: document.getElementById('profile-username'), profBal: document.getElementById('prof-balance'), profNet: document.getElementById('prof-networth'), profCases: document.getElementById('prof-cases'), profDays: document.getElementById('prof-days'), profInventory: document.getElementById('prof-inventory'), profInvContainer: document.getElementById('prof-inv-container'), btnViewProfInv: document.getElementById('btn-view-prof-inv'), profBestContainer: document.getElementById('prof-best-container'), profBestDrop: document.getElementById('prof-best-drop'), profAvatar: document.getElementById('prof-avatar'), lbList: document.getElementById('leaderboard-list'), backBtn: document.getElementById('back-to-my-profile'), upgCircleFg: document.getElementById('upgrade-circle-fg'), wagerMoneyBlock: document.getElementById('wager-money-block'), wagerItemBlock: document.getElementById('wager-item-block'), selWagerItemDiv: document.getElementById('selected-wager-item'), btnWagerMoney: document.getElementById('btn-wager-money'), btnWagerItem: document.getElementById('btn-wager-item'), detModal: document.getElementById('details-modal'), detName: document.getElementById('det-item-name'), detImg: document.getElementById('det-item-img'), detBase: document.getElementById('det-base-price'), detMuts: document.getElementById('det-mutations-block'), detFinal: document.getElementById('det-final-price'), detRarity: document.getElementById('det-rarity-badge')
             };
 
             function upBal(n){ if(n!==undefined){ currentBal=n; el.bal.innerText = formatBalance(n); } }
@@ -703,6 +725,7 @@
                     d.cases.forEach(c=>{
                         const div=document.createElement('div'); div.className='case-card';
                         let keyBadge = ''; if(c.keys && c.keys > 0) { keyBadge = `<div class="keys-badge">🔑 ${c.keys}</div>`; }
+                        // РЕНДЕР ПРЯМОУГОЛЬНЫХ КЕЙСОВ
                         div.innerHTML=`${keyBadge}<img src="${c.icon_url}" class="case-img"><div class="case-name">${c.name}</div><div class="case-price">⭐️ ${formatBalance(c.price)}</div>`;
                         div.onclick=()=>{selectedCase=c; showOpenModal();}; el.cases.appendChild(div);
                     });
@@ -710,8 +733,7 @@
                 d.inventory = sortItems(d.inventory);
                 const invJSON = JSON.stringify(d.inventory);
                 if (isInitial || el.inv.dataset.hash !== invJSON) {
-                    el.inv.dataset.hash = invJSON;
-                    el.inv.innerHTML=''; 
+                    el.inv.dataset.hash = invJSON; el.inv.innerHTML=''; 
                     if(!d.inventory.length) el.inv.innerHTML="<p style='color:#666;grid-column:1/-1;text-align:center;margin-top:20px;font-size:0.9rem'>Инвентарь пуст</p>";
                     d.inventory.forEach(i=>{ el.inv.appendChild(createItemCardHTML(i)); });
                 }
@@ -726,8 +748,7 @@
             }
             
             window.viewItemDetails = (item) => {
-                el.detName.innerText = item.name; el.detImg.src = item.image_url; el.detBase.innerText = formatBalance(item.price);
-                el.detRarity.innerText = item.rarity; el.detRarity.style.color = RARITY_COLORS_HEX[item.rarity] || '#fff'; el.detRarity.style.border = `1px solid ${RARITY_COLORS_HEX[item.rarity] || '#fff'}`;
+                el.detName.innerText = item.name; el.detImg.src = item.image_url; el.detBase.innerText = formatBalance(item.price); el.detRarity.innerText = item.rarity; el.detRarity.style.color = RARITY_COLORS_HEX[item.rarity] || '#fff'; el.detRarity.style.border = `1px solid ${RARITY_COLORS_HEX[item.rarity] || '#fff'}`; el.detRarity.style.background = `rgba(0,0,0,0.5)`;
                 let rawVal = item.price; let muts = item.muts_list || []; if(!muts.length && item.mutations) muts = item.mutations.split(',');
                 el.detMuts.innerHTML = '';
                 if (muts && muts.length > 0) { muts.forEach(m => { if(!m) return; const mult = MUTATION_MULTIPLIERS[m] || 1.0; rawVal *= mult; const emoji = MUT_EMOJIS[m] || ''; const color = MUTATION_COLORS[m] || '#fff'; const row = document.createElement('div'); row.className = 'info-row'; row.innerHTML = `<span class="mut-row" style="color:${color}">${emoji} ${m}</span><span class="info-value" style="color:${color}">x${mult.toFixed(1)}</span>`; el.detMuts.appendChild(row); }); } 
@@ -735,10 +756,18 @@
                 el.detFinal.innerText = formatBalance(Math.floor(rawVal)); el.detModal.classList.remove('hidden');
             }
 
+            // ФИКС ФЕТЧА: Добавлена проверка на JSON
+            async function fetchAPI(url, payload) {
+                const res = await fetch(API + url, { method: 'POST', body: JSON.stringify(payload) });
+                if (!res.ok) { const text = await res.text(); throw new Error(`Server Error: ${res.status}`); }
+                const contentType = res.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) { throw new Error("Server returned non-JSON response (likely HTML error page)"); }
+                return await res.json();
+            }
+
             async function load(){
                 try {
-                    const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username, photo_url: photoUrl})});
-                    const d=await res.json();
+                    const d = await fetchAPI('/data', {user_id:userId, username, photo_url: photoUrl});
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
                     renderAll(d, true); updateGamesList(); pollGameStatus();
                     setTimeout(()=>el.loader.style.display='none',500);
@@ -749,13 +778,12 @@
                 if(el.popup.classList.contains('active') || !el.openModal.classList.contains('hidden') || el.loader.style.display !== 'none') return;
                 if(activeGameId) pollGameStatus(); else updateGamesList(); 
                 try {
-                    const res=await fetch(`${API}/data`,{method:'POST', body:JSON.stringify({user_id:userId, username})});
-                    const d=await res.json(); if(d.error) return;
+                    const d = await fetchAPI('/data', {user_id:userId, username});
                     allItems=d.case_items||[]; inventory=d.inventory||[]; allItemsSorted=d.all_items||[];
                     renderAll(d, false);
-                } catch(e){ console.error("AutoUpdate Error", e); }
+                } catch(e){ }
             }
-            setInterval(autoUpdate, 2000); 
+            setInterval(autoUpdate, 2500); 
 
             window.showCreateGameModal = () => { document.getElementById('create-game-modal').classList.remove('hidden'); setWagerType('money'); }
             window.setWagerType = (type) => {
@@ -768,14 +796,15 @@
                 let payload = {user_id: userId, game_type: selGameType};
                 if(wagerType === 'money') { payload.wager_type = 'balance'; payload.wager_amount = amount; } 
                 else { if(!selWagerItem) return tg.showAlert("Выберите предмет!"); payload.wager_type = 'item'; payload.wager_item_id = selWagerItem.item_id; payload.wager_amount = 0; }
-                try { const res = await fetch(`${API}/games/create`, { method: 'POST', body: JSON.stringify(payload) }); const d = await res.json(); if(d.status === 'ok') { closeModal('create-game-modal'); pollGameStatus(); } else tg.showAlert("Ошибка: " + d.error); } catch(e) { console.error(e); }
+                try { const d = await fetchAPI('/games/create', payload); if(d.status === 'ok') { closeModal('create-game-modal'); pollGameStatus(); } else tg.showAlert("Ошибка: " + d.error); } catch(e) { }
             }
             async function updateGamesList() {
                 if(activeGameId) return; 
                 try {
                     const res = await fetch(`${API}/games/list`, {method:'POST'});
-                    const d = await res.json(); el.gamesList.innerHTML = '';
-                    if(d.games.length === 0) el.gamesList.innerHTML = "<p style='color:#666;text-align:center;margin-top:20px;'>Нет активных игр</p>";
+                    const d = await res.json();
+                    el.gamesList.innerHTML = '';
+                    if(!d.games || d.games.length === 0) el.gamesList.innerHTML = "<p style='color:#666;text-align:center;margin-top:20px;'>Нет активных игр</p>";
                     d.games.forEach(g => {
                         if(g.host_id === userId || g.guest_id === userId) { activeGameId = g.id; renderActiveGame(g); return; }
                         let icon = g.game_type === 'rps' ? '✂️' : '🎲'; let wager = g.wager_type === 'balance' ? `${g.wager_amount} ⭐️` : `📦 ${g.item_name}`;
@@ -784,8 +813,8 @@
                     });
                 } catch(e) {}
             }
-            window.joinGame = async (gid) => { try { const res = await fetch(`${API}/games/join`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:gid})}); const d = await res.json(); if(d.status === 'ok') { activeGameId = gid; pollGameStatus(); } else tg.showAlert(d.error); } catch(e){} }
-            async function pollGameStatus() { try { const res = await fetch(`${API}/games/status`, {method:'POST', body:JSON.stringify({user_id:userId})}); const d = await res.json(); if(d.game) { activeGameId = d.game.id; renderActiveGame(d.game); } else { if(activeGameId) { activeGameId = null; exitGame(); } } } catch(e){} }
+            window.joinGame = async (gid) => { try { const d = await fetchAPI('/games/join', {user_id:userId, game_id:gid}); if(d.status === 'ok') { activeGameId = gid; pollGameStatus(); } else tg.showAlert(d.error); } catch(e){} }
+            async function pollGameStatus() { try { const d = await fetchAPI('/games/status', {user_id:userId}); if(d.game) { activeGameId = d.game.id; renderActiveGame(d.game); } else { if(activeGameId) { activeGameId = null; exitGame(); } } } catch(e){} }
 
             function renderActiveGame(game) {
                 el.gamesLobby.style.display = 'none'; el.gameUi.style.display = 'flex';
@@ -817,9 +846,9 @@
                 }
             }
 
-            window.sendMove = async (mv) => { await fetch(`${API}/games/move`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId, move:mv})}); pollGameStatus(); }
-            window.exitGame = async () => { if(activeGameId) try { await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})}); } catch(e) {}; el.gameUi.style.display = 'none'; el.gamesLobby.style.display = 'block'; activeGameId = null; updateGamesList(); }
-            window.cancelActiveGame = async () => { if(!confirm("Отменить игру и вернуть ставку?")) return; try { await fetch(`${API}/games/cancel`, {method:'POST', body:JSON.stringify({user_id:userId, game_id:activeGameId})}); exitGame(); } catch(e) {} }
+            window.sendMove = async (mv) => { await fetchAPI('/games/move', {user_id:userId, game_id:activeGameId, move:mv}); pollGameStatus(); }
+            window.exitGame = async () => { if(activeGameId) try { await fetchAPI('/games/cancel', {user_id:userId, game_id:activeGameId}); } catch(e) {}; el.gameUi.style.display = 'none'; el.gamesLobby.style.display = 'block'; activeGameId = null; updateGamesList(); }
+            window.cancelActiveGame = async () => { if(!confirm("Отменить игру и вернуть ставку?")) return; try { await fetchAPI('/games/cancel', {user_id:userId, game_id:activeGameId}); exitGame(); } catch(e) {} }
 
             function renderProfile(user, inventoryData, isMe, bestItem = null) {
                 el.profUser.innerText = user.username; el.profBal.innerText = formatBalance(user.balance); el.profNet.innerText = formatBalance(user.net_worth); el.profCases.innerText = user.cases_opened;
@@ -840,7 +869,7 @@
             window.viewProfile = async (targetId) => {
                 if(targetId == userId) { switchTab('profile'); return; }
                 el.loader.style.display = 'flex';
-                try { const res = await fetch(`${API}/profile`, {method: 'POST', body: JSON.stringify({target_id: targetId})}); const d = await res.json(); if(d.profile) { renderProfile(d.profile, d.profile.inventory, false, d.profile.best_item); switchTab('profile'); } } catch(e) { console.error(e); }
+                try { const d = await fetchAPI('/profile', {target_id: targetId}); if(d.profile) { renderProfile(d.profile, d.profile.inventory, false, d.profile.best_item); switchTab('profile'); } } catch(e) { }
                 el.loader.style.display = 'none';
             }
 
@@ -853,9 +882,9 @@
                 updateSellSlider(sellCount); el.sellModal.classList.remove('hidden');
             }
             window.updateSellSlider=(v)=>{ sellCount = parseInt(v); el.sellSliderVal.innerText = sellCount; el.sellTotalBtn.innerText = formatBalance(sellingItem.sell_price * sellCount); }
-            el.confirmSellBtn.onclick = async() => { if(!sellingItem) return; const totalPrice = sellingItem.sell_price * sellCount; el.sellModal.classList.add('hidden'); upBal(currentBal + totalPrice); try { await fetch(`${API}/sell_batch`,{method:'POST',body:JSON.stringify({ user_id:userId, item_id:sellingItem.item_id, count:sellCount, price_per_item:sellingItem.sell_price, mutations: sellingItem.muts_list })}); load(); } catch(e) { load(); } }
+            el.confirmSellBtn.onclick = async() => { if(!sellingItem) return; const totalPrice = sellingItem.sell_price * sellCount; el.sellModal.classList.add('hidden'); upBal(currentBal + totalPrice); try { await fetchAPI('/sell_batch', { user_id:userId, item_id:sellingItem.item_id, count:sellCount, price_per_item:sellingItem.sell_price, mutations: sellingItem.muts_list }); load(); } catch(e) { load(); } }
 
-            window.sellAllItems = async () => { if(inventory.length === 0) return tg.showAlert("Инвентарь пуст!"); if(!confirm("Вы точно хотите продать ВЕСЬ инвентарь?")) return; el.loader.style.display = 'flex'; try { const res = await fetch(`${API}/sell_all`, {method: 'POST', body: JSON.stringify({user_id: userId})}); const d = await res.json(); if(d.status === 'ok') { tg.showAlert(`Продано на ${formatBalance(d.total)} звезд!`); load(); } else { tg.showAlert("Ошибка продажи"); } } catch(e) { console.error(e); } el.loader.style.display = 'none'; }
+            window.sellAllItems = async () => { if(inventory.length === 0) return tg.showAlert("Инвентарь пуст!"); if(!confirm("Вы точно хотите продать ВЕСЬ инвентарь?")) return; el.loader.style.display = 'flex'; try { const d = await fetchAPI('/sell_all', {user_id: userId}); if(d.status === 'ok') { tg.showAlert(`Продано на ${formatBalance(d.total)} звезд!`); load(); } } catch(e) { } el.loader.style.display = 'none'; }
 
             function getWeightedRandomItem(itemsInCase) {
                 const pool = (itemsInCase && itemsInCase.length > 0) ? itemsInCase : allItemsSorted;
@@ -864,16 +893,16 @@
                 return pool[0];
             }
 
-            // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ПОД КЕЙСЫ (ПРЕДПРОСМОТР + ШАНСЫ) ---
+            // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ОТКРЫТИЯ ---
             window.showOpenModal=()=>{ 
                 if(!selectedCase) return;
                 el.multiBox.style.display = 'none'; el.multiBox.innerHTML = ''; el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false; el.slider.value = 1; 
                 
-                // Мгновенная установка имени и шанса мутации
+                // МГНОВЕННОЕ НАЗВАНИЕ И ШАНС
                 document.getElementById('modal-case-name').innerText = selectedCase.name;
                 document.getElementById('modal-mut-chance').innerText = (selectedCase.mutation_chance || 5) + '%';
                 
-                // Предпросмотр содержимого
+                // ПРЕДПРОСМОТР ПРЕДМЕТОВ
                 const preview = document.getElementById('modal-preview');
                 preview.innerHTML = '';
                 const caseItems = allItemsSorted.filter(i => i.case_id === selectedCase.id);
@@ -886,22 +915,20 @@
                     preview.appendChild(div);
                 });
 
-                updateSlider(1); 
-                el.openModal.classList.remove('hidden'); 
+                updateSlider(1); el.openModal.classList.remove('hidden'); 
             }
-            
+
             window.updateSlider=(v)=>{ openCount=parseInt(v); el.sliderVal.innerText=openCount; if(selectedCase.keys >= openCount) el.mPrice.innerHTML = `<span style="color:#33ff33">БЕСПЛАТНО (Ключи: ${selectedCase.keys})</span>`; else el.mPrice.innerHTML = `Цена: <span class="star-icon">⭐️</span> ${formatBalance(selectedCase.price*openCount)}`; }
 
             async function runOpenCase(mode) {
                 const price = selectedCase.price * openCount; if(selectedCase.keys < openCount && currentBal < price) return tg.showAlert("Мало звезд!");
                 el.btnFast.disabled = true; el.btnSpin.disabled = true; el.slider.disabled = true;
                 try {
-                    const res = await fetch(`${API}/open`,{method:'POST',body:JSON.stringify({user_id:userId, case_id:selectedCase.id, count:openCount})});
-                    const d=await res.json(); if(d.error){ el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false; return tg.showAlert(d.error); }
+                    const d = await fetchAPI('/open', {user_id:userId, case_id:selectedCase.id, count:openCount});
                     if(!d.used_keys) { upBal(currentBal - price); } else { selectedCase.keys -= openCount; }
                     if (mode === 'fast') { el.openModal.classList.add('hidden'); showResults(d.dropped); } 
                     else { el.multiBox.style.display = 'block'; el.multiBox.innerHTML = ''; d.dropped.forEach((winItem, idx) => { createRouletteRow(winItem, idx); }); setTimeout(() => { el.openModal.classList.add('hidden'); showResults(d.dropped); }, 5500); }
-                } catch(e) { console.error(e); load(); }
+                } catch(e) { el.btnFast.disabled = false; el.btnSpin.disabled = false; el.slider.disabled = false; load(); }
             }
             el.btnFast.onclick = () => runOpenCase('fast'); el.btnSpin.onclick = () => runOpenCase('spin');
 
@@ -914,8 +941,7 @@
                     card.innerHTML = `<img src="${imgUrl}">`; track.appendChild(card);
                 }
                 row.appendChild(line); row.appendChild(track); el.multiBox.appendChild(row);
-                const CARD_WIDTH = 100; const CARD_GAP = 10; const UNIT_WIDTH = CARD_WIDTH + CARD_GAP; const containerWidth = el.multiBox.clientWidth || 350; const centerOfContainer = containerWidth / 2;
-                const centerOfWinningCard = (UNIT_WIDTH * WIN_INDEX) + (UNIT_WIDTH / 2); const randomOffset = Math.floor(Math.random() * 70) - 35; const scrollAmount = centerOfWinningCard - centerOfContainer + randomOffset;
+                const scrollAmount = (110 * WIN_INDEX) + (110/2) - (el.multiBox.clientWidth / 2) + (Math.random() * 70 - 35);
                 setTimeout(() => { track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.2, 1)"; track.style.transform = `translateX(-${scrollAmount}px)`; }, 50 + (index * 50));
             }
 
@@ -965,22 +991,22 @@
                 if(!upgMy || !upgTarget) { el.uChance.innerText="0%"; el.uBtn.disabled=true; el.upgCircleFg.style.strokeDashoffset = 628; return; }
                 let ch = (upgMy.price / upgTarget.price) * 100 * 0.95; if(ch>80) ch=80; if(ch<1) ch=1;
                 const chanceVal = ch.toFixed(2); el.uChance.innerText = chanceVal + "%"; el.uBtn.disabled=false;
-                const radius = 100; const circumference = 2 * Math.PI * radius; const offset = circumference - (ch / 100) * circumference; el.upgCircleFg.style.strokeDashoffset = offset;
+                const circumference = 2 * Math.PI * 100; const offset = circumference - (ch / 100) * circumference; el.upgCircleFg.style.strokeDashoffset = offset;
             }
             el.uBtn.onclick=async()=>{
                 if(!upgMy || !upgTarget) return; el.uBtn.disabled=true; el.resultLayer.classList.remove('show'); document.querySelector('.progress-ring').style.transition = 'none'; document.querySelector('.progress-ring').style.transform = 'rotate(-90deg)';
                 try{
-                    const res=await fetch(`${API}/upgrade`,{method:'POST',body:JSON.stringify({user_id:userId, item_id:upgMy.item_id, target_id:upgTarget.id})});
-                    const d=await res.json(); if(d.error) { tg.showAlert(d.error); el.uBtn.disabled=false; return; }
+                    const d = await fetchAPI('/upgrade', {user_id:userId, item_id:upgMy.item_id, target_id:upgTarget.id});
                     const winChanceVal = parseFloat(el.uChance.innerText); const isWin = (d.status === 'win');
-                    let stopAngle; if(isWin) { stopAngle = Math.random() * winChanceVal; } else { stopAngle = winChanceVal + (Math.random() * (100 - winChanceVal)); }
-                    const spins = 5 * 360; const finalRotate = spins - (stopAngle/100 * 360); const ringEl = document.querySelector('.progress-ring');
+                    let stopAngle = isWin ? Math.random() * winChanceVal : winChanceVal + (Math.random() * (100 - winChanceVal));
+                    const finalRotate = (5 * 360) - (stopAngle/100 * 360);
+                    const ringEl = document.querySelector('.progress-ring');
                     ringEl.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.2, 1)'; ringEl.style.transform = `rotate(${finalRotate - 90}deg)`; 
                     setTimeout(()=>{
                         el.resultLayer.classList.add('show'); if(isWin){ el.resultText.innerText = "УСПЕХ"; el.resultText.className = "text-win"; showResults([d.item]); } else { el.resultText.innerText = "НЕУДАЧА"; el.resultText.className = "text-lose"; load(); }
                         upgMy=null; upgTarget=null; el.uLeft.innerHTML="<p>ПРЕДМЕТ</p>"; el.uLeft.classList.remove('selected'); el.uRight.innerHTML="<p>ЦЕЛЬ</p>"; el.uRight.classList.remove('selected'); el.uChance.innerText="0%"; el.uBtn.disabled=false; el.upgCircleFg.style.strokeDashoffset = 628;
                     }, 4050);
-                } catch(e){ console.error(e); tg.showAlert("Ошибка связи!"); el.uBtn.disabled=false; load(); }
+                } catch(e){ el.uBtn.disabled=false; load(); }
             }
             document.getElementById('claim-btn').onclick=()=>{ el.popup.classList.remove('active'); el.popup.classList.add('hidden'); };
             load();
