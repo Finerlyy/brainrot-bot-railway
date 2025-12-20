@@ -68,9 +68,30 @@
         .nav-btn.active::after { content: ''; position: absolute; bottom: -5px; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
 
         /* Grid & Cards */
-        .cases-grid, .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
         
-        .case-card, .item-card { 
+        /* ИЗМЕНЕНИЯ: Сетка кейсов 2 колонки */
+        .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        
+        /* ИЗМЕНЕНИЯ: Карточка кейса (Горизонтальная, Прозрачная) */
+        .case-card { 
+            background: transparent; /* Прозрачный фон */
+            border: none; /* Без рамок */
+            border-radius: 16px; 
+            text-align: center; 
+            transition: 0.2s; 
+            position: relative; 
+            overflow: hidden; 
+            aspect-ratio: 16 / 9; /* Горизонтальный прямоугольник */
+            display: flex; flex-direction: column; 
+            justify-content: flex-end; /* Текст внизу */
+            align-items: center;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* Карточка предмета (осталась старой) */
+        .item-card { 
             background: var(--card); 
             padding: 10px; 
             border-radius: 18px; 
@@ -83,9 +104,22 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer;
         }
-        .case-card:active, .item-card:active { transform: scale(0.96); background: #252529; }
+
+        .case-card:active, .item-card:active { transform: scale(0.96); }
         
-        .case-img, .item-img { 
+        /* ИЗМЕНЕНИЯ: Картинка кейса на весь блок */
+        .case-img { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            z-index: 1;
+            margin: 0;
+        }
+
+        .item-img { 
             width: 70%; 
             height: 70%; 
             object-fit: cover; 
@@ -99,10 +133,35 @@
             border: 1px solid var(--glow-color);
         }
 
-        .case-name { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #eee; width: 100%; }
-        .case-price { color: var(--text-muted); font-size: 0.75rem; display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 600; }
+        /* ИЗМЕНЕНИЯ: Текст кейса поверх картинки */
+        .case-name { 
+            font-weight: 800; 
+            margin-bottom: 2px; 
+            font-size: 0.85rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: #fff; 
+            width: 100%; 
+            position: relative; 
+            z-index: 2; /* Поверх картинки */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+        .case-price { 
+            color: var(--accent); 
+            font-size: 0.8rem; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 4px; 
+            font-weight: 700; 
+            position: relative;
+            z-index: 2; /* Поверх картинки */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            padding-bottom: 5px;
+        }
         
-        .keys-badge { position: absolute; top: 8px; right: 8px; background: rgba(51, 255, 51, 0.15); color: #33ff33; font-weight: 800; font-size: 0.65rem; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(51, 255, 51, 0.3); z-index: 10; }
+        .keys-badge { position: absolute; top: 8px; right: 8px; background: rgba(51, 255, 51, 0.9); color: #000; font-weight: 900; font-size: 0.65rem; padding: 4px 8px; border-radius: 8px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: none; }
         .mutation-badges { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 3px; z-index: 10; }
         .mut-badge { font-size: 0.75rem; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 2px 4px; }
         .item-quantity { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 6px; font-weight: bold; }
