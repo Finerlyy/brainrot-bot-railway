@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ЭТОТ ТЕГ ЧИНИТ ЗАГРУЗКУ КАРТИНОК С IBB.CO НА ТЕЛЕФОНАХ -->
+    <meta name="referrer" content="no-referrer">
     <title>Brainrot Drop</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
@@ -70,27 +72,25 @@
         /* Grid & Cards */
         .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; }
         
-        /* ИЗМЕНЕНИЯ: Сетка кейсов 2 колонки */
         .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         
-        /* ИЗМЕНЕНИЯ: Карточка кейса (Горизонтальная, Прозрачная) */
         .case-card { 
-            background: transparent; /* Прозрачный фон */
-            border: none; /* Без рамок */
+            background: transparent; 
+            border: none;
             border-radius: 16px; 
             text-align: center; 
             transition: 0.2s; 
             position: relative; 
             overflow: hidden; 
-            aspect-ratio: 16 / 9; /* Горизонтальный прямоугольник */
+            aspect-ratio: 16 / 9; 
             display: flex; flex-direction: column; 
-            justify-content: flex-end; /* Текст внизу */
+            justify-content: flex-end; 
             align-items: center;
             cursor: pointer;
             padding: 0;
+            width: 100%; /* Фикс для ширины */
         }
 
-        /* Карточка предмета (осталась старой) */
         .item-card { 
             background: var(--card); 
             padding: 10px; 
@@ -107,7 +107,6 @@
 
         .case-card:active, .item-card:active { transform: scale(0.96); }
         
-        /* ИЗМЕНЕНИЯ: Картинка кейса на весь блок */
         .case-img { 
             position: absolute;
             top: 0;
@@ -117,6 +116,7 @@
             object-fit: cover; 
             z-index: 1;
             margin: 0;
+            backface-visibility: hidden; /* Фикс для мерцания на iOS */
         }
 
         .item-img { 
@@ -133,7 +133,6 @@
             border: 1px solid var(--glow-color);
         }
 
-        /* ИЗМЕНЕНИЯ: Текст кейса поверх картинки */
         .case-name { 
             font-weight: 800; 
             margin-bottom: 2px; 
@@ -144,7 +143,7 @@
             color: #fff; 
             width: 100%; 
             position: relative; 
-            z-index: 2; /* Поверх картинки */
+            z-index: 2; 
             text-shadow: 0 2px 4px rgba(0,0,0,0.9);
         }
         .case-price { 
@@ -156,7 +155,7 @@
             gap: 4px; 
             font-weight: 700; 
             position: relative;
-            z-index: 2; /* Поверх картинки */
+            z-index: 2; 
             text-shadow: 0 2px 4px rgba(0,0,0,0.9);
             padding-bottom: 5px;
         }
@@ -1331,4 +1330,4 @@
 });
     </script>
 </body>
-</html>
+</html>--- END OF FILE index.html ---
