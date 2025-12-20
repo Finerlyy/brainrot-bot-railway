@@ -51,8 +51,13 @@ async def init_db():
         await db.executemany("INSERT OR IGNORE INTO rarity_weights (rarity, weight) VALUES (?, ?)", default_weights)
         await db.commit()
         
+        # --- ОБНОВЛЕНИЕ КАРТИНКИ КЕЙСА ---
         case_name = '🧠 Brainrot Case'
-        await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, 300, 'https://i.ibb.co/mCZ9d327/1000002237.jpg'))
+        new_cover = 'https://i.ibb.co/Kcph3txZ/123-Photoroom.png'
+        
+        await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (case_name, 300, new_cover))
+        # Принудительно обновляем картинку
+        await db.execute("UPDATE cases SET icon_url = ? WHERE name = ?", (new_cover, case_name))
         
         free_case_name = '🎁 Free Box'
         await db.execute("INSERT OR IGNORE INTO cases (name, price, icon_url) VALUES (?, ?, ?)", (free_case_name, 0, 'https://cdn-icons-png.flaticon.com/512/669/669954.png'))
