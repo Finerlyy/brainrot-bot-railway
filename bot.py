@@ -22,7 +22,8 @@ from database import (
     get_best_item_db, claim_free_case_key
 )
 
-TOKEN = "8292962840:AAEHmybp8iU3e7HjWgXUZ_c4pcQ2TE2g1Kw" 
+# --- НОВЫЙ ТОКЕН ---
+TOKEN = "8292962840:AAFszTXMRcAYDAUTRKm2Sd2TeEhJgqpihpc" 
 WEB_APP_URL = "https://brainrot-bot-railway-production.up.railway.app"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 
